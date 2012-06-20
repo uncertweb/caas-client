@@ -59,48 +59,62 @@
   // UncertWeb options
   UncertWeb.options = {
     broker_url: 'lib/broker.php',
-    caas_url:   'lib/caas.php'
+    caas_url:   'lib/caas.php',
+    // Setup default search options for the broker.
+    //
+    //- **si**: Start index
+    //- **st**: Search term
+    //- **bbox**: Bounding box
+    //- **rel**: Spatial relationship, e.g. contains, intersects
+    //- **ts**: time start for temporal queries
+    //- **te**: time end for temporal queries
+    //- **ct**: Count - number of results returned
+    //- **loc**: Location string, put through a geocoder before querying
+    search_config: {
+      si: 1,
+      st: '',
+      bbox: '',
+      rel: '',
+      ts: '',
+      te: '',
+      ct: 10,
+      loc: '',
+      outputFormat: 'application/atom+xml'
+    }
   };
 
 
   // Broker module
   // -------------
 
-      // Setup default search options for the broker.
-      //
-      //- **si**: Start index
-      //- **st**: Search term
-      //- **bbox**: Bounding box
-      //- **rel**: Spatial relationship, e.g. contains, intersects
-      //- **ts**: time start for temporal queries
-      //- **te**: time end for temporal queries
-      //- **ct**: Count - number of results returned
-      //- **loc**: Location string, put through a geocoder before querying
-      config = {
-        si: 1,
-        st: '',
-        bbox: '',
-        rel: '',
-        ts: '',
-        te: '',
-        ct: 10,
-        loc: '',
-        outputFormat: 'application/atom+xml'
-      };
-
   // Create the `UncertWeb.broker` module.
   UncertWeb.broker = {
     // Search the broker for the specified `keywords`.
     // Handle the success via inline callbacks or via the returned
     // deferred object.
-    search: function (keywords, success, fail) {
+    search: function (keywords) {
         var dfd = $.Deferred(),
             results = [],
             $data,
             entry = {},
             start = +new Date(),
             result_object = {},
-            base_url = UncertWeb.options.broker_url;
+            base_url = UncertWeb.options.broker_url,
+            index = 1,
+            opts,
+            success,
+            fail;
+
+        // Check for options
+        if(UncertWeb.isObject(arguments[index])) {
+          opts = arguments[index];
+          index += 1;
+        }
+
+        success = arguments[index];
+        fail = arguments[index+1];
+
+        config = $.extend({}, UncertWeb.options.search_config, opts);
 
         // Set the keywords in the search config
         config.st = keywords;
@@ -166,8 +180,8 @@
           // Log the error to the console
           console.error('Search failed: ' + data);
           // If an inline callback was provided, fire it now
-          if(UncertWeb.isFunction(failure)) {
-            failure.call(this, data, "failure");
+          if(UncertWeb.isFunction(fail)) {
+            fail.call(this, data, "failure");
           }
         });
 

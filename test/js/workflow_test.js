@@ -462,13 +462,48 @@
     });
   });
 
+  test('Override search config', function() {
+    stop(2);
+    expect(2);
+
+    UncertWeb.broker.search("e").done(function (results) {
+      ok(results.num_results > 1, "Searching for 'e' returns more than 1 result");
+      start(1);
+    });
+
+    UncertWeb.broker.search("e", {
+      ct: 1
+    }).done(function (results) {
+      equal(results.num_results, 1, "Unless you override the search parameters");
+      start(1);
+    });
+  });
+
   test("Inline callbacks", function () {
-    stop();
-    expect(3);
+    stop(3);
+    expect(5);
+
+
     UncertWeb.broker.all(function (data) {
       ok(true, "inline callbacks should work");
       ok(data, "and have access to the data");
       ok(UncertWeb.isArray(data.results), "with a results array");
+      start();
+    });
+
+    UncertWeb.broker.search("e", {}, function (data) {
+      ok(true, "Inline callbacks work when config parameters sent");
+      start();
+    });
+
+
+
+    UncertWeb.broker.search("e", {
+      fail: true
+    },
+    function(){ /* success callback */ },
+    function (status) {
+      ok(true, "Inline fail callback also works");
       start();
     });
   });
