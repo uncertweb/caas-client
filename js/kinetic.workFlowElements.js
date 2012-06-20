@@ -2,28 +2,25 @@ Kinetic.WorkFlowElement = function (config)
 {
 	this.classType = "WorkFlowElement";
 	this.vertices 	= new Array();
-	Kinetic.Group.apply(this, [config]);
-	
-
-	
-	this.textElement = new Array();
+	this.textElements = new Array();
+	this.text = config.text;
 	//we need to put a line break if too long, currently crude needs to be update
-	
+	this.brokerProperties = config.brokerProperties;
 	
 	config = {
-			  x:config.x,
-			  y:config.y,
-			  text:config.text,
-			  width: this.textLength,
-	          height: 60,
-	          fill: "",
-	          stroke: "black",
-	          lineJoin: 'round',
-	          strokeWidth: 2,
-	          stage: config.stage,
-	          type:config.type,
-	          cornerRadius:5
-			
+		  x:config.x,
+		  y:config.y,
+		  text:config.text,
+		  width: this.textLength,
+          height: 60,
+          fill: "",
+          stroke: "black",
+          lineJoin: 'round',
+          strokeWidth: 2,
+          layer: config.layer,
+          type:config.type,
+          cornerRadius:5,
+          draggable:config.draggable
 	};
 	
 	//choose the colour based on what type of element this is
@@ -35,40 +32,44 @@ Kinetic.WorkFlowElement = function (config)
 		array = new Array();
 		array.push(config.text);
 		config.text = array;
-		ctx = config.stage.children[0].getContext();
+		ctx = config.layer.getContext();
 		this.textLength = ctx.measureText(config.text[0]).width * 1.5;
 		config.width = this.textLength;
 	}
 	else if(config.type == "addElement")
 	{
+		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.title;
 		config.fill = "green";
 		config.alpha = 0.8;
 		config.text = this.cleanText(config.text);
-		ctx = config.stage.children[0].getContext();
+		ctx = config.layer.getContext();
 		this.textLength = ctx.measureText(config.text[0]).width * 1.5;
 		config.width = this.textLength;
 	}
 	else
 	{
+		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.title;
 		config.fill = "green";
 		config.alpha = 0.8;
-		newXY = config.stage.checkXY({x:config.x,y:config.y,w:this.textLength + 20,h:60})
-		config.x = newXY.x;
-		config.y = newXY.y/2;
+		//newXY = config.layer.findNextPositionVertical();
+		//config.x = newXY.x;
+		//config.y = newXY.y;
 		config.text = this.cleanText(config.text);
-		ctx = config.stage.children[0].getContext();
+		ctx = config.layer.getContext();
 		this.textLength = ctx.measureText(config.text[0]).width * 1.5;
 		config.width = this.textLength;
+		
 	}
 	//need to ensure that the x and y given are not over lapping anything else
 	//so call the stage, to check all children
-	
+	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
+	this.text = config.text;
 	this.rect = new Kinetic.Rect(config);
 	this.add(this.rect);
     xText = config.x + (this.textLength/2);
     for(i=0;i<config.text.length;i++)
     {
-    	this.textElement.push(new Kinetic.Text({
+    	this.textElements.push(new Kinetic.Text({
           x: xText,
           y: config.y+10+(i*10),
           text: config.text[i],
@@ -78,12 +79,14 @@ Kinetic.WorkFlowElement = function (config)
           align: "center",
           verticalAlign: "middle"
     	}))
-    	this.add(this.textElement[i]);
+    	this.add(this.textElements[i]);
 
     }
     
     
-    this.on("dragmove", function() { this.updateAllVertices(); });
+    this.on("dragmove", function() { 
+    	this.updateAllVertices(); 
+    });
 		    
 }
 
@@ -95,13 +98,29 @@ Kinetic.WorkFlowElement.prototype = {
 		this.getLayer().add(connection);
 	
 	},
+	addConnectionsToLayer : function ()
+	{
+		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
+
+	},
 	moveToTop : function ()
 	{
 		this.rect.moveToTop();
-		for(iTEl=0;iTEl<this.textElement.length;iTEl++)
+		for(iTEl=0;iTEl<this.textElements.length;iTEl++)
 		{
-			this.textElement[iTEl].moveToTop();
+			this.textElements[iTEl].moveToTop();
 		}
+	},
+	setAllPositions : function(config)
+	{
+		xText = config.x + (this.textLength/2);
+	    for(itEls=0;itEls<this.textElements.length;itEls++)
+	    {
+	    	this.textElements[itEls].setPosition(xText,config.y+10+(itEls*10));
+	    }
+    	this.rect.setPosition(config.x,config.y);
+ 
+		
 	},
 	cleanText : function (text)
 	{
@@ -127,8 +146,15 @@ Kinetic.WorkFlowElement.prototype = {
 	{
 		for(CWi=0;CWi<this.vertices.length;CWi++) { this.vertices[CWi]._dragUpdate(); }
 		
+	},
+	getHeight : function ()
+	{
+		return this.rect.getHeight();
+	},
+	getWidth : function()
+	{
+		return this.rect.getWidth();
 	}
-
 };
 
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowElement, Kinetic.Group);
@@ -138,7 +164,7 @@ Kinetic.WorkFlowStart = function (config)
 	this.vertices 	= new Array();
 	this.classType = "WorkFlowStart";
 	this.components = new Array();
-	Kinetic.Group.apply(this, [config]);
+	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
 	var textLength = config.text.length;
 	radius = 15;
 	this.circle = new Kinetic.Circle({
@@ -150,7 +176,7 @@ Kinetic.WorkFlowStart = function (config)
           strokeWidth: 2
     });
 	this.add(this.circle);
-    this.add(new Kinetic.Text({
+	this.textElement = new Kinetic.Text({
           x: config.x,
           y: config.y+radius+10,
           text: "Start",
@@ -159,7 +185,8 @@ Kinetic.WorkFlowStart = function (config)
           textFill: "black",
           align: "center",
           verticalAlign: "middle"
-    }));
+    });
+    this.add(this.textElement);
     this.on("dragmove", function() { this.updateAllVertices(); });		    
 }
 Kinetic.WorkFlowStart.prototype = {
@@ -169,11 +196,30 @@ Kinetic.WorkFlowStart.prototype = {
 		this.getLayer().add(connection);
 	
 	},
+	addConnectionsToLayer : function ()
+	{
+		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
+
+	},
+	setAllPositions : function(config)
+	{
+	    this.textElement.setPosition(config.x,config.y+radius+10);
+    	this.circle.setPosition(config.x,config.y);
+	},
  	updateAllVertices : function ()
 	{
 		for(i=0;i<this.vertices.length;i++) { this.vertices[i]._dragUpdate(); }
 		
+	},
+	getHeight : function ()
+	{
+		return this.circle.getRadius() * 2;
+	},
+	getWidth : function()
+	{
+		return this.circle.getRadius() * 2;
 	}
+
 
 };
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowStart, Kinetic.Group);
@@ -183,7 +229,7 @@ Kinetic.WorkFlowEnd = function (config)
 	this.vertices 	= new Array();
 	this.classType = "WorkFlowEnd";
 	this.components = new Array();
-	Kinetic.Group.apply(this, [config]);
+	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
 	var textLength = config.text.length;
 	radius = 15;
 	this.circle = new Kinetic.Circle({
@@ -195,16 +241,18 @@ Kinetic.WorkFlowEnd = function (config)
           strokeWidth: 5
     });
 	this.add(this.circle);
-    this.add(new Kinetic.Text({
+    this.textElement = new Kinetic.Text({
           x: config.x,
           y: config.y+radius+10,
-          text: "End",
+          text: "Start",
           fontSize: 10,
           fontFamily: "Calibri",
           textFill: "black",
           align: "center",
           verticalAlign: "middle"
-    }));
+    });
+    this.add(this.textElement);
+
     this.on("dragmove", function() { this.updateAllVertices(); });		    
 }
 Kinetic.WorkFlowEnd.prototype = {
@@ -214,10 +262,28 @@ Kinetic.WorkFlowEnd.prototype = {
 		this.getLayer().add(connection);
 	
 	},
+	setAllPositions : function(config)
+	{
+	    this.textElement.setPosition(config.x,config.y+radius+10);
+    	this.circle.setPosition(config.x,config.y);
+	},
+	addConnectionsToLayer : function ()
+	{
+		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
+
+	},
  	updateAllVertices : function ()
 	{
 		for(i=0;i<this.vertices.length;i++) { this.vertices[i]._dragUpdate(); }
 		
+	},
+	getHeight : function ()
+	{
+		return this.circle.getRadius() * 2;
+	},
+	getWidth : function()
+	{
+		return this.circle.getRadius() * 2;
 	}
 
 };
@@ -307,7 +373,7 @@ Kinetic.Connection.prototype = {
 					case 2:
 						return {
 							x:r1.getAbsolutePosition().x - r1.getRadius(), 
-							y:r1.getAbsolutePosition().y - r1.getRadius()
+							y:r1.getAbsolutePosition().y
 						}
 						break;
 					case 3:
@@ -395,7 +461,7 @@ Kinetic.Connection.prototype = {
 					case 2:
 						return {
 							x:r2.getAbsolutePosition().x + r2.getRadius(), 
-							y:r2.getAbsolutePosition().y - r2.getRadius()
+							y:r2.getAbsolutePosition().y
 						}
 						break;
 					case 3:
@@ -455,10 +521,10 @@ Kinetic.Connection.prototype = {
 		}
 		if(box2 instanceof Kinetic.Circle)
 		{
-			if( pos2.x + box2.getRadius() <= pos1.x ) {  return 2 }
-			if( pos2.x + box2.getRadius().width <= pos1.x ) {  return 2 }
-			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 4; }
-			return 3;
+			if( pos2.x + box2.getRadius() <= pos1.x ) {  return 3 }
+			if( pos2.x + box2.getRadius().width <= pos1.x ) {  return 3 }
+			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 3; }
+			return 1;
 		}
 		if( pos1.x + box1.getSize().width <= pos2.x ) { return 1; }
 		if( pos2.x + box2.getSize().width <= pos1.x ) {  return 2 }

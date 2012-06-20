@@ -1,6 +1,7 @@
 <html>
   <head>
     <style>
+      <style>
       body {
         margin: 0px;
         padding: 0px;
@@ -8,100 +9,145 @@
       canvas {
         border: 1px solid #9C9898;
       }
+      #container {
+        display: inline-block;
+        overflow: scroll;
+      }
+      #buttons {
+        position: absolute;
+        top: 5px;
+        left: 10px;
+      }
+      #buttons > input {
+        padding: 10px;
+        display: block;
+        margin-top: 5px;
+      }
+    </style>
     </style>
     
     <script type="text/javascript" src="js/lib/kinetic-v3.9.8.js"></script>
     <script src="js/lib/kinetic.line.js"></script>
 	<script src="js/lib/kinetic.bezier.js"></script>
-	  <script type="text/javascript" src="js/kinetic.workflowStage.js"></script>
+	<script src="js/lib/underscore.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
+	<script type="text/javascript" src="js/kinetic.workflowLayer.js"></script>
     <script type="text/javascript" src="js/kinetic.workFlowElements.js"></script>
     <script type="text/javascript" src="js/kinetic.workFlow.js"></script>
- 
+    <script type="text/javascript" src="js/workFlow.js"></script>
     
     
     <script type="text/javascript">
     	var workflowsAndElements = new Array();
     	var workFlows =new Array();
     	window.onload = function() {
-        var stage = new Kinetic.WorkFlowStage({
-          container: "container",
-          width: document.width,
-          height: document.height,
-          
-        })
-    	var layer = new Kinetic.Layer();
-        stage.add(layer);
-        start = new Kinetic.WorkFlowStart({x:100,y:10,text:"Start",draggable:true});
-        layer.add(start);
-        
-        wFlow = new Kinetic.WorkFlow({text:'[3] Mulitple Instances (one for each environmental dataset',x:100,y:10,draggable:true,stage:stage});
-        layer.add(wFlow);
-        workFlows.push(wFlow);
-        start.connectTo(wFlow);
-        wFlow.addElement({text:"[access:raster] WCS Access Broker",x:10,y:10,stage:stage});
-         wFlow.addElement({text:"[processing:datamanipulation:montecarlorealization] UTS to realizatios",x:10,y:10,stage:stage});
-        
-         wFlow.addElement({text:"[utils:multiplexerU Mulitplexer",x:10,y:10,stage:stage});
-         
-         
-         wFlowEl1 = new Kinetic.WorkFlowElement({text:'[utils:scrambler] List Scrambler',x:100,y:40,draggable:true,stage:stage});
-         layer.add(wFlowEl1);
-         
-         wFlow.connectTo(wFlowEl1);
-         
-         wFlowEl2 = new Kinetic.WorkFlowElement({text:'[publisher:raster] WCS-T',x:100,y:40,draggable:true,stage:stage});
-        layer.add(wFlowEl2);
-        
-        wFlowEl1.connectTo(wFlowEl2);
-        
-        wFlow1 = new Kinetic.WorkFlow({text:'[?] Multiple Instances (one for each Realisation)',x:100,y:40,draggable:true,stage:stage});
-        layer.add(wFlow1);
-        workFlows.push(wFlow1);
-        wFlow1.addElement({text:"[processing:geoprocessing: thermatic:gpc:ehabitat] eHabitat",x:10,y:10,stage:stage});
-        
-        layer.add(wFlow1);
-        
-        wFlowEl2.connectTo(wFlow1);
-        
-        wFlowEl3 = new Kinetic.WorkFlowElement({text:'[utils:demultiplexer] Demultiplexer',x:100,y:40,draggable:true,stage:stage,type:"component"});
-        layer.add(wFlowEl3);
-        
-        wFlow1.connectTo(wFlowEl3);
-        
-        wFlowEl4 = new Kinetic.WorkFlowElement({text:'[processing:datamanipulation:statisticsextraction] UTS Statistic Extraction',x:100,y:40,draggable:true,stage:stage,type:"component"});
-        layer.add(wFlowEl4);
-        
-        
-        wFlowEl3.connectTo(wFlowEl4);
-        
-        
-        wFlowEl5 = new Kinetic.WorkFlowElement({text:'[publisher:raster] WCS-T Publisher',x:100,y:40,draggable:true,stage:stage,type:"component"});
-        layer.add(wFlowEl5);
-        
-        
-        wFlowEl4.connectTo(wFlowEl5);
-        
-        wFlowEl6 = new Kinetic.WorkFlowElement({text:'[access:raster] WCS Url generator',x:100,y:40,draggable:true,stage:stage,type:"component"});
-        layer.add(wFlowEl6);
-        
-        
-        wFlowEl5.connectTo(wFlowEl6);
-
-        end = new Kinetic.WorkFlowEnd({x:100,y:150,text:"End",draggable:true})
-        layer.add(end);
-        wFlowEl6.connectTo(end);
-        
-        
-        stage.draw();
-        for(wFs=0;wFs<workFlows.length;wFs++)
-        {
-        	workFlows[wFs].updateAllVertices();
-        }
-
+    		
+	    	var stage = new Kinetic.Stage({
+	          container: "container",
+	          width: document.width,
+	          height: document.height
+	        });
+	        
+	        
+	        var brokerInfo;
+	        UncertWeb.broker.search('',
+	        function(data)
+	        {
+	        	brokerInfo = data;
+	        },
+	        function (data)
+	        {
+	        	console.log('error');
+	        }
+	        );
+	        
+	    	var layer = new Kinetic.WorkFlowLayer();
+	        stage.add(layer);
+	        ctx = stage.children[0].getContext();
+	        ctx.font = fontSize + "Calibri";
+	        start = new Kinetic.WorkFlowStart({x:20,y:20,text:"Start",draggable:true});
+	        layer.addElement(start);
+	        
+	        wFlow = new Kinetic.WorkFlow({text:'[3] Mulitple Instances (one for each environmental dataset)',x:100,y:10,draggable:true,layer:layer});
+	        layer.addElement(wFlow);
+	        workFlows.push(wFlow);
+	        start.connectTo(wFlow);
+	        wFlow.addElement({text:"[access:raster] WCS Access Broker",x:10,y:10,layer:layer,brokerProperties:brokerInfo.results[7]});
+	         wFlow.addElement({text:"[processing:datamanipulation:montecarlorealization] UTS to realizatios",x:10,y:10,layer:layer,brokerProperties:brokerInfo.results[3]});
+	        
+	         wFlow.addElement({text:"[utils:multiplexerU] Mulitplexer",x:10,y:10,layer:layer,brokerProperties:brokerInfo.results[1]});
+	         
+	         
+	         wFlowEl1 = new Kinetic.WorkFlowElement({text:'[utils:scrambler] List Scrambler',x:100,y:40,draggable:true,layer:layer,brokerProperties:brokerInfo.results[5]});
+	         layer.addElement(wFlowEl1);
+	         
+	         wFlow.connectTo(wFlowEl1);
+	         
+	         wFlowEl2 = new Kinetic.WorkFlowElement({text:'[publisher:raster] WCS-T',x:100,y:40,draggable:true,layer:layer,brokerProperties:brokerInfo.results[0]});
+	        layer.addElement(wFlowEl2);
+	        
+	        wFlowEl1.connectTo(wFlowEl2);
+	        
+	        wFlow1 = new Kinetic.WorkFlow({text:'[?] Multiple Instances (one for each Realisation)',x:100,y:40,draggable:true,layer:layer});
+	        layer.addElement(wFlow1);
+	        workFlows.push(wFlow1);
+	        wFlow1.addElement({text:"[processing:geoprocessing: thermatic:gpc:ehabitat] eHabitat",x:10,y:10,layer:layer,brokerProperties:brokerInfo.results[9]});
+	        
+	        
+	        wFlowEl2.connectTo(wFlow1);
+	        
+	        wFlowEl3 = new Kinetic.WorkFlowElement({text:'[utils:demultiplexer] Demultiplexer',x:100,y:40,draggable:true,layer:layer,type:"component",brokerProperties:brokerInfo.results[1]});
+	        layer.addElement(wFlowEl3);
+	        
+	        wFlow1.connectTo(wFlowEl3);
+	        
+	        wFlowEl4 = new Kinetic.WorkFlowElement({text:'[processing:datamanipulation:statisticsextraction] UTS Statistic Extraction',x:100,y:40,draggable:true,layer:layer,type:"component",brokerProperties:brokerInfo.results[6]});
+	        layer.addElement(wFlowEl4);
+	        
+	        
+	        wFlowEl3.connectTo(wFlowEl4);
+	        
+	        
+	        wFlowEl5 = new Kinetic.WorkFlowElement({text:'[publisher:raster] WCS-T Publisher',x:100,y:40,draggable:true,layer:layer,type:"component",brokerProperties:brokerInfo.results[0]});
+	        layer.addElement(wFlowEl5);
+	        
+	        
+	        wFlowEl4.connectTo(wFlowEl5);
+	        
+	        wFlowEl6 = new Kinetic.WorkFlowElement({text:'[access:raster] WCS Url generator',x:100,y:40,draggable:true,layer:layer,type:"component",brokerProperties:brokerInfo.results[0]});
+	        layer.addElement(wFlowEl6);
+	        
+	        
+	        wFlowEl5.connectTo(wFlowEl6);
+	
+	        end = new Kinetic.WorkFlowEnd({x:100,y:150,text:"End",draggable:true})
+	        layer.addElement(end);
+	        wFlowEl6.connectTo(end);
+	        
+	        
+	        stage.draw();
+	        layer.reDrawLayer();
+	        layer.updateAllVertices();
+	        layer.convertToBPMN();
+	        
+	        document.getElementById('moveup').addEventListener('click', function() {
+          		layer.moveUp();
+        	}, false);
+        	document.getElementById('io').addEventListener('click', function() {
+          		//layer.moveUp();
+          		$("#io").prop('value', 'Toggle Input/Output Mode - On');
+        	}, false);
+	
         };
     </script>
    </head>
   <body onmousedown="return false;">
     <div id="container"></div>
+    
+    <div id="buttons">
+      <input type="button" id="moveup" value="Move Up">
+      <input type="button" id="io" value="Toggle Input/Output Mode - Off">
+    </div>
   </body>
 </html>
