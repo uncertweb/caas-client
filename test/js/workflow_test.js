@@ -1,6 +1,7 @@
 (function () {
 
   UncertWeb.options.broker_url = "../lib/broker.php";
+  UncertWeb.options.caas_url = "../lib/caas.php";
 
   // helper functions
   var generateComponent = function () {
@@ -9,6 +10,89 @@
       description: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium.',
       annotation: '[access:raster]'
     });
+  };
+
+  var generateEHabitat = function () {
+    var workflow = new UncertWeb.Workflow(),
+        nestedWorkflow1 = new UncertWeb.Workflow(),
+        nestedWorkflow2 = new UncertWeb.Workflow();
+
+    // build the first MC block
+    var wcsAccess = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[access:raster] WCS Access Broker'
+    });
+
+    var utsToRealisations = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[processing:datamanipulation:montecarlorealization] UTS to realizations'
+    });
+
+    var multiplexer = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[utils:multiplexerU] Multiplexer'
+    });
+
+    nestedWorkflow1.append([wcsAccess, utsToRealisations, multiplexer]);
+    workflow.append(nestedWorkflow1);
+
+    // Attach scriptTasks
+    var scrambler = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[utils:scrambler] List Scrambler'
+    });
+
+    var wcsT = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[publish:raster] WCS-T'
+    });
+
+    workflow.append([scrambler, wcsT]);
+
+    // Build second nested workflow
+    var eHabitat = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[processing:geoprocessing:thematic:gpc:ehabitat] eHabitat'
+    });
+
+    nestedWorkflow2.append(eHabitat);
+
+    workflow.append(nestedWorkflow2);
+
+    // Add the remaining tasks
+    var demultiplexer = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[utils:demultiplexer] Demultiplexer'
+    });
+
+    var utsExtraction = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: 'processing:datamanipulation:statisticsextraction] UTS Statistics Extraction'
+    });
+
+    var wcsPublisher = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[publisher:raster] WCS-T Publisher'
+    });
+
+    var wcsGenerator = new UncertWeb.Component({
+      name: new Date(),
+      description: 'test',
+      annotation: '[access:raster] WCS Url generator'
+    });
+
+    workflow.append([demultiplexer, utsExtraction, wcsPublisher, wcsGenerator]);
+
+    return workflow;
   };
 
   module('UncertWeb', {
@@ -779,84 +863,8 @@
   });
 
   test('eHabitat BPMN example', function() {
-    var workflow = new UncertWeb.Workflow(),
-        nestedWorkflow1 = new UncertWeb.Workflow(),
-        nestedWorkflow2 = new UncertWeb.Workflow();
 
-    // build the first MC block
-    var wcsAccess = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[access:raster] WCS Access Broker'
-    });
-
-    var utsToRealisations = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[processing:datamanipulation:montecarlorealization] UTS to realizations'
-    });
-
-    var multiplexer = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[utils:multiplexerU] Multiplexer'
-    });
-
-    nestedWorkflow1.append([wcsAccess, utsToRealisations, multiplexer]);
-    workflow.append(nestedWorkflow1);
-
-    // Attach scriptTasks
-    var scrambler = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[utils:scrambler] List Scrambler'
-    });
-
-    var wcsT = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[publish:raster] WCS-T'
-    });
-
-    workflow.append([scrambler, wcsT]);
-
-    // Build second nested workflow
-    var eHabitat = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[processing:geoprocessing:thematic:gpc:ehabitat] eHabitat'
-    });
-
-    nestedWorkflow2.append(eHabitat);
-
-    workflow.append(nestedWorkflow2);
-
-    // Add the remaining tasks
-    var demultiplexer = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[utils:demultiplexer] Demultiplexer'
-    });
-
-    var utsExtraction = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: 'processing:datamanipulation:statisticsextraction] UTS Statistics Extraction'
-    });
-
-    var wcsPublisher = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[publisher:raster] WCS-T Publisher'
-    });
-
-    var wcsGenerator = new UncertWeb.Component({
-      name: new Date(),
-      description: 'test',
-      annotation: '[access:raster] WCS Url generator'
-    });
-
-    workflow.append([demultiplexer, utsExtraction, wcsPublisher, wcsGenerator]);
+    var workflow = generateEHabitat();
 
     // create the BPMN
     var bpmn = UncertWeb.Encode.asBPMN(workflow),
@@ -884,36 +892,44 @@
     ok(UncertWeb.isFunction(UncertWeb.CaaS.publish), "... that is a function");
   });
 
-  test("CaaS result", function () {
-    var promise = UncertWeb.CaaS.publish();
-    var values = ["SUCCESS", "FAILURE"];
+  test('CaaS failure', function() {
+    stop(2);
 
-    stop();
-    expect(8);
+    var promise = UncertWeb.CaaS.publish(undefined),
+        ehabitat = generateEHabitat();
 
-    promise.done(function (result) {
-      console.log(result);
-      ok(result, "It should return something");
-      ok(UncertWeb.isObject(result), "that is an object");
-      ok(result.status, "that has a status property");
-      ok($.inArray(result.status, values) > -1, "that is either SUCCESS or FAILURE");
-      ok(result.message, "it should also have a message property");
-      ok(UncertWeb.isArray(result.message), "that is an array");
-      ok(result.message.length > 0, "with at least 1 message");
-      ok(result.status === "FAILURE" && result.model === undefined, "it shouldn't have a model property if it was a failure");
+    promise.fail(function () {
+      ok(true, "A publish request should fail without a workflow");
+      ok(arguments.length > 0, "and it should return the underlying problem");
       start();
     });
 
-
-    // for (var i = 0; i < result.message.length; i++) {
-    //   ok(UncertWeb.isString(result.message[i]), "all messages should be a string");
-    // }
+    UncertWeb.CaaS.publish(ehabitat, undefined).fail(function () {
+      ok(true, "A publish request should also fail when a valid workflow is sent without metadata");
+      ok(arguments.length > 0, "with the error arguments");
+      start();
+    });
   });
 
-  // test("CaaS communication", function () {
-  //   stop(1);
-  //   expect(1);
-  //   UncertWeb.CaaS.publish()
-  // });
+  test('CaaS success', function () {
+    stop();
+    expect(1);
+
+    var eHabitat = generateEHabitat(),
+        promise;
+
+    promise = UncertWeb.CaaS.publish(eHabitat, {
+      title: "My new workflow",
+      description: "This is just a test workflow to ensure the client is working correctly",
+      organisation: "Aston University"
+    });
+
+    promise.done(function (result) {
+      ok(true, "Publishing a valid BPMN with metadata should work");
+    }).always(function () {
+      start();
+    });
+
+  });
 
 }());
