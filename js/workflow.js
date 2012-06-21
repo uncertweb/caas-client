@@ -77,10 +77,26 @@
       rel: '',
       ts: '',
       te: '',
-      ct: 10,
+      ct: 1000,
       loc: '',
       outputFormat: 'application/atom+xml'
     }
+  };
+
+  UncertWeb.namespaces = {
+    GCO: 'http://www.isotc211.org/2005/gco',
+    BPMN: 'http://www.omg.org/spec/BPMN/20100524/MODEL',
+    BPMNDI: 'http://www.omg.org/spec/BPMN/20100524/DI',
+    DC: 'http://www.omg.org/spec/DD/20100524/DC',
+    DI: 'http://www.omg.org/spec/DD/20100524/DI',
+    G: 'http://www.jboss.org/drools/flow/gpd',
+    TNS: 'http://www.jboss.org/drools',
+    XSD: 'http://www.w3.org/2001/XMLSchema',
+    XSI: 'http://www.w3.org/2001/XMLSchema-instance',
+    MVEL: 'http://www.mvel.org/2.0',
+    JAVA: 'http://www.java.com/javaTypes',
+    GMD: 'http://www.isotc211.org/2005/gmd',
+    CAAS: 'http://essi.iia.cnr.it/caas/1.0'
   };
 
 
@@ -93,106 +109,106 @@
     // Handle the success via inline callbacks or via the returned
     // deferred object.
     search: function (keywords) {
-        var dfd = $.Deferred(),
-            results = [],
-            $data,
-            entry = {},
-            start = +new Date(),
-            result_object = {},
-            base_url = UncertWeb.options.broker_url,
-            index = 1,
-            opts,
-            success,
-            fail;
+      var dfd = $.Deferred(),
+          results = [],
+          $data,
+          entry = {},
+          start = +new Date(),
+          result_object = {},
+          base_url = UncertWeb.options.broker_url,
+          index = 1,
+          opts,
+          success,
+          fail;
 
-        // Check for options
-        if(UncertWeb.isObject(arguments[index])) {
-          opts = arguments[index];
-          index += 1;
-        }
-
-        success = arguments[index];
-        fail = arguments[index+1];
-
-        config = $.extend({}, UncertWeb.options.search_config, opts);
-
-        // Set the keywords in the search config
-        config.st = keywords;
-
-        // Make an AJAX request to the proxy service with the configuration options
-        $.ajax({
-          url: base_url,
-          data: config
-          // When the AJAX query responds
-        }).done(function (data) {
-          $data = $(data);
-          // Map the XML data into an array of JSON objects
-          results = $.map($data.find('entry'), function (elem) {
-            var $this = $(elem);
-            // Skip any elements without annotations as we cannot use them in the system.
-            if($this.find('category[scheme="urn:X-GI-caas:component:taxonomy"]').length === 0) {
-              return null;
-            }
-            // Return a JSON representation of the XML `entry` element
-            //
-            //- **id**: Unique ID, not to be confused with the internal IDs used by us.
-            //- **title**: Human readable title.
-            //- **endpoint**: URL of component, although this is rarely set so shouldn't be relied on.
-            //- **keywords**: Array of words describing the component.
-            //- **updated**: Date and time that the component was last updated in the broker.
-            //- **summary**: Human readable description of the component.
-            //- **serviceType**: Type of component (data access, model etc).
-            //- **annotation**: CaaS annotation of this component.
-            return {
-              id: $this.find('id').text(),
-              title: $this.find('title').text(),
-              endpoint: $this.find('endpoint').text(),
-              keywords: $.map($this.find('[term="keywords"]'), function (elem) {
-                return $(elem).attr('label');
-              }),
-              updated: $this.find('updated').text(),
-              summary: $this.find('summary').text(),
-              serviceType: $this.find('category[term="serviceType"]').attr('label'),
-              annotation: $this.find('category[scheme="urn:X-GI-caas:component:taxonomy"]').attr('label'),
-              parentID: $this.find('parentID').text()
-            };
-          });
-          // Create a wrapper object for the query results and including:
-          //
-          //- **num_results**: Number of results returned by the query.
-          //- **completed_in**: The time taken, in seconds, to execute the search.
-          //- **query**: The actual query sent to the broker.
-          //- **results**: An array of results objects detailed above.
-          result_object = {
-            num_results: results.length,
-            completed_in: (+new Date() - start) / 1000,
-            query: $.param(config),
-            results: results
-          };
-          // Once we have finished converting the XML to JSON, resolve the deferred object.
-          dfd.resolve(result_object);
-          // If an inline callback function was provided, fire it now.
-          if(UncertWeb.isFunction(success)) {
-            success.call(this, result_object, "success");
-          }
-          // If the AJAX request was unsuccessful
-        }).fail(function (data) {
-          // Log the error to the console
-          console.error('Search failed: ' + data);
-          // If an inline callback was provided, fire it now
-          if(UncertWeb.isFunction(fail)) {
-            fail.call(this, data, "failure");
-          }
-        });
-
-        // Return a deferred object straight away so the user is not blocked.
-        return dfd;
-      },
-
-      // Alias function for `UncertWeb.broker.search('')` that returns all components in the broker.
-      all: function (success, failure) {
-        return this.search('', success, failure);
+      // Check for options
+      if(UncertWeb.isObject(arguments[index])) {
+        opts = arguments[index];
+        index += 1;
       }
+
+      success = arguments[index];
+      fail = arguments[index+1];
+
+      config = $.extend({}, UncertWeb.options.search_config, opts);
+
+      // Set the keywords in the search config
+      config.st = keywords;
+
+      // Make an AJAX request to the proxy service with the configuration options
+      $.ajax({
+        url: base_url,
+        data: config
+        // When the AJAX query responds
+      }).done(function (data) {
+        $data = $(data);
+        // Map the XML data into an array of JSON objects
+        results = $.map($data.find('entry'), function (elem) {
+          var $this = $(elem);
+          // Skip any elements without annotations as we cannot use them in the system.
+          if($this.find('category[scheme="urn:X-GI-caas:component:taxonomy"]').length === 0) {
+            return null;
+          }
+          // Return a JSON representation of the XML `entry` element
+          //
+          //- **id**: Unique ID, not to be confused with the internal IDs used by us.
+          //- **title**: Human readable title.
+          //- **endpoint**: URL of component, although this is rarely set so shouldn't be relied on.
+          //- **keywords**: Array of words describing the component.
+          //- **updated**: Date and time that the component was last updated in the broker.
+          //- **summary**: Human readable description of the component.
+          //- **serviceType**: Type of component (data access, model etc).
+          //- **annotation**: CaaS annotation of this component.
+          return {
+            id: $this.find('id').text(),
+            title: $this.find('title').text(),
+            endpoint: $this.find('endpoint').text(),
+            keywords: $.map($this.find('[term="keywords"]'), function (elem) {
+              return $(elem).attr('label');
+            }),
+            updated: $this.find('updated').text(),
+            summary: $this.find('summary').text(),
+            serviceType: $this.find('category[term="serviceType"]').attr('label'),
+            annotation: $this.find('category[scheme="urn:X-GI-caas:component:taxonomy"]').attr('label'),
+            parentID: $this.find('parentID').text()
+          };
+        });
+        // Create a wrapper object for the query results and including:
+        //
+        //- **num_results**: Number of results returned by the query.
+        //- **completed_in**: The time taken, in seconds, to execute the search.
+        //- **query**: The actual query sent to the broker.
+        //- **results**: An array of results objects detailed above.
+        result_object = {
+          num_results: results.length,
+          completed_in: (+new Date() - start) / 1000,
+          query: $.param(config),
+          results: results
+        };
+        // Once we have finished converting the XML to JSON, resolve the deferred object.
+        dfd.resolve(result_object);
+        // If an inline callback function was provided, fire it now.
+        if(UncertWeb.isFunction(success)) {
+          success.call(this, result_object, "success");
+        }
+        // If the AJAX request was unsuccessful
+      }).fail(function () {
+        // Log the error to the console
+        console.error('Search failed ' + arguments[0].responseText);
+        // If an inline callback was provided, fire it now
+        if(UncertWeb.isFunction(fail)) {
+          fail.apply(this, arguments);
+        }
+      });
+
+      // Return a deferred object straight away so the user is not blocked.
+      return dfd;
+    },
+
+    // Alias function for `UncertWeb.broker.search('')` that returns all components in the broker.
+    all: function (success, failure) {
+      return this.search('', success, failure);
+    }
   };
 
   // Component module
@@ -384,20 +400,33 @@
 
   // Create the root Document node - used to create XML elements
   var doc = document.implementation.createDocument(null, null, null);
-
+  var url = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
   // Helper method to create XML elements
   // http://stackoverflow.com/questions/3191179/generate-xml-document-in-memory-with-javascript
   function XML() {
-    var node = doc.createElementNS("", arguments[0]),
+    var components,
+        namespace,
+        elementName,
+        node,
         text,
         child,
+        attributeIndex = 1,
         i = 1;
 
-    // If second argument is an object literal, we have attributes
-    if(UncertWeb.isObject(arguments[1])) {
+    // Namespace provided if second argument is string and first argument matches a url
+    if(UncertWeb.isString(arguments[1]) && arguments[0].match(url)) {
+      node = doc.createElementNS(arguments[0], arguments[1]);
+      i += 1;
+      attributeIndex += 1;
+    } else {
+      // no namespace
+      node = doc.createElementNS("", arguments[0]);
+    }
+
+    if(UncertWeb.isObject(arguments[attributeIndex])) { // attributes object
       // increase i to exclude attributes from child nodes
       i += 1;
-      var attributes = arguments[1];
+      var attributes = arguments[attributeIndex];
       for(var attr in attributes) {
         if (attributes.hasOwnProperty(attr)) {
           node.setAttribute(attr, attributes[attr]);
@@ -416,7 +445,7 @@
     return node;
   }
 
-    // Helper function to generate a scriptTask node for a component
+  // Helper function to generate a scriptTask node for a component
   function scriptTask(component) {
     return XML('scriptTask', {
       completionQuantity: 1,
@@ -539,22 +568,22 @@
   UncertWeb.Encode = {
     asBPMN: function (workflow) {
       var bpmn = XML('definitions', {
-        'xmlns'               : 'http://www.omg.org/spec/BPMN/20100524/MODEL',
-        'xmlns:bpmndi'        : 'http://www.omg.org/spec/BPMN/20100524/DI',
-        'xmlns:dc'            : 'http://www.omg.org/spec/DD/20100524/DC',
-        'xmlns:di'            : 'http://www.omg.org/spec/DD/20100524/DI',
-        'xmlns:g'             : 'http://www.jboss.org/drools/flow/gpd',
-        'xmlns:tns'           : 'http://www.jboss.org/drools',
-        'xmlns:xsd'           : 'http://www.w3.org/2001/XMLSchema',
-        'xmlns:xsi'           : 'http://www.w3.org/2001/XMLSchema-instance',
+        'xmlns'               : UncertWeb.namespaces.BPMN,
+        'xmlns:bpmndi'        : UncertWeb.namespaces.BPMNDI,
+        'xmlns:dc'            : UncertWeb.namespaces.DC,
+        'xmlns:di'            : UncertWeb.namespaces.DI,
+        'xmlns:g'             : UncertWeb.namespaces.G,
+        'xmlns:tns'           : UncertWeb.namespaces.TNS,
+        'xmlns:xsd'           : UncertWeb.namespaces.XSD,
+        'xmlns:xsi'           : UncertWeb.namespaces.XSI,
         'exporter'            : 'UncertWeb JavaScript Client',
         'exporterVersion'     : '0.1',
         'id'                  : 'Definition',
         'name'                : '',
-        'expressionLanguage'  : 'http://www.mvel.org/2.0',
-        'targetNamespace'     : 'http://www.jboss.org/drools',
-        'typeLanguage'        : 'http://www.java.com/javaTypes',
-        'xsi:schemaLocation'  : 'http://www.omg.org/spec/BPMN/20100524/MODEL http://bpmn.sourceforge.net/schemas/BPMN20.xsd'
+        'expressionLanguage'  : UncertWeb.namespaces.MVEL,
+        'targetNamespace'     : UncertWeb.namespaces.TNS,
+        'typeLanguage'        : UncertWeb.namespaces.JAVA,
+        'xsi:schemaLocation'  : UncertWeb.namespaces.BPMN + ' http://bpmn.sourceforge.net/schemas/BPMN20.xsd'
       });
 
       // A workflow has been passed in
@@ -567,8 +596,6 @@
           });
 
         encodeWorkflow(workflow, process);
-
-
 
         // create an itemDefinition for each nested workflow and attach it to the bpmn document
         for (var i = 0; i < workflow.length; i++) {
@@ -588,39 +615,227 @@
   // CaaS Module
   // -----------
 
+  function encodeMetadata(metadata) {
+    var caasMetadata = XML(
+      UncertWeb.namespaces.CAAS,
+      'caas:metadata',
+      XML(
+        UncertWeb.namespaces.GMD,
+        'gmd:MD_Metadata',
+        encodeISOLanguage(),
+        encodeISOCharacterSet(),
+        encodeISOContact(metadata.organisation),
+        encodeISODateStamp(),
+        encodeIdentificationInfo(metadata.title, metadata.description)
+      )
+    );
+
+    // caasMetadata.appendChild(encodeISOLanguage());
+    return caasMetadata;
+  }
+
+  function encodeISOLanguage() {
+    return XML(
+      UncertWeb.namespaces.GMD,
+      'gmd:language',
+      XML(
+        UncertWeb.namespaces.GMD,
+        'gmd:LangaugeCode',
+        {
+          'codeList': 'http://www.isotc211.org/2005/resources/Codelist/ML_gmxCodelists.xml#LanguageCode',
+          'codeListValue': 'eng'
+        },
+        "English"
+      )
+    );
+  }
+
+  function encodeISOCharacterSet() {
+    return XML(
+      UncertWeb.namespaces.GMD,
+      'gmd:characterSet',
+      XML(
+        UncertWeb.namespaces.GMD,
+        'gmd:MD_CharacterSetCode',
+        {
+          'codeListValue': 'utf8',
+          'codeList': 'http://www.isotc211.org/2005/resources/Codelist/gmxCodeLists.xml#MD_CharacterSetCode',
+          'codeSpace': 'ISOTC211/19115'
+        },
+        'utf8'
+      )
+    );
+  }
+
+  function encodeISOContact(organisation) {
+    return XML(
+      UncertWeb.namespaces.GMD,
+      'gmd:contact',
+      XML(
+        UncertWeb.namespaces.GMD,
+        'gmd:CI_ResponsibleParty',
+        XML(
+          UncertWeb.namespaces.GMD,
+          'gmd:organisationName',
+          encodeCharacterString(organisation)
+        ),
+        XML(
+          UncertWeb.namespaces.GMD,
+          'gmd:role',
+          XML(
+            UncertWeb.namespaces.GMD,
+            'gmd:CI_RoleCode',
+            {
+              'codeList': 'http://www.isotc211.org/2005/resources/Codelist/gmxCodeLists.xml#CI_RoleCode',
+              'codeListValue': 'pointOfContact',
+              'codeSpace': 'ISOTC211/19115'
+            },
+            'pointOfContact'
+          )
+        )
+      )
+    );
+  }
+
+  function encodeCharacterString (string) {
+    return XML(
+      UncertWeb.namespaces.GCO,
+      'gco:CharacterString',
+      string
+    );
+  }
+
+  function encodeISODateStamp() {
+    return XML(
+      UncertWeb.namespaces.GMD,
+      'gmd:dateStamp',
+      encodeDate()
+    );
+  }
+
+  function encodeDate() {
+    var date = new Date();
+    return XML(
+      UncertWeb.namespaces.GCO,
+      'gco:Date',
+      date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate()
+    );
+  }
+
+  function encodeIdentificationInfo(title, description) {
+    return XML(
+      UncertWeb.namespaces.GMD,
+      'gmd:identificationInfo',
+      XML(
+        UncertWeb.namespaces.GMD,
+        'gmd:MD_DataIdentification',
+        encodeCitation(title),
+        encodeAbstract(description),
+        encodeISOLanguage()
+      )
+    );
+  }
+
+  function encodeCitation(title) {
+    return XML(
+      UncertWeb.namespaces.GMD,
+      'gmd:citation',
+      XML(
+        UncertWeb.namespaces.GMD,
+        'gmd:CI_Citation',
+        XML(
+          UncertWeb.namespaces.GMD,
+          'gmd:title',
+          encodeCharacterString(title)
+        ),
+        XML(
+          UncertWeb.namespaces.GMD,
+          'gmd:date',
+          XML(
+            UncertWeb.namespaces.GMD,
+            'gmd:CI_Date',
+            XML(
+              UncertWeb.namespaces.GMD,
+              'gmd:date',
+              encodeDate()
+            ),
+            XML(
+              UncertWeb.namespaces.GMD,
+              'gmd:dateType',
+              XML(
+                UncertWeb.namespaces.GMD,
+                'gmd:CI_DateTypeCode',
+                {
+                  'codeList': 'http://www.isotc211.org/2005/resources/Codelist/gmxCodeLists.xml#CI_DateTypeCode',
+                  'codeListValue': 'creation',
+                  'codeSpace': 'ISOTC211/19115'
+                },
+                'creation'
+              )
+            )
+          )
+        )
+      )
+    );
+  }
+
+  function encodeAbstract(description) {
+    return XML(
+      UncertWeb.namespaces.GMD,
+      'gmd:abstract',
+      encodeCharacterString(description)
+    );
+  }
+
+  // Helper function to encode a workflow + metadata into a CaaS bpmnCreateRequest element
+  function encodePublishRequest(workflow, metadata) {
+    var encodedWorkflow = UncertWeb.Encode.asBPMN(workflow);
+
+    var request = XML(
+      UncertWeb.namespaces.CAAS,
+      'caas:bpmnCreateRequest',
+      {
+        'xmlns:gco':  UncertWeb.namespaces.GCO,
+        'xmlns:gmd':  UncertWeb.namespaces.GMD,
+        'xmlns:caas': UncertWeb.namespaces.CAAS,
+        'xmlns:xsi':  UncertWeb.namespaces.XSI,
+        'xsi:schemaLocation': UncertWeb.namespaces.CAAS + ' http://zeus.pin.unifi.it/schemas/GI-caas/1.0/caas.xsd'
+      },
+      encodeMetadata(metadata),
+      XML(
+        UncertWeb.namespaces.CAAS,
+        'caas:model',
+        encodedWorkflow
+      )
+    );
+
+    console.log(request);
+    return (new XMLSerializer()).serializeToString(request);
+  }
+
   UncertWeb.CaaS = {
-    publish: function(workflow) {
+    publish: function(workflow, metadata) {
       var $promise = $.Deferred(),
           startTime = +new Date(),
           $innerPromise = $.ajax({
             url: UncertWeb.options.caas_url,
             type: 'POST',
-            data: {
-              greetings: "HELLO CAAS!"
-            }
+            contentType: 'text/xml',
+            processData: false,
+            data: encodePublishRequest(workflow, metadata)
           }),
           results;
 
       $innerPromise.done(function (data) {
         var endTime = new Date();
-        console.log(data);
         results = {
-          status: "SUCCESS",
-          message: ["good", "bad"],
-          model: true,
+          data: data,
           completed_in: (+new Date() - startTime) / 1000
         };
         $promise.resolve(results);
-      }).fail(function (data) {
-        results = {
-          status: "FAILURE",
-          message: ["not good"]
-        };
-        $promise.resolve(results);
+      }).fail(function () {
+        $promise.reject(arguments);
       });
-
-
-
 
       // return the promise straight away
       return $promise;
