@@ -1,19 +1,47 @@
 <?php
-$proxy_url = 'http://174.129.9.172/gi-caas/services/http-post-publish';
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $proxy_url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$output = curl_exec($ch);
-if (!$output)
+
+class Proxy
 {
-  $response = json_encode(array(
-    "Exception" => array("message" => "Error with request: " . curl_error($ch)),
-    'URL' => $proxy_url
-  ));
+  private $headers;
+
+  private function setHeaders($ch, $header)
+  {
+    $this->headers[] = $header;
+    return strlen($header);
+  }
+
+  public function send($opts)
+  {
+    $this->headers = array();
+    $opts[CURLOPT_HEADERFUNCTION] = array($this, 'setHeaders');
+    $ch = curl_init();
+    curl_setopt_array($ch, $opts);
+    return curl_exec($ch);
+  }
+
+  public function getHeaders()
+  {
+    return $this->headers;
+  }
 }
-else
-{
-  $response = $output;
+
+// $proxy_url = 'http://174.129.9.172/gi-caas/services/rest/processes';
+$proxy_url = 'http://localhost/~williamw/client/test/test_caas.php';
+$opts = array(
+  CURLOPT_URL => $proxy_url,
+  CURLOPT_HEADERFUNCTION => array('setHeaders'),
+  CURLOPT_POST => true,
+  CURLOPT_POSTFIELDS => $HTTP_RAW_POST_DATA,
+  CURLOPT_HTTPHEADER => array('Content-Type: text/xml'),
+  CURLOPT_RETURNTRANSFER => true
+);
+
+$proxy = new Proxy();
+
+$output = $proxy->send($opts);
+
+foreach ($proxy->getHeaders() as $header) {
+  header($header);
 }
-header('Content-type: text/xml');
-echo $response;
+
+echo $output;
