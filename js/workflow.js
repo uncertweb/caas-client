@@ -52,7 +52,7 @@
     // Generate a unique ID
     uid: function () {
       _currID += 1;
-      return _currID;
+      return '_'+_currID;
     }
   };
 
@@ -263,7 +263,8 @@
 
     // Private properties
     var subscribers = {},
-        id = UncertWeb.uid();
+        id = UncertWeb.uid(),
+        iterations;
 
     // Publish an event occuring on this workflow.
     this.publish = function (event, data) {
@@ -330,6 +331,16 @@
     // Get the unique ID of this workflow.
     this.getId = function () {
       return id;
+    };
+
+    // Get the number of iterations of this workflow
+    this.getIterations = function () {
+      return iterations;
+    };
+
+    // Set the number of iterations of this workflow
+    this.setIterations = function (newIterations) {
+      iterations = newIterations;
     };
   };
 
@@ -457,12 +468,14 @@
   }
 
   // Create a subProcess element
-  function subProcess(id) {
+  function subProcess(id, iterations) {
+    // if iterations is undefined replace with the question mark syntax
+    iterations = iterations || '?';
     return XML('subProcess', {
       completionQuantity: 1,
       id: id,
       isForCompensation: false,
-      name: 'TODO',
+      name: '[' + iterations + '] Multiple Instances (one for each environmental dataset)',
       startQuantity: 1,
       triggeredByEvent: false
     }, XML('multiInstanceLoopCharacteristics', {
@@ -539,7 +552,7 @@
         appendTo.appendChild(scriptTask(child));
       } else if(UncertWeb.isWorkflow(child)) {
         // this is a subprocess
-        var sp = subProcess(child.getId());
+        var sp = subProcess(child.getId(), child.getIterations());
         encodeWorkflow(child, sp, true);
         appendTo.appendChild(sp);
       }
@@ -629,8 +642,6 @@
         encodeIdentificationInfo(metadata.title, metadata.description)
       )
     );
-
-    // caasMetadata.appendChild(encodeISOLanguage());
     return caasMetadata;
   }
 
@@ -718,7 +729,7 @@
         dateString;
 
     dateString = date.getFullYear() + '-' +
-                 ('0' + date.getMonth() + 1).slice(-2) + '-' +
+                 ('0' + (date.getMonth() + 1)).slice(-2) + '-' +
                  ('0' + date.getDate()).slice(-2);
     return XML(
       UncertWeb.namespaces.GCO,
@@ -804,7 +815,7 @@
         'xmlns:gmd':  UncertWeb.namespaces.GMD,
         'xmlns:caas': UncertWeb.namespaces.CAAS,
         'xmlns:xsi':  UncertWeb.namespaces.XSI,
-        'xsi:schemaLocation': UncertWeb.namespaces.CAAS + ' http://zeus.pin.unifi.it/schemas/GI-caas/1.0/caas.xsd'
+        'xsi:schemaLocation': UncertWeb.namespaces.CAAS + ' http://zeus.pin.unifi.it/schemas/GI-caas/1.0/caas2.xsd'
       },
       encodeMetadata(metadata),
       XML(
@@ -822,14 +833,21 @@
     publish: function(workflow, metadata) {
       var $promise = $.Deferred(),
           startTime = +new Date(),
-          $innerPromise = $.ajax({
-            url: UncertWeb.options.caas_url,
-            type: 'POST',
-            contentType: 'text/xml',
-            processData: false,
-            data: encodePublishRequest(workflow, metadata)
-          }),
           results;
+
+      // We need metadata
+      if (metadata === undefined) {
+        $promise.reject("Metadata is required");
+        return $promise;
+      }
+
+      var $innerPromise = $.ajax({
+        url: UncertWeb.options.caas_url,
+        type: 'POST',
+        contentType: 'text/xml',
+        processData: false,
+        data: encodePublishRequest(workflow, metadata)
+      });
 
       $innerPromise.done(function (data) {
         var endTime = new Date();

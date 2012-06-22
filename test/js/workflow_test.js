@@ -49,7 +49,7 @@
     var wcsT = new UncertWeb.Component({
       name: new Date(),
       description: 'test',
-      annotation: '[publish:raster] WCS-T'
+      annotation: '[publisher:raster] WCS-T'
     });
 
     workflow.append([scrambler, wcsT]);
@@ -75,7 +75,7 @@
     var utsExtraction = new UncertWeb.Component({
       name: new Date(),
       description: 'test',
-      annotation: 'processing:datamanipulation:statisticsextraction] UTS Statistics Extraction'
+      annotation: '[processing:datamanipulation:statisticsextraction] UTS Statistics Extraction'
     });
 
     var wcsPublisher = new UncertWeb.Component({
@@ -747,7 +747,7 @@
     ok(startName, "and it should have a name");
     equal(startName, "Start", "that is equal to Start");
 
-    var startParellel = start.getAttribute('parellelMultiple');
+    var startParellel = start.getAttribute('parallelMultiple');
     ok(startParellel, "it should also have a parallelMultiple attribute");
     equal(startParellel, "false", "that is false");
 
@@ -840,8 +840,8 @@
         loopChars = $loopChars.get(0);
     ok($loopChars.length, "A subProcess should have a multiInstanceLoopCharacteristics child");
 
-    ok(loopChars.getAttribute('behaviour'), "A multiInstanceLoopCharacteristics should have a behaviour attribute");
-    equal(loopChars.getAttribute('behaviour'), 'All', 'that is equal to All');
+    ok(loopChars.getAttribute('behavior'), "A multiInstanceLoopCharacteristics should have a behaviour attribute");
+    equal(loopChars.getAttribute('behavior'), 'All', 'that is equal to All');
 
     ok(loopChars.getAttribute('isSequential'), 'it should also have an isSequential attribute');
     equal(loopChars.getAttribute('isSequential'), 'false', 'that is equal to false');
@@ -894,6 +894,7 @@
 
   test('CaaS failure', function() {
     stop(2);
+    expect(4);
 
     var promise = UncertWeb.CaaS.publish(undefined),
         ehabitat = generateEHabitat();
@@ -901,12 +902,14 @@
     promise.fail(function () {
       ok(true, "A publish request should fail without a workflow");
       ok(arguments.length > 0, "and it should return the underlying problem");
+    }).always(function () {
       start();
     });
 
     UncertWeb.CaaS.publish(ehabitat, undefined).fail(function () {
       ok(true, "A publish request should also fail when a valid workflow is sent without metadata");
       ok(arguments.length > 0, "with the error arguments");
+    }).always(function () {
       start();
     });
   });
