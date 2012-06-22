@@ -466,7 +466,7 @@
       startQuantity: 1,
       triggeredByEvent: false
     }, XML('multiInstanceLoopCharacteristics', {
-      behaviour: 'All',
+      behavior: 'All',
       isSequential: false
     },  XML('loopDataInputRef', id + "_input"),
         XML('inputDataItem', {
@@ -485,7 +485,7 @@
       id: id,
       isInterrupting: 'true',
       name: 'Start',
-      parellelMultiple: false
+      parallelMultiple: false
     });
   }
 
@@ -640,7 +640,7 @@
       'gmd:language',
       XML(
         UncertWeb.namespaces.GMD,
-        'gmd:LangaugeCode',
+        'gmd:LanguageCode',
         {
           'codeList': 'http://www.isotc211.org/2005/resources/Codelist/ML_gmxCodelists.xml#LanguageCode',
           'codeListValue': 'eng'
@@ -714,11 +714,16 @@
   }
 
   function encodeDate() {
-    var date = new Date();
+    var date = new Date(),
+        dateString;
+
+    dateString = date.getFullYear() + '-' +
+                 ('0' + date.getMonth() + 1).slice(-2) + '-' +
+                 ('0' + date.getDate()).slice(-2);
     return XML(
       UncertWeb.namespaces.GCO,
       'gco:Date',
-      date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate()
+      dateString
     );
   }
 
