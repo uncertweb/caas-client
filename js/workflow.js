@@ -103,6 +103,17 @@
   // Broker module
   // -------------
 
+  // Helper function to create IO objects from the broker results
+  // Currently mocked up as no IO data is present in the broker
+  function parseIO (xml) {
+
+    return [{
+      id: UncertWeb.uid(),
+      name: "Input Name",
+      description: "Input description"
+    }];
+  }
+
   // Create the `UncertWeb.broker` module.
   UncertWeb.broker = {
     // Search the broker for the specified `keywords`.
@@ -170,7 +181,9 @@
             description: $this.find('summary').text(),
             serviceType: $this.find('category[term="serviceType"]').attr('label'),
             annotation: $this.find('category[scheme="urn:X-GI-caas:component:taxonomy"]').attr('label'),
-            parentID: $this.find('parentID').text()
+            parentID: $this.find('parentID').text(),
+            inputs: parseIO($this.find('inputs')),
+            outputs: parseIO($this.find('outputs'))
           };
         });
         // Create a wrapper object for the query results and including:
