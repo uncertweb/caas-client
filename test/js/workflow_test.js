@@ -665,8 +665,25 @@
   module("Encode", {
     // setup
     setup: function () {
-      this.encoder = UncertWeb.Encode;
+      var self = this;
+      stop();
 
+      this.encoder = UncertWeb.Encode;
+      var w = new UncertWeb.Workflow(),
+          c,
+          c2;
+
+      UncertWeb.broker.all().done(function (results) {
+        c = new UncertWeb.Component(results.results[0]);
+        c2 = new UncertWeb.Component(results.results[1]);
+        w.append([c, c2]);
+        self.bpmn = UncertWeb.Encode.asBPMN(w);
+        self.$bpmn = $(self.bpmn);
+        self.workflow = w;
+        self.component1 = c;
+        self.component2 = c2;
+        start();
+      });
     }
   });
 
@@ -678,66 +695,42 @@
   });
 
   test("BPMN encoding", function () {
-    var bpmn = UncertWeb.Encode.asBPMN(),
-        $bpmn = $(bpmn);
-
-    ok(bpmn, "asBPMN should always return something");
-    ok($bpmn.length > 0, "and it should be valid XML");
-
+    ok(this.bpmn, "asBPMN should always return something");
+    ok(this.$bpmn.length > 0, "and it should be valid XML");
   });
 
   test("BPMN definition element", function () {
-
-    var bpmn = UncertWeb.Encode.asBPMN(),
-    $bpmn = $(bpmn);
-
-
-    equal($bpmn.prop('tagName'), 'definitions', 'The root element should be definitions');
-    equal($bpmn.children().length, 0, "but it should not have any children");
-
-    // namespaces
-    equal("http://www.omg.org/spec/BPMN/20100524/MODEL", $bpmn.attr('xmlns'), "and it should have an xmlns attribute");
-    equal("http://www.omg.org/spec/BPMN/20100524/DI", $bpmn.attr('xmlns:bpmndi'), "and an xmlns:bpmndi attribute");
-    equal("http://www.omg.org/spec/DD/20100524/DC", $bpmn.attr('xmlns:dc'), "and an xmlns:dc attribute");
-    equal("http://www.omg.org/spec/DD/20100524/DI", $bpmn.attr('xmlns:di'), "and an xmlns:di attribute");
-    equal("http://www.jboss.org/drools/flow/gpd", $bpmn.attr('xmlns:g'), "and an xmlns:g attribute");
-    equal("http://www.jboss.org/drools", $bpmn.attr('xmlns:tns'), "and an xmlns:tns attribute");
-    equal("http://www.w3.org/2001/XMLSchema", $bpmn.attr('xmlns:xsd'), "and an xmlns:xsd attribute");
-    equal("http://www.w3.org/2001/XMLSchema-instance", $bpmn.attr('xmlns:xsi'), "and an xmlns:xsi attribute");
-    equal("http://www.jboss.org/drools", bpmn.getAttribute('targetNamespace'), "and a target namespace");
-
-
+    equal(this.$bpmn.prop('tagName'), 'definitions', 'The root element should be definitions');
+    ok(this.$bpmn.children().length > 0, "and it should have a child");
     // other attributes
-    equal("UncertWeb JavaScript Client", $bpmn.attr('exporter'), "The exporter should be UncertWeb JavaScript Client");
+    equal("UncertWeb JavaScript Client", this.$bpmn.attr('exporter'), "The exporter should be UncertWeb JavaScript Client");
     // Have to use javascript instead of jQuery as it doesn't handle camel-cased attribute names
-    ok(bpmn.getAttribute('exporterVersion'), "the exporter should have a version number");
-    equal("Definition", $bpmn.attr('id'), "and it should have an ID of Definition");
-    equal("", $bpmn.attr('name'), "and a name (that is blank?)");
-    equal("http://www.mvel.org/2.0", bpmn.getAttribute('expressionLanguage'), "and use MVEL as the expression language");
-    equal("http://www.java.com/javaTypes", bpmn.getAttribute('typeLanguage'), "and a type language");
-    equal("", bpmn.getAttributeNS("xsi", "schemaLocation"), "and a schema location");
-
+    ok(this.bpmn.getAttribute('exporterVersion'), "the exporter should have a version number");
+    equal("Definition", this.$bpmn.attr('id'), "and it should have an ID of Definition");
+    equal("", this.$bpmn.attr('name'), "and a name (that is blank?)");
+    equal("http://www.mvel.org/2.0", this.bpmn.getAttribute('expressionLanguage'), "and use MVEL as the expression language");
+    equal("http://www.java.com/javaTypes", this.bpmn.getAttribute('typeLanguage'), "and a type language");
+    equal("", this.bpmn.getAttributeNS("xsi", "schemaLocation"), "and a schema location");
   });
 
+  test('BPMN namespace definitions', function() {
+    // namespaces
+    equal("http://www.omg.org/spec/BPMN/20100524/MODEL", this.$bpmn.attr('xmlns'), "and it should have an xmlns attribute");
+    equal("http://www.omg.org/spec/BPMN/20100524/DI", this.$bpmn.attr('xmlns:bpmndi'), "and an xmlns:bpmndi attribute");
+    equal("http://www.omg.org/spec/DD/20100524/DC", this.$bpmn.attr('xmlns:dc'), "and an xmlns:dc attribute");
+    equal("http://www.omg.org/spec/DD/20100524/DI", this.$bpmn.attr('xmlns:di'), "and an xmlns:di attribute");
+    equal("http://www.jboss.org/drools/flow/gpd", this.$bpmn.attr('xmlns:g'), "and an xmlns:g attribute");
+    equal("http://www.jboss.org/drools", this.$bpmn.attr('xmlns:tns'), "and an xmlns:tns attribute");
+    equal("http://www.w3.org/2001/XMLSchema", this.$bpmn.attr('xmlns:xsd'), "and an xmlns:xsd attribute");
+    equal("http://www.w3.org/2001/XMLSchema-instance", this.$bpmn.attr('xmlns:xsi'), "and an xmlns:xsi attribute");
+    equal("http://www.jboss.org/drools", this.bpmn.getAttribute('targetNamespace'), "and a target namespace");
+  });
 
-  test("BPMN generation of simple workflow", function () {
-    var w = new UncertWeb.Workflow(),
-        c = generateComponent(),
-        c2 = generateComponent();
+  test('BPMN process element', function() {
+    var $process = this.$bpmn.children('process').eq(0),
+    process = $process.get(0);
 
-
-    // add component to workflow
-    w.append([c, c2]);
-
-    var bpmn = UncertWeb.Encode.asBPMN(w),
-    $bpmn = $(bpmn),
-    $process = $(bpmn).children('process').eq(0),
-    process = $process.get(0),
-    $tasks = $process.children('scriptTask');
-    // console.log(new XMLSerializer().serializeToString(bpmn));
-
-
-    equal($bpmn.children('process').length, 1, "There should be a single process element representing the workflow");
+    equal(this.$bpmn.children('process').length, 1, "There should be a single process element representing the workflow");
 
     var isClosed = process.getAttribute('isClosed');
     ok(isClosed, "it should have a isClosed attribute");
@@ -749,13 +742,56 @@
 
     var name = process.getAttribute('name');
     ok(name, "it should also have a name");
-    equal(w.id, name, "that is the same as the workflow ID");
+    equal(this.workflow.id, name, "that is the same as the workflow ID");
 
     var processType = process.getAttribute('processType');
     ok(processType, "it should also have a processType");
     equal(processType, "Private", "that is private");
+  });
 
-    equal($tasks.length, w.length, "The process should have a scriptTask node for each component");
+  test('BPMN start events', function() {
+    // Start and end events
+    var $start = this.$bpmn.find('startEvent'),
+        start = $start.get(0);
+    equal($start.length, 1, "A workflow should have a start event");
+
+    var startID = $start.attr('id');
+    ok(startID, "and it should have an ID");
+    equal(startID, this.workflow.id + "_start", "that is equal to the workflow ID and _start");
+
+    var startIsInterrupting = start.getAttribute('isInterrupting');
+    ok(startIsInterrupting, "and it should have an isInterrupting attribute");
+    equal(startIsInterrupting, "true", "that is set to true");
+
+    var startName = start.getAttribute('name');
+    ok(startName, "and it should have a name");
+    equal(startName, "Start", "that is equal to Start");
+
+    var startParellel = start.getAttribute('parallelMultiple');
+    ok(startParellel, "it should also have a parallelMultiple attribute");
+    equal(startParellel, "false", "that is false");
+  });
+
+  test('BPMN end events', function() {
+    var $end = this.$bpmn.find('endEvent');
+    equal($end.length, 1, "A workflow should have a single end event");
+
+    var endID = $end.attr('id');
+    ok(endID, "and it should have an ID attribute");
+    equal(endID, this.workflow.id + "_end", "and it should be equal to the workflow ID + _end");
+
+    var endName = $end.attr('name');
+    ok(endName, "and it should have a name attribute");
+    equal(endName, "End", "that is equal to End");
+
+    var ed = $end.find('terminateEventDefinition');
+    ok(ed, "An end event should have a terminateEventDefinition child");
+    ok(ed.attr('id'), 'with an ID attribute');
+  });
+
+  test('BPMN script task', function() {
+    var $tasks = this.$bpmn.find('scriptTask');
+    equal($tasks.length, this.workflow.length, "The process should have a scriptTask node for each component");
 
     var task = $tasks.get(0);
 
@@ -769,7 +805,7 @@
 
     var taskName = task.getAttribute('name');
     ok(taskName, "it should have a name attribute");
-    equal(taskName, c.annotation, 'that is set to the component annotation');
+    equal(taskName, this.component1.annotation, 'that is set to the component annotation');
 
     var startQuantity = task.getAttribute('startQuantity');
     ok(startQuantity, "it should also have a startQuantity attribute");
@@ -777,48 +813,24 @@
 
     var taskID = task.getAttribute('id');
     ok(taskID, "it should also have an ID attribute");
-    equal(taskID, c.id, 'that is equal to the component ID');
+    equal(taskID, this.component1.id, 'that is equal to the component ID');
+  });
 
-    // Start and end events
-    var $start = $process.children('startEvent'),
-        start = $start.get(0);
-    equal($start.length, 1, "A workflow should have a start event");
+  test('BPMN IO linking', function() {
+    var $tasks = this.$bpmn.find('scriptTask');
+  });
 
-    var startID = $start.attr('id');
-    ok(startID, "and it should have an ID");
-    equal(startID, w.id + "_start", "that is equal to the workflow ID and _start");
-
-    var startIsInterrupting = start.getAttribute('isInterrupting');
-    ok(startIsInterrupting, "and it should have an isInterrupting attribute");
-    equal(startIsInterrupting, "true", "that is set to true");
-
-    var startName = start.getAttribute('name');
-    ok(startName, "and it should have a name");
-    equal(startName, "Start", "that is equal to Start");
-
-    var startParellel = start.getAttribute('parallelMultiple');
-    ok(startParellel, "it should also have a parallelMultiple attribute");
-    equal(startParellel, "false", "that is false");
-
-    var $end = $process.children('endEvent');
-    equal($end.length, 1, "A workflow should have a single end event");
-
-    var endID = $end.attr('id');
-    ok(endID, "and it should have an ID attribute");
-    equal(endID, w.id + "_end", "and it should be equal to the workflow ID + _end");
-
-    var endName = $end.attr('name');
-    ok(endName, "and it should have a name attribute");
-    equal(endName, "End", "that is equal to End");
-
-    var ed = $end.find('terminateEventDefinition');
-    ok(ed, "An end event should have a terminateEventDefinition child");
-    ok(ed.attr('id'), 'with an ID attribute');
+  test("BPMN sequence flow", function () {
+    var self = this,
+        startID = self.$bpmn.find('startEvent').attr('id'),
+        endID = self.$bpmn.find('endEvent').attr('id');
+    // console.log(new XMLSerializer().serializeToString(bpmn));
+    console.log(this.$bpmn);
 
     // Sequence flow
-    var $sequences = $process.find('sequenceFlow');
+    var $sequences = this.$bpmn.find('sequenceFlow');
     ok($sequences.length, "A workflow should have at least 1 sequenceFlow element");
-    equal($sequences.length, w.length + 1, "actually it should have 1 for each child plus 1 to start");
+    equal($sequences.length, this.workflow.length + 1, "actually it should have 1 for each child plus 1 to start");
 
     var startSeq = $sequences.filter(function (index) {
       return this.getAttribute('sourceRef') == startID;
@@ -834,17 +846,16 @@
 
     ok(startSeq.get(0).getAttribute('targetRef') != endID, "The start event cannot route to the end event");
 
-    for (var i = 0; i < w.length; i++) {
-      var id = w[i].id;
-      ok($bpmn.find('sequenceFlow[sourceRef="'+id+'"]').length == 1, "there should be a sourceRef for each component");
-      ok($bpmn.find('sequenceFlow[targetRef="'+id+'"]').length == 1, "there should also be a targetRef for each component");
+    for (var i = 0; i < this.workflow.length; i++) {
+      var id = this.workflow[i].id;
+      ok(this.$bpmn.find('sequenceFlow[sourceRef="'+id+'"]').length == 1, "there should be a sourceRef for each component");
+      ok(this.$bpmn.find('sequenceFlow[targetRef="'+id+'"]').length == 1, "there should also be a targetRef for each component");
     }
   });
 
-
-  test('BPMN generation of nested workflows', function() {
+  test('BPMN nested workflows', function() {
     var w1 = new UncertWeb.Workflow(),
-        c1 = generateComponent();
+        c1 = generateComponent(),
         w2 = new UncertWeb.Workflow(),
         c2 = generateComponent();
 
@@ -852,8 +863,9 @@
     w2.append(c2);
 
     var bpmn = UncertWeb.Encode.asBPMN(w1),
-    $bpmn = $(bpmn),
-    $process = $(bpmn).children('process').eq(0),
+        $bpmn = $(bpmn);
+
+    var $process = $bpmn.children('process').eq(0),
     process = $process.get(0),
     $tasks = $process.children('scriptTask'),
     $subProcesses = $process.children('subProcess');
@@ -908,7 +920,6 @@
     ok(odi.length, "and an outputDataItem child");
     ok(odi.get(0).getAttribute('isCollection'), "which has an isCollection attribute");
     equal(odi.get(0).getAttribute('isCollection'), "false", "whose value is false");
-
   });
 
   test('eHabitat BPMN example', function() {

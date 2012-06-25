@@ -145,7 +145,7 @@
       success = arguments[index];
       fail = arguments[index+1];
 
-      config = $.extend({}, UncertWeb.options.search_config, opts);
+      var config = $.extend({}, UncertWeb.options.search_config, opts);
 
       // Set the keywords in the search config
       config.st = keywords;
