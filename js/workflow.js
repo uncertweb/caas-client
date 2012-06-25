@@ -240,13 +240,16 @@
   };
 
   // Create `UncertWeb.Workflow` module.
-  UncertWeb.Workflow = function () {
+  UncertWeb.Workflow = function (opts) {
     // Length property to help mimic array behaviour.
     this.length = 0;
 
+    // public properties
+    this.id = opts === undefined ? UncertWeb.uid() : opts.id || UncertWeb.uid();
+    this.iterations = opts === undefined ? undefined : opts.iterations;
+
     // Private properties
     var subscribers = {},
-        id = UncertWeb.uid(),
         iterations;
 
     // Publish an event occuring on this workflow.
@@ -312,9 +315,7 @@
     };
 
     // Get the unique ID of this workflow.
-    this.getId = function () {
-      return id;
-    };
+
 
     // Get the number of iterations of this workflow
     this.getIterations = function () {
@@ -444,9 +445,9 @@
     return XML('scriptTask', {
       completionQuantity: 1,
       isForCompensation: false,
-      name: component.getAnnotation(),
+      name: component.annotation,
       startQuantity: 1,
-      id: component.getId()
+      id: component.id
     });
   }
 
@@ -525,7 +526,7 @@
     isNestedWorkflow = isNestedWorkflow || false;
 
     // Add the start event
-    var startID = workflow.getId() + "_start";
+    var startID = workflow.id + "_start";
     appendTo.appendChild(startEvent(startID));
 
     // for each child of the workflow, create the relevant XML
@@ -535,28 +536,28 @@
         appendTo.appendChild(scriptTask(child));
       } else if(UncertWeb.isWorkflow(child)) {
         // this is a subprocess
-        var sp = subProcess(child.getId(), child.getIterations());
+        var sp = subProcess(child.id, child.getIterations());
         encodeWorkflow(child, sp, true);
         appendTo.appendChild(sp);
       }
     }
 
     // Add the end event
-    var endID = workflow.getId() + "_end";
+    var endID = workflow.id + "_end";
     appendTo.appendChild(endEvent(endID, !isNestedWorkflow));
 
     // Add the sequence flow
-    appendTo.appendChild(sequenceFlow(startID, workflow[0].getId()));
+    appendTo.appendChild(sequenceFlow(startID, workflow[0].id));
 
     // Assume workflow is in order of execution
     for ( i = 0; i < workflow.length - 1; i++) {
       var c = workflow[i];
       var end = workflow[i+1];
-      appendTo.appendChild(sequenceFlow(c.getId(), end.getId()));
+      appendTo.appendChild(sequenceFlow(c.id, end.id));
     }
 
     // Add end sequence
-    appendTo.appendChild(sequenceFlow(workflow[workflow.length - 1].getId(), endID));
+    appendTo.appendChild(sequenceFlow(workflow[workflow.length - 1].id, endID));
   }
 
 
@@ -587,7 +588,7 @@
         var process = XML('process', {
             isClosed: false,
             isExecutable: true,
-            name: workflow.getId(),
+            name: workflow.id,
             processType: 'Private'
           });
 
@@ -596,7 +597,7 @@
         // create an itemDefinition for each nested workflow and attach it to the bpmn document
         for (var i = 0; i < workflow.length; i++) {
           if(UncertWeb.isWorkflow(workflow[i])) {
-            bpmn.appendChild(itemDefinition(workflow[i].getId()));
+            bpmn.appendChild(itemDefinition(workflow[i].id));
           }
         }
 

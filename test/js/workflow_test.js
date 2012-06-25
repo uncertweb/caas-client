@@ -185,7 +185,10 @@
 
   module('Workflow', {
     setup: function () {
-      this.workflow1 = new UncertWeb.Workflow();
+      this.workflow1 = new UncertWeb.Workflow({
+        id: 'MYID',
+        iterations: 5
+      });
       this.workflow2 = new UncertWeb.Workflow();
       this.workflow1clone = this.workflow1;
       this.component1 = generateComponent();
@@ -404,9 +407,15 @@
     this.workflow1.clear();
   });
 
-  test("getId method", function () {
-    ok(this.workflow1.getId(), "Workflows should have an ID accessible at getId");
-    ok(this.workflow1.getId() !== this.workflow2.getId(), "and they should not be the same as another workflow");
+  test("public properties", function () {
+    ok(this.workflow1.id, "Workflows should have an ID accessible");
+    ok(this.workflow1.id !== this.workflow2.id, "and they should not be the same as another workflow");
+    equal(this.workflow1.id, 'MYID', "IDs should be manually set if passed in the constructor");
+
+    ok(this.workflow1.iterations, "a workflow should have a number of iterations is supplied in the constructor");
+    equal(this.workflow1.iterations, 5, "and it should be set accordingly");
+
+
   });
 
 
@@ -720,7 +729,7 @@
 
     var name = process.getAttribute('name');
     ok(name, "it should also have a name");
-    equal(w.getId(), name, "that is the same as the workflow ID");
+    equal(w.id, name, "that is the same as the workflow ID");
 
     var processType = process.getAttribute('processType');
     ok(processType, "it should also have a processType");
@@ -740,7 +749,7 @@
 
     var taskName = task.getAttribute('name');
     ok(taskName, "it should have a name attribute");
-    equal(taskName, c.getAnnotation(), 'that is set to the component annotation');
+    equal(taskName, c.annotation, 'that is set to the component annotation');
 
     var startQuantity = task.getAttribute('startQuantity');
     ok(startQuantity, "it should also have a startQuantity attribute");
@@ -748,7 +757,7 @@
 
     var taskID = task.getAttribute('id');
     ok(taskID, "it should also have an ID attribute");
-    equal(taskID, c.getId(), 'that is equal to the component ID');
+    equal(taskID, c.id, 'that is equal to the component ID');
 
     // Start and end events
     var $start = $process.children('startEvent'),
@@ -757,7 +766,7 @@
 
     var startID = $start.attr('id');
     ok(startID, "and it should have an ID");
-    equal(startID, w.getId() + "_start", "that is equal to the workflow ID and _start");
+    equal(startID, w.id + "_start", "that is equal to the workflow ID and _start");
 
     var startIsInterrupting = start.getAttribute('isInterrupting');
     ok(startIsInterrupting, "and it should have an isInterrupting attribute");
@@ -776,7 +785,7 @@
 
     var endID = $end.attr('id');
     ok(endID, "and it should have an ID attribute");
-    equal(endID, w.getId() + "_end", "and it should be equal to the workflow ID + _end");
+    equal(endID, w.id + "_end", "and it should be equal to the workflow ID + _end");
 
     var endName = $end.attr('name');
     ok(endName, "and it should have a name attribute");
@@ -806,7 +815,7 @@
     ok(startSeq.get(0).getAttribute('targetRef') != endID, "The start event cannot route to the end event");
 
     for (var i = 0; i < w.length; i++) {
-      var id = w[i].getId();
+      var id = w[i].id;
       ok($bpmn.find('sequenceFlow[sourceRef="'+id+'"]').length == 1, "there should be a sourceRef for each component");
       ok($bpmn.find('sequenceFlow[targetRef="'+id+'"]').length == 1, "there should also be a targetRef for each component");
     }
@@ -839,7 +848,7 @@
     equal(sp.getAttribute('completionQuantity'), "1", "that is equal to 1");
 
     ok($sp.attr('id'), 'it should also have an ID');
-    equal($sp.attr('id'), w2.getId(), 'that is equal to the nested workflow ID');
+    equal($sp.attr('id'), w2.id, 'that is equal to the nested workflow ID');
 
     ok(sp.getAttribute('isForCompensation'), "it should also have an isForCompensation attribute");
     equal(sp.getAttribute('isForCompensation'), 'false', 'that is equal to false');
@@ -868,7 +877,7 @@
 
     var ldir = $loopChars.find('loopDataInputRef').eq(0);
     ok(ldir.length, "it should have a loopDataInputRef child");
-    equal(ldir.text(), w2.getId() + "_input", "whose value is equal to the nested workflow ID + _input");
+    equal(ldir.text(), w2.id + "_input", "whose value is equal to the nested workflow ID + _input");
 
     var idi = $loopChars.find('inputDataItem').eq(0);
     ok(idi.length, "and an inputDataItem child");
