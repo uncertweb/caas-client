@@ -295,6 +295,10 @@
     equal(this.workflow1.length, 2, "Workflows as children count to parent length");
     ok(this.workflow1[0].append(this.component1), "Workflows as children can be appended to");
 
+    ok(this.workflow2.parent, "a nested workflow should have a parent attribute");
+    equal(this.workflow2.parent, this.workflow1, "and it should be equal to the workflow it was appended to");
+
+    equal(this.workflow1.parent, undefined, "A workflow that is not nested should NOT have a parent attribute");
   });
 
   test("Append callbacks", function () {
@@ -495,7 +499,6 @@
   });
 
   test("Component properties", function () {
-
     // name property
     ok(UncertWeb.isString(this.component1.name), "Name property should be a string");
     equal(this.component1.name, this.metadata1.name, "and it should equal the supplied parameter");
@@ -515,8 +518,25 @@
     // no id property
     ok(this.component2.id, "an ID should always exist, even if not supplied in the constructor");
     ok(UncertWeb.isString(this.component2.id), "and it should be a string");
-    console.log(this.component1.id);
-    console.log(this.component2.id);
+
+    // Reference to parent workflow
+    var workflow = new UncertWeb.Workflow();
+    workflow.append(this.component1);
+    ok(this.component1.workflow, "a component should have a workflow property if it belongs to a workflow");
+    equal(this.component1.workflow, workflow, "and it should equal the workflow it belongs to");
+
+    equal(this.component2.workflow, undefined, "a component not yet part of a workflow should not have a workflow property");
+
+    // Top function
+    var root = this.component1.root;
+    ok(root, "a component should have a root property");
+    ok(UncertWeb.isFunction(root), "that is a function");
+    equal(this.component1.root(), workflow, "and it should return a reference to the root of the workflow");
+
+    // multi nesting
+    workflow.append(new UncertWeb.Workflow().append(this.component2));
+    equal(this.component2.root(), workflow, "even if nested multiple times");
+    console.log(this.component2.root());
   });
 
   module("Broker");
@@ -968,8 +988,11 @@
     setup: function () {
       stop();
       var self = this;
-      UncertWeb.broker.search('eHabitat').done(function (results) {
+      UncertWeb.broker.all().done(function (results) {
         self.component = new UncertWeb.Component(results.results[0]);
+        self.component2 = new UncertWeb.Component(results.results[1]);
+        self.disconnected = new UncertWeb.Component(results.results[2]);
+        self.workflow = new UncertWeb.Workflow().append([self.component, new UncertWeb.Workflow().append(self.component2)]);
         start();
       });
     }
@@ -989,6 +1012,147 @@
     ok(UncertWeb.isObject(output), "an output should be an object");
 
     ok(input.id, "an input should have an id");
+    ok(UncertWeb.isString(input.id), "which is a string");
+
+    ok(input.name, "an input should also have a name");
+    ok(UncertWeb.isString(input.name), "that is a string");
+
+    ok(input.description, "an input should also have a description");
+    ok(UncertWeb.isString(input.description), "that is a string");
+
+    ok(output.id, "an output should have an id");
+    ok(UncertWeb.isString(output.id), "which is a string");
+
+    ok(output.name, "an output should also have a name");
+    ok(UncertWeb.isString(output.name), "that is a string");
+
+    ok(output.description, "an output should also have a description");
+    ok(UncertWeb.isString(output.description), "that is a string");
+
+    ok(input.component, "an input should have a reference to its component");
+    equal(input.component, this.component, "that is equal to the component it belongs to");
+  });
+
+  test("IO connections", function () {
+    var connections = this.component.connections;
+    ok(connections, "a component should have connections");
+    ok(connections.length !== undefined, "that has a length");
+    equal(connections.length, 0, "that is initially zero");
+  });
+
+  test("Creating a connection between an output and input object", function () {
+    var output = this.component.outputs[0];
+    var input = this.component2.inputs[0];
+    ok(this.component.connect, "A component should have a connect property");
+    ok(UncertWeb.isFunction(this.component.connect), "that is a function");
+
+    this.component.connect(output, input);
+
+    var connections = this.component.connections;
+    equal(connections.length, 1, "connecting an output and input should add a connection");
+    equal(this.component2.connections.length, 1, "connecting also creates a connection on the other component");
+    ok(UncertWeb.isObject(connections[0]), "a connection should be an object");
+
+    ok(connections[0].output, "with an output property");
+    equal(connections[0].output, output, "That is equal to the output supplied in connect");
+
+    ok(connections[0].input, "a connection should also have an input property");
+    equal(connections[0].input, input, "that is equal to the input supplied in connect");
+  });
+
+  test("Creating a connection between an ouput ID and an input ID", function () {
+    var output = this.component.outputs[0];
+    var input = this.component2.inputs[0];
+    ok(this.component.connect, "A component should have a connect property");
+    ok(UncertWeb.isFunction(this.component.connect), "that is a function");
+
+    this.component.connect(output.id, input.id);
+
+    var connections = this.component.connections;
+    equal(connections.length, 1, "connecting an output and input should add a connection");
+    ok(UncertWeb.isObject(connections[0]), "a connection should be an object");
+
+    ok(connections[0].output, "with an output property");
+    equal(connections[0].output, output, "That is equal to the output supplied in connect");
+
+    ok(connections[0].input, "a connection should also have an input property");
+    equal(connections[0].input, input, "that is equal to the input supplied in connect");
+  });
+
+  test("Finding connections between components", function () {
+    var connectedTo = this.component.connectedTo;
+    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
+    this.component.connect(this.component.outputs[0], this.component2.inputs[1]);
+
+    ok(connectedTo, "A component should provide a connectedTo attribute");
+    ok(UncertWeb.isFunction(connectedTo), "that is a function");
+
+    equal(this.component.connectedTo(this.component2), true, "that should return true when connected");
+    equal(this.component2.connectedTo(this.component), true, "and it should work in the reverse direction");
+    equal(this.component.connectedTo(this.disconnected), false, "and false when not");
+
+    ok(UncertWeb.isArray(this.component.connectedTo()), "Calling connectedTo with no paramter should return an array of components");
+    equal(this.component.connectedTo().length, 1, "and it should contain the correct number of components");
+    equal(this.component.connectedTo()[0], this.component2, "and the list should contain the component to which it is connected");
+    equal(this.component2.connectedTo().length, 1, "the connectedTo function should work both ways");
+    equal(this.component2.connectedTo()[0], this.component, "the connectedTo function should work both ways");
+
+    ok(this.component.connectionsTo, "a component should have a connectionsTo attribute");
+    ok(UncertWeb.isFunction(this.component.connectionsTo), "that is a function");
+    ok(UncertWeb.isArray(this.component.connectionsTo()), "that returns an array");
+    equal(this.component.connectionsTo(this.component2).length, 2, "that has the correct number of connections");
+    equal(this.component2.connectionsTo(this.component).length, 2, "and it works both ways");
+
+    equal(this.component.connectionsTo(this.component).length, 0, "no connections should exist between the same component");
+  });
+
+  test("Disconnecting components by connection", function () {
+    var disconnect = this.component.disconnect;
+    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
+
+    ok(disconnect, "a component should have a disconnect attribute");
+    ok(UncertWeb.isFunction(disconnect), "that is a function");
+
+    equal(this.component.connections.length, 1, "A connection is established");
+    equal(this.component2.connections.length, 1, "on both sides");
+    this.component.disconnect(this.component.connections[0]);
+
+    equal(this.component.connections.length, 0, "And when disconnected it is removed");
+    equal(this.component2.connections.length, 0, "from both sides");
+
+  });
+
+  test('Disconnectiong components by component', function() {
+    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
+    this.component2.connect(this.component2.outputs[1], this.component.inputs[0]);
+    equal(this.component.connections.length, 2, "A connection is established");
+    equal(this.component2.connections.length, 2, "on both sides");
+    this.component2.disconnect(this.component2.connections[0]);
+
+    equal(this.component.connections.length, 1, "And when disconnected it is removed");
+    equal(this.component2.connections.length, 1, "from both sides");
+
+    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
+
+    equal(this.component.connections.length, 2, "A connection is established");
+    equal(this.component2.connections.length, 2, "on both sides");
+
+    this.component.disconnect(this.component2);
+
+    equal(this.component.connections.length, 0, "All connections to a component are removed");
+    equal(this.component2.connections.length, 0, "on both sides");
+  });
+
+  test('Disconnection all connections of a component', function() {
+    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
+    this.component2.connect(this.component2.outputs[1], this.component.inputs[0]);
+
+    equal(this.component.connections.length, 2, "A connection is established");
+    equal(this.component2.connections.length, 2, "on both sides");
+
+    this.component.disconnect();
+
+    equal(this.component.connections.length, 0, "calling disconnect() with no paramters removes all connections");
   });
 
 }());

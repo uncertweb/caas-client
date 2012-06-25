@@ -111,6 +111,10 @@
       id: UncertWeb.uid(),
       name: "Input Name",
       description: "Input description"
+    }, {
+      id: UncertWeb.uid(),
+      name: "IO 2",
+      description: "IO number 2"
     }];
   }
 
@@ -227,6 +231,41 @@
   // Component module
   // ----------------
 
+  // Helper functions to find a component based on an IO ID
+
+  function _root () {
+    var root = this;
+    // find the top of the tree
+    while (!(root.parent === window || root.parent === undefined)) {
+      root = root.parent;
+    }
+    return root;
+  }
+
+  function searchComponent (component, id) {
+    if (UncertWeb.isComponent(component)) {
+      var arr = component.inputs.concat(component.outputs);
+      for (i = 0; i < arr.length; i++) {
+        if(arr[i].id == id) {
+          return arr[i];
+        }
+      }
+    }
+  }
+
+  function searchWorkflow (workflow, id) {
+    for (var i = 0; i < workflow.length; i++) {
+      if(UncertWeb.isComponent(workflow[i])) {
+        result = searchComponent(workflow[i], id);
+      } else {
+        result = searchWorkflow(workflow[i], id);
+      }
+      if(result) {
+        return result;
+      }
+    }
+  }
+
   // Create the `UncertWeb.Component` module.
   UncertWeb.Component = function (opts) {
     // Setup public properties
@@ -237,7 +276,125 @@
 
     this.inputs = opts.inputs || [];
     this.outputs = opts.outputs || [];
+    this.connections = [];
+
+    this.root = _root;
+
+    // setup parent references in the IO objects
+    var i;
+    for (i = 0; i < this.inputs.length; i++) {
+      this.inputs[i].component = this;
+    }
+
+    for (i = 0; i < this.outputs.length; i++) {
+      this.outputs[i].component = this;
+    }
+
+    this.connect = function (output, input) {
+      output = UncertWeb.isObject(output) ? output : searchWorkflow(this.root(), output);
+      input = UncertWeb.isObject(input) ? input : searchWorkflow(this.root(), input);
+
+      var connection = {
+        output: output,
+        input: input
+      };
+
+      // Add connections to both sides
+      input.component.connections.push(connection);
+      output.component.connections.push(connection);
+    };
+
+    function removeConnection (conn) {
+      var inputConnections = conn.input.component.connections,
+          outputConnections = conn.output.component.connections;
+
+      for (var i = inputConnections.length - 1; i >= 0; i--) {
+        if(inputConnections[i] === conn) {
+          inputConnections.splice(i,1);
+          break;
+        }
+      }
+      for (var j = outputConnections.length - 1; j >= 0; j--) {
+        if (outputConnections[j] === conn) {
+         outputConnections.splice(j,1);
+        }
+      }
+    }
+
+    // disconnect a component via a specified connection, or all connections
+    // to a specified component
+    this.disconnect = function (args) {
+      var toRemove = [];
+
+      if(UncertWeb.isComponent(args)) {
+        toRemove = this.connectionsTo(args);
+      } else if(UncertWeb.isObject(args)) {
+        // remove this single connection
+        toRemove.push(args);
+      } else if(args === undefined) {
+        // remove all connections
+        toRemove = this.connections.slice();
+      }
+
+      for (var i = 0; i < toRemove.length; i++) {
+        removeConnection(toRemove[i]);
+      }
+    };
+
+    // returns all connection objects to a specified component
+    this.connectionsTo = function (component) {
+      var _connections = [];
+
+      if(component === undefined || this === component) return _connections;
+
+      for (var i = 0; i < this.connections.length; i++) {
+        var conn = this.connections[i];
+        if(conn.input.component.id === component.id ||
+           conn.output.component.id === component.id) {
+          _connections.push(conn);
+        }
+      }
+      return _connections;
+    };
+
+    // Returns true if this component is linked to the component passed as args[0]
+    // returns false otherwise
+    this.connectedTo = function (componentID) {
+      var i;
+      if(arguments.length === 0) {
+        // return array of connected components
+        var _components = {};
+
+        // get all components
+        for(i = 0; i < this.connections.length; i++) {
+          var _input = this.connections[i]['input']['component'],
+              _output = this.connections[i]['output']['component'];
+          _components[_input.id] = _input;
+          _components[_output.id] = _output;
+        }
+
+        var results = [];
+        // reindex array
+        for (var key in _components) {
+          if(key === this.id) continue;
+          results.push(_components[key]);
+        }
+
+        return results;
+      } else {
+        var id = componentID.id || componentID;
+
+        for (i = 0; i < this.connections.length; i++) {
+          if(this.connections[i].input.component.id == id ||
+             this.connections[i].output.component.id == id) {
+            return true;
+          }
+        }
+        return false;
+      }
+    };
   };
+
 
   // Workflow module
   // ---------------
@@ -367,7 +524,10 @@
         // `wrapCallback` helper function.
         if(UncertWeb.isWorkflow(components[i])) {
           wrapCallback.call(this, components[i]);
+        } else {
+          components[i]['workflow'] = this;
         }
+        components[i]['parent'] = this;
       }
       // Publish some events to let observers know we have updated.
       this.publish('workflow/component/add', components);
@@ -822,7 +982,6 @@
       )
     );
 
-    console.log(request);
     return (new XMLSerializer()).serializeToString(request);
   }
 
