@@ -241,6 +241,9 @@
       return properties.id;
     };
 
+    this.inputs = properties.inputs || [];
+    this.outputs = properties.outputs || [];
+
   };
 
   // Workflow module

@@ -8,7 +8,13 @@
     return new UncertWeb.Component({
       name: Date(),
       description: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium.',
-      annotation: '[access:raster]'
+      annotation: '[access:raster]',
+      inputs: [
+        {}
+      ],
+      outputs: [
+        {}
+      ]
     });
   };
 
@@ -933,6 +939,26 @@
       start();
     });
 
+  });
+
+  module("IO", {
+    setup: function () {
+      this.component = generateComponent();
+    }
+  });
+
+  test('IO structure', function() {
+    ok(this.component.inputs, "A component should have inputs");
+    ok(this.component.outputs, "and it should have outputs");
+    ok(this.component.inputs.length !== undefined, "inputs should have a length");
+    ok(this.component.outputs.length !== undefined, "outputs should have a length");
+  });
+
+  test('IO object', function() {
+    var input = this.component.inputs[0];
+    var output = this.component.outputs[0];
+    ok(UncertWeb.isObject(input), "an input should be an object");
+    ok(UncertWeb.isObject(output), "an output should be an object");
   });
 
 }());
