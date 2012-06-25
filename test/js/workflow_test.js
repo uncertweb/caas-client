@@ -10,7 +10,9 @@
       description: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium.',
       annotation: '[access:raster]',
       inputs: [
-        {}
+        {
+          id: true
+        }
       ],
       outputs: [
         {}
@@ -411,12 +413,14 @@
   module('Component', {
 
     setup: function () {
+      var self = this;
+      stop();
+
       var all = {
           name: 'name',
           description: 'description',
           annotation: 'annotation'
         };
-
 
         this.missing_description = {
           name: 'name',
@@ -427,7 +431,6 @@
           name: 'name',
           description: 'description'
         };
-
 
         this.missing_type = {
           description: 'description',
@@ -446,10 +449,15 @@
           annotation: 'annotation'
         };
 
-        this.component1 = new UncertWeb.Component(all);
-        this.component2 = new UncertWeb.Component(all);
-        this.component1clone = this.component1;
-
+        UncertWeb.broker.all().done(function (results) {
+          self.metadata1 = results.results[0];
+          self.component1 = new UncertWeb.Component(self.metadata1);
+          self.metadata2 = results.results[1];
+          self.metadata2.id = undefined;
+          self.component2 = new UncertWeb.Component(self.metadata2);
+          self.component1clone = self.component1;
+          start();
+        });
     }
   });
 
@@ -459,7 +467,6 @@
 
   test("Component constructor function", function () {
     expect(7);
-
     ok(UncertWeb.isObject(this.component1), "Component should be an object");
     ok(this.component2 !== this.component1, "Two Component objects should not be equal");
     ok(this.component1clone === this.component1, "Two identical Component objects should be equal");
@@ -481,19 +488,26 @@
   test("Component properties", function () {
 
     // name property
-    equal(this.component1.name, undefined, "Name property should be private");
-    equal(this.component1.getName(), 'name', "Name property should be accessible via getName()");
-
+    ok(UncertWeb.isString(this.component1.name), "Name property should be a string");
+    equal(this.component1.name, this.metadata1.name, "and it should equal the supplied parameter");
     // description property
-    equal(this.component1.description, undefined, "description property should be private");
-    equal(this.component1.getDescription(), 'description', "description property should be accesible via getDescription()");
-
+    ok(UncertWeb.isString(this.component1.description), "description property should be a string");
+    equal(this.component1.description, this.metadata1.description, "and it should equal the supplied parameter");
     // annotation property
-    equal(this.component1.annotation, undefined, "annotation property should be private");
-    equal(this.component1.getAnnotation(), 'annotation', "annotation property should be accessible via getAnnotation()");
+    ok(UncertWeb.isString(this.component1.annotation), "annotation property should be a string");
+    equal(this.component1.annotation, this.metadata1.annotation, "and it should equal the supplied parameter");
+    // id property
+    ok(UncertWeb.isString(this.component1.id), "id property should be a string");
+    if(this.metadata1.id) {
+      console.log(this.metadata1.id);
+      equal(this.component1.id, this.metadata1.id, "and it should equal the supplied ID if present");
+    }
 
-    equal(this.component1._id, undefined, "_id property should be private");
-    ok(this.component1.getId(), "But it should be accessible via the getId method");
+    // no id property
+    ok(this.component2.id, "an ID should always exist, even if not supplied in the constructor");
+    ok(UncertWeb.isString(this.component2.id), "and it should be a string");
+    console.log(this.component1.id);
+    console.log(this.component2.id);
   });
 
   module("Broker");
@@ -531,8 +545,8 @@
       expect(data.num_results * 4);
       $.each(data.results, function (index, elem) {
         ok(elem.annotation, "results should have an annotation");
-        ok(elem.title, "and a title");
-        ok(elem.summary, "and a summary");
+        ok(elem.name, "and a name");
+        ok(elem.description, "and a description");
         ok(elem.id, "and an ID");
       });
       start();
@@ -943,7 +957,12 @@
 
   module("IO", {
     setup: function () {
-      this.component = generateComponent();
+      stop();
+      var self = this;
+      UncertWeb.broker.search('eHabitat').done(function (results) {
+        self.component = new UncertWeb.Component(results.results[0]);
+        start();
+      });
     }
   });
 
@@ -959,6 +978,8 @@
     var output = this.component.outputs[0];
     ok(UncertWeb.isObject(input), "an input should be an object");
     ok(UncertWeb.isObject(output), "an output should be an object");
+
+    ok(input.id, "an input should have an id");
   });
 
 }());

@@ -161,13 +161,13 @@
           //- **annotation**: CaaS annotation of this component.
           return {
             id: $this.find('id').text(),
-            title: $this.find('title').text(),
+            name: $this.find('title').text(),
             endpoint: $this.find('endpoint').text(),
             keywords: $.map($this.find('[term="keywords"]'), function (elem) {
               return $(elem).attr('label');
             }),
             updated: $this.find('updated').text(),
-            summary: $this.find('summary').text(),
+            description: $this.find('summary').text(),
             serviceType: $this.find('category[term="serviceType"]').attr('label'),
             annotation: $this.find('category[scheme="urn:X-GI-caas:component:taxonomy"]').attr('label'),
             parentID: $this.find('parentID').text()
@@ -215,35 +215,15 @@
   // ----------------
 
   // Create the `UncertWeb.Component` module.
-  UncertWeb.Component = function (config) {
-    // Function to validate the config properties
+  UncertWeb.Component = function (opts) {
+    // Setup public properties
+    this.id = opts.id || UncertWeb.uid();
+    this.name = opts.name || "";
+    this.description = opts.description || "";
+    this.annotation = opts.annotation || "";
 
-    // Create a private variable `properties` to hold the component properties.
-    var properties = config;
-
-    // Assign an ID to this component.
-    properties.id = UncertWeb.uid();
-
-    // Public getter methods
-    this.getName = function () {
-      return properties.name;
-    };
-
-    this.getDescription = function () {
-      return properties.description;
-    };
-
-    this.getAnnotation = function () {
-      return properties.annotation;
-    };
-
-    this.getId = function () {
-      return properties.id;
-    };
-
-    this.inputs = properties.inputs || [];
-    this.outputs = properties.outputs || [];
-
+    this.inputs = opts.inputs || [];
+    this.outputs = opts.outputs || [];
   };
 
   // Workflow module
