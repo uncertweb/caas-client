@@ -4,6 +4,68 @@ Kinetic.WorkFlowLayer = function (config)
 	this.currentElements = new Array();
 	this.classType = "WorkFlowLayer";
 	this.standAloneWF = null;
+	this.ioMode = false;
+	this.ioObjects = {input:null,output:null};
+	
+	this.toggleIOMode = function ()
+	{
+		if(this.ioMode)
+		{
+			this.ioMode = false;
+			//remove all events listening for the click
+			this.setUpIOMode();
+		}
+		else
+		{
+			this.ioMode = true;
+			this.setUpIOMode();
+		}
+		return this.ioMode;
+	};
+	this.setIoObjects = function(el)
+	{
+		//if user has clicked an item again then, this means they do not want to select it
+		if(_.isEqual(el,this.ioObjects.output))
+		{
+			this.ioObjects.output = null;
+			return false;
+		}
+		else if(_.isEqual(el,this.ioObjects.input))
+		{
+			this.ioObjects.input = null;
+			return false;
+		}
+		
+		if(this.ioObjects.output == null)
+		{
+			//first click should be the outputs
+			this.ioObjects.output = el;
+			//if both objects now set, then open up the modal
+			if(this.ioObjects.input != null && this.ioObjects.output != null)
+			{
+				WorkFlow_UI.io.open(this.ioObjects);		
+			}
+			return true;
+		}	
+		else if (this.ioObjects.input == null)
+		{
+			this.ioObjects.input = el;
+			//if both objects now set, then open up the modal
+			if(this.ioObjects.input != null && this.ioObjects.output != null)
+			{
+				WorkFlow_UI.io.open(this.ioObjects);		
+			}
+			return true;
+		}
+		else
+		{
+			//this should not happen, as after two have been clicked.
+			//popup should appear, and after ioObjects should be cleared
+		}
+		
+			
+	};
+	
 	this.getStandAloneIndex = function (workflow)
 		{
 			for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
@@ -30,18 +92,30 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.standAloneWF = new Kinetic.WorkFlow({text:'[3] Mulitple Instances (one for each environmental dataset',x:100,y:10,draggable:false,layer:this,standalone:true});
 		this.standAloneWF.setVertices(workFlow.vertices,workFlow);
 		this.add(this.standAloneWF);
-		for(iWEls=0;iWEls<workFlow.components.length;iWEls++)
-		{
-				this.standAloneWF.addElement({brokerProperties:workFlow.components[iWEls].brokerProperties,text:workFlow.components[iWEls].text,layer:this});
-		}
 		
+		this.standAloneWF.addElements(workFlow.components);
+		this.standAloneWF.addConnectionsToLayer();
+		this.ioMode = false;
+			//remove all events listening for the click
+		this.setUpIOMode();
 		this.draw();
 		this.standAloneWF.updateAllVertices();
 	},
 	addElement : function (el)
 	{
 		this.add(el);
-		this.currentElements.push(el);
+		if(this.currentElements[this.currentElements.length -1] instanceof Kinetic.WorkFlowEnd)
+		{
+			end = this.currentElements.pop();
+			this.currentElements.push(el);
+			this.currentElements.push(end);
+		}
+		else
+		{
+			this.currentElements.push(el);
+		}
+		
+		this.draw();
 	},
 	moveUp : function ()
 	{
@@ -51,11 +125,10 @@ Kinetic.WorkFlowLayer.prototype = {
 			//standAloneWF has to updated,as the layout is different
 			tempEl = new Kinetic.WorkFlow({text:'test moveUp',x:100,y:10,draggable:true,layer:this,standalone:false});
 			this.add(tempEl);
+			//the reference in the array has to be updated to the new element
 			tempEl.setVertices(this.standAloneWF.vertices,this.standAloneWF);
-			for(iWEls=0;iWEls<this.standAloneWF.components.length;iWEls++)
-			{
-	tempEl.addElement({brokerProperties:this.standAloneWF.components[iWEls].brokerProperties,text:this.standAloneWF.components[iWEls].text,layer:this});
-			}
+			
+			tempEl.addElements(this.standAloneWF.components);
 			if(this.standAloneIndex == -1)
 			{
 				this.currentElements.push(tempEl);
@@ -71,15 +144,100 @@ Kinetic.WorkFlowLayer.prototype = {
 			for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 			{
 				this.add(this.currentElements[iCEls]);
+				
 				this.currentElements[iCEls].addConnectionsToLayer();
+				
 			}
-			
+			this.ioMode = false;
+			//remove all events listening for the click
+			this.setUpIOMode();
 			this.draw();
 			this.reDrawLayer();
 			this.updateAllVertices();
-
+					
 			this.standAloneWF = null;
 			this.standAloneIndex = -1;
+		}
+	},
+	setUpIOMode : function ()
+	{
+		if(this.ioMode)
+		{
+			if(this.standAloneWF == null)
+			{
+				//all currentEls need to be clickable
+				for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
+				{
+					
+					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowElement)
+					{
+						this.currentElements[iCEls].on('click',function()
+						{
+							if(this.getLayer().setIoObjects(this))
+							{
+								this.setStroke('red');
+								this.getLayer().draw();
+							}
+							else
+							{
+								this.setStroke('black');
+								this.getLayer().draw();
+							}
+							
+						});
+					}
+					
+				}
+			}
+			else
+			{
+				for(iCEls=0;iCEls<this.standAloneWF.components.length;iCEls++)
+				{
+					this.standAloneWF.components[iCEls].on('click',function()
+					{
+						if(this.getLayer().setIoObjects(this))
+						{
+							this.setStroke('red');
+							this.getLayer().draw();
+						}
+						else
+						{
+							this.setStroke('black');
+							this.getLayer().draw();
+						}
+						
+					});
+					
+					
+				}
+			}
+
+		}
+		else
+		{
+			this.ioObjects = {input:null,output:null};
+			if(this.standAloneWF == null)
+			{
+				//all currentEls non clickable
+				for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
+				{
+					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowElement)
+					{
+						this.currentElements[iCEls].off('click');
+						this.currentElements[iCEls].setStroke('black');
+					}
+					
+				}
+				this.getLayer().draw();
+			}
+			else
+			{
+				for(iCEls=0;iCEls<this.standAloneWF.components.length;iCEls++)
+				{
+					this.standAloneWF.components[iCEls].off('click');
+					this.standAloneWF.components[iCEls].setStroke('black');
+				}
+			}
 		}
 	},
 	reDrawLayer : function ()
@@ -91,17 +249,17 @@ Kinetic.WorkFlowLayer.prototype = {
 		currentWidth = 0;
 		rowWidth = 0;
 		rowArray = new Array();
-		lastYRow = 100;
+		lastYRow = 50;
 		nextRowY = 0;
 		noRows = 0;
 		for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 		{
 			//get width of current element
-			
-			currentWidth = this.currentElements[iCEls].getWidth() + 10;
+			this.currentElements[iCEls].setPosition({x:0,y:0});
+			currentWidth = this.currentElements[iCEls].getWidth() + 20;
 				
 			//check if adding this current width will overflow the canvas
-			if((rowWidth+currentWidth)>this.getStage().getWidth()-40)
+			if((rowWidth+currentWidth)>this.getStage().getWidth()-50)
 			{
 				
 				//update the X,Ys
@@ -137,6 +295,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		else
 			nextRowY = this.setUpForwardsRow(rowArray,lastYRow,rowWidth);		
 		this.draw();
+		this.updateAllVertices();
 		//
 	},
 	setUpForwardsRow : function(rowArray,lastYRow,rowWidth)
@@ -145,7 +304,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		for(iR=0;iR<rowArray.length;iR++)
 		{
 			//find the margin
-			margin = (this.getStage().getWidth()-rowWidth +20)/rowArray.length - 1
+			margin = (this.getStage().getWidth()-rowWidth +40)/rowArray.length - 1
 			if(rowArray[iR] instanceof Kinetic.WorkFlow || rowArray[iR] instanceof Kinetic.WorkFlowElement)
 			{
 				if(iR != 0)
@@ -160,7 +319,7 @@ Kinetic.WorkFlowLayer.prototype = {
 						y = rowArray[iR-1].getHeight()/2-rowArray[iR].getHeight()/2;
 						y += lastYRow;
 						lastYRow = y;
-						rowArray[iR].setAllPositions({x:currentX+rowArray[iR-1].getWidth(),y:y});
+						rowArray[iR].setAllPositions({x:currentX,y:y});
 					}
 					
 				}
@@ -194,7 +353,7 @@ Kinetic.WorkFlowLayer.prototype = {
 					y = rowArray[iR-1].getHeight()/2;
 					y += lastYRow;
 					lastYRow = y;
-					rowArray[iR].setAllPositions({x:currentX + rowArray[iR-1].getWidth()+margin,y:y});
+					rowArray[iR].setAllPositions({x:currentX,y:y});
 				}
 				
 				if(nextRowY<rowArray[iR].getHeight()+lastYRow)
@@ -203,17 +362,17 @@ Kinetic.WorkFlowLayer.prototype = {
 				}
 			}
 			currentX += margin;
-	
+			currentX += rowArray[iR].getWidth();
 		}
 		return nextRowY;
 	},
 	setUpBackwardsRow : function(rowArray,lastYRow,rowWidth)
 	{
-		currentX = this.getStage().getWidth()-40 ;
+		currentX = this.getStage().getWidth()-20 ;
 		for(iR=0;iR<rowArray.length;iR++)
 		{
 			//find the margin
-			margin = (this.getStage().getWidth()+20-rowWidth)/rowArray.length - 1
+			margin = (this.getStage().getWidth()+40-rowWidth)/rowArray.length - 1
 			if(rowArray[iR] instanceof Kinetic.WorkFlow || rowArray[iR] instanceof Kinetic.WorkFlowElement)
 			{
 				if(iR != 0)

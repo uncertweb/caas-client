@@ -2,10 +2,47 @@ Kinetic.WorkFlowElement = function (config)
 {
 	this.classType = "WorkFlowElement";
 	this.vertices 	= new Array();
+	/*ioConnections layout = {
+				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
+				output:{obj:components.ouput,outputIO:components.output.getIOObject(outputObId)}
+			}*/
+	this.ioConnections = new Array();
+	this.getInputConnections = function(output)
+	{
+		//find all connections that have the output as the output
+		return _.filter(this.ioConnections, function(io){ return _.isEqual(io.output.obj,output);});
+	};
+	this.getOutputConnections = function(input)
+	{
+		//find all connections that have the output as the output
+		return _.filter(this.ioConnections, function(io){ return _.isEqual(io.input.obj,input);});
+	};
 	this.textElements = new Array();
 	this.text = config.text;
 	//we need to put a line break if too long, currently crude needs to be update
 	this.brokerProperties = config.brokerProperties;
+	this.getInputs = function ()
+	{
+		return this.brokerProperties.inputs;
+	};
+	this.getOutputs = function ()
+	{
+		return this.brokerProperties.outputs;
+	};
+	this.getAllIOs = function ()
+	{
+		return this.brokerProperties.inputs.concat(this.brokerProperties.outputs);
+	}
+	this.setStroke = function (colour)
+	{
+		this.rect.setStroke(colour);
+	};
+	this.getIOObject = function(id)
+	{
+		//loop through all IOs and return id match
+		return _.find(this.getAllIOs(), function(IO){ return IO["id"] == id; })
+		//return null;
+	};
 	
 	config = {
 		  x:config.x,
@@ -27,8 +64,8 @@ Kinetic.WorkFlowElement = function (config)
 	//either mainRect of normal
 	if(config.type == "mainRect")
 	{
-		config.fill = "purple";
-		config.alpha = 0.75;
+		config.fill = "#736AFF";
+		config.alpha = 1;
 		array = new Array();
 		array.push(config.text);
 		config.text = array;
@@ -39,8 +76,8 @@ Kinetic.WorkFlowElement = function (config)
 	else if(config.type == "addElement")
 	{
 		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.title;
-		config.fill = "green";
-		config.alpha = 0.8;
+		config.fill = "#51A351";
+		config.alpha = 1;
 		config.text = this.cleanText(config.text);
 		ctx = config.layer.getContext();
 		this.textLength = ctx.measureText(config.text[0]).width * 1.5;
@@ -49,8 +86,8 @@ Kinetic.WorkFlowElement = function (config)
 	else
 	{
 		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.title;
-		config.fill = "green";
-		config.alpha = 0.8;
+		config.fill = "#51A351";
+		config.alpha = 1;
 		//newXY = config.layer.findNextPositionVertical();
 		//config.x = newXY.x;
 		//config.y = newXY.y;
@@ -92,11 +129,77 @@ Kinetic.WorkFlowElement = function (config)
 
 Kinetic.WorkFlowElement.prototype = {
 
- 	connectTo : function (el)
+ 	connectTo : function (connectConfig)
 	{
-		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
-	
+		//this is always the output as its being connected to an input
+		//need to check whether this map already exists
+		var foundCon  = _.find(this.ioConnections,function(ioCon)
+						{
+							return _.isEqual(ioCon,connectConfig);
+						});
+		if (foundCon != undefined)
+		{
+			//this connection has already been defined
+			return false;
+		}
+		else
+		{
+			//this is not a current connection
+			//so we need to save it in the list
+			this.ioConnections.push(connectConfig);
+			connectConfig.input.obj.ioConnections.push(connectConfig);
+			//check whether we should draw a connection, ie whether the connection has not already been drawn
+			var that = this;
+			foundCon = _.find(this.vertices, function(vert)
+						{
+							return vert.start == that && vert.end == connectConfig.input.obj;
+						});
+			if(foundCon == undefined)
+			{
+				//no connection, so create one
+				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black"}); 
+				this.getLayer().add(connection);
+				
+				this.getLayer().draw();
+			}
+			return true;
+		}
+	},
+	disconnect :function(connectConfig)
+	{
+		//this is always the output
+		//delete from IO connections
+		this.ioConnections.splice(_.indexOf(this.ioConnections, connectConfig),1);
+		if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
+		{
+			//get the component of the ioObject, then use this to delete its ioConection
+			var comToDelete = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
+			comToDelete.ioConnections.splice(_.indexOf(comToDelete.ioConnections, connectConfig),1);
+		}
+		else
+		{
+			connectConfig.input.obj.ioConnections.splice(_.indexOf(connectConfig.input.obj.ioConnections, connectConfig),1);
+		}
+		//delete from vertices, if this is the last ioconnection for this and input
+		var foundCon  = _.find(this.ioConnections,function(ioCon)
+						{
+							return _.isEqual(ioCon.input.obj,connectConfig.input.obj) && _.isEqual(ioCon.output.obj,connectConfig.output.obj);
+						});
+		//if its undefined that means there should not be a connection
+		if (foundCon == undefined)
+		{
+			//need to delete
+			//find the connection in vertices
+			var that = this;
+			foundCon = _.find(this.vertices, function(vert)
+						{
+							return vert.start == that && vert.end == connectConfig.input.obj;
+						});
+			foundCon.remove();
+			this.getLayer().draw();
+			
+		}
+		
 	},
 	addConnectionsToLayer : function ()
 	{
@@ -171,7 +274,7 @@ Kinetic.WorkFlowStart = function (config)
           x: config.x,
           y: config.y,
           radius: radius,
-          fill: "green",
+          fill: "51A351",
           stroke: "black",
           strokeWidth: 2
     });
@@ -244,7 +347,7 @@ Kinetic.WorkFlowEnd = function (config)
     this.textElement = new Kinetic.Text({
           x: config.x,
           y: config.y+radius+10,
-          text: "Start",
+          text: "End",
           fontSize: 10,
           fontFamily: "Calibri",
           textFill: "black",
@@ -455,7 +558,7 @@ Kinetic.Connection.prototype = {
 					case 1:
 						return {
 							x:r2.getAbsolutePosition().x - r2.getRadius(), 
-							y:r2.getAbsolutePosition().y - r2.getRadius()
+							y:r2.getAbsolutePosition().y
 						}
 						break;
 					case 2:
@@ -508,6 +611,13 @@ Kinetic.Connection.prototype = {
 				}
 			}
 	},
+	remove : function()
+	{
+		this.start.vertices.splice(_.indexOf(this.start.vertices,this),1);
+		this.end.vertices.splice(_.indexOf(this.end.vertices,this),1);
+		this.getLayer().remove(this);
+		
+	},
 	//gets where the object are in terms of each other, so you can connect to the correct side
 	_getOrientation : function(box1, box2 ) {  // 1=left, 2=right, 3=above, 4=below
 		var pos1 = box1.getAbsolutePosition();
@@ -521,10 +631,10 @@ Kinetic.Connection.prototype = {
 		}
 		if(box2 instanceof Kinetic.Circle)
 		{
-			if( pos2.x + box2.getRadius() <= pos1.x ) {  return 3 }
-			if( pos2.x + box2.getRadius().width <= pos1.x ) {  return 3 }
-			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 3; }
-			return 1;
+			if( pos2.x + box2.getRadius() <= pos1.x ) {  return 2; }
+			if( pos1.x + box1.getWidth() <= pos2.x ) {  return 1; }
+			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 4; }
+			return 3;
 		}
 		if( pos1.x + box1.getSize().width <= pos2.x ) { return 1; }
 		if( pos2.x + box2.getSize().width <= pos1.x ) {  return 2 }

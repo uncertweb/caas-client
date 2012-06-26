@@ -2,13 +2,107 @@ var fontSize = 10;
 
 Kinetic.WorkFlow = function (config)
 {
-	this.vertices 	= new Array();
+	this.vertices = new Array();
 	
 	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
 	this.classType = "WorkFlow";
 	this.components = new Array();
-	
-	
+	this.title = config.text;
+	this.setStroke = function (colour)
+	{
+		this.mainElement.setStroke(colour);
+	};
+	this.getComponentOfIO = function(id)
+	{
+		return _.find(this.components, function(com){ return com.getIOObject(id) != undefined; })
+	}
+	this.getIOObject = function(id)
+	{
+		//loop through all components
+		return this.getComponentOfIO(id).getIOObject(id);
+	};
+	this.getInputConnections = function(output)
+	{
+		//find all connections that have the output as the output, for each component
+		var allInputsCons = new Array();
+		if(output instanceof Kinetic.WorkFlow)
+		{
+			//if the input is a component then we need to check for inputs.components
+			//so loop all components
+			//find if one of the input.components equals the io input
+			//if it does, then this is a ioConnection to return
+			_.each(this.components, function(com){
+				allInputsCons  = allInputsCons.concat(
+					_.filter(com.ioConnections, 
+						function(io){ return _.find(output.components, 
+										function(comOutput)				
+										{ 
+											return _.isEqual(io.output.obj,comOutput);
+										}) != undefined;
+									})
+				);
+			});
+
+		}
+		else
+		{
+			_.each(this.components, function(com){
+				allInputsCons =  allInputsCons.concat(_.filter(com.ioConnections, function(io){ return _.isEqual(io.output.obj,output);}));
+			});
+		}
+		return allInputsCons;
+	};
+	this.getOutputConnections = function(input)
+	{
+		//find all connections that have the output as the output
+		var allOutputsCons = new Array();
+		if(input instanceof Kinetic.WorkFlow)
+		{
+			//if the input is a component then we need to check for inputs.components
+			//so loop all components
+			//find if one of the input.components equals the io input
+			//if it does, then this is a ioConnection to return
+			_.each(this.components, function(com){
+				allOutputsCons  = allOutputsCons.concat(
+					_.filter(com.ioConnections, 
+						function(io){ return _.find(input.components, 
+										function(comInput)				
+										{ 
+											return _.isEqual(io.input.obj,comInput);
+										}) != undefined;
+									})
+				);
+			});
+
+		}
+		else
+		{
+			_.each(this.components, function(com){
+				allOutputsCons  = allOutputsCons.concat(_.filter(com.ioConnections, function(io){ return _.isEqual(io.input.obj,input);}));
+			});
+		}
+		return allOutputsCons;
+	};
+	//to get input and outputs of a workflow, need to loop components
+	//this may change, dependant on if we do not include taken ones
+	this.getInputs = function ()
+	{
+		var collectedIns = new Array();
+		_.each(this.components, function(com)
+		{
+			collectedIns = collectedIns.concat(com.getInputs());
+		});
+		return collectedIns;
+	};
+	this.getOutputs = function ()
+	{
+		var collectedOuts = new Array();
+		_.each(this.components, function(com)
+		{
+			collectedOuts = collectedOuts.concat(com.getOutputs());
+		});
+		return collectedOuts;
+	};
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.standAlone = config.standalone;
 	if(this.standAlone == true)
@@ -40,18 +134,12 @@ Kinetic.WorkFlow = function (config)
 		});
 
 	}
-
 	//update the size of the element, to ensure it covers all internal elements
 	this.updateSizeAndPosOfMainEl();
 	this.on("dragmove", function() 
 	{ 
 		this.updateAllVertices();
-		
 	});
-		
-	
-	
-	
 }
 Kinetic.WorkFlow.prototype = {
 
@@ -79,11 +167,11 @@ Kinetic.WorkFlow.prototype = {
 	    if(this.components.length == 0)
 	    {
 	    	//connect to the start
-	    	this.startElement.connectTo(comGroup);
+	    	//this.startElement.connectTo(comGroup);
 	    }
 	    else
 	    {
-	    	this.components[this.components.length -1].connectTo(comGroup);
+	    	//this.components[this.components.length -1].connectTo(comGroup);
 	    }
 	    
 	    this.components.push(comGroup);
@@ -96,26 +184,144 @@ Kinetic.WorkFlow.prototype = {
 	    this.moveComponentsToTop();
 	    
 	},
+	addElements : function(els)
+	{
+		var t = this;
+		_.each(els,function(el)
+		{
+			//update the position of the el
+			//need to reset the group position
+			el.setPosition({x:0,y:0});
+			ctx = t.getLayer().getContext();
+			TL = ctx.measureText(el.text[0].substring(0, 40)).width * 1.5;
+			position = t.findWhereToPutNewElement(TL);
+			t.add(el);
+			t.components.push(el);
+			el.setAllPositions(position);
+			
+			el.setAttrs({draggable:t.standAlone});
+		});
+		this.updateSizeAndPosOfMainEl();	
+		
+	},
 	updateAllVertices : function ()
 	{
 		if(this.standAlone ==false || this.standAlone == undefined)
 		{
 			this.mainElement.updateAllVertices();
 			for(Vi=0;Vi<this.vertices.length;Vi++) { this.vertices[Vi]._dragUpdate(); }
-
 		}
-		
-		
 		for(Ci=0;Ci<this.components.length;Ci++) { this.components[Ci].updateAllVertices(); }
 		this.startElement.updateAllVertices();
 	},
-	connectTo : function (el)
+	/*connectTo : function (el)
 	{
 		//need to connect this to the main element as thats the outer layer
 		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
 		this.getLayer().add(connection);
 
 	
+	},*/
+	connectTo : function (connectConfig)
+	{
+		//this is always the output as its being connected to an input
+		//need to check whether this map already exists
+		//as this is a workflow, we need to check the element
+		
+		//output component
+		var outputCom = this.getComponentOfIO(connectConfig.output.outputIO.id);
+		//change the output from workflow to component
+		connectConfig.output.obj = outputCom;
+		var foundCon  = _.find(outputCom.ioConnections,function(ioCon)
+						{
+							return _.isEqual(ioCon,connectConfig);
+						});
+		if (foundCon != undefined)
+		{
+			//this connection has already been defined
+			return false;
+		}
+		else
+		{
+			//this is not a current connection
+			//so we need to save it in the list
+			outputCom.ioConnections.push(connectConfig);
+			if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
+			{
+				var inputCom = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
+				inputCom.ioConnections.push(connectConfig);	
+			}
+			else
+			{
+				connectConfig.input.obj.ioConnections.push(connectConfig);
+			}
+			
+			
+			//check whether we should draw a connection, ie whether the connection has not already been drawn
+			var that = this;
+			foundCon = _.find(this.vertices, function(vert)
+						{
+							return vert.start == that && vert.end == connectConfig.input.obj;
+						});
+			if(foundCon == undefined)
+			{
+				//no connection, so create one
+				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black"}); 
+				this.getLayer().add(connection);
+				this.getLayer().draw();
+			}
+			return true;
+		}
+	},
+	disconnect :function(connectConfig)
+	{
+		//this is always the output
+		//delete from IO connections
+		//output component
+		var outputCom = this.getComponentOfIO(connectConfig.output.outputIO.id);
+		//change the output from workflow to component
+		connectConfig.output.obj = outputCom;
+		connectConfig.output.obj.ioConnections.splice(_.indexOf(this.ioConnections, connectConfig),1);
+		if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
+		{
+			//get the component of the ioObject, then use this to delete its ioConection
+			var comToDelete = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
+			comToDelete.ioConnections.splice(_.indexOf(comToDelete.ioConnections, connectConfig),1);
+		}
+		else
+		{
+			connectConfig.input.obj.ioConnections.splice(_.indexOf(connectConfig.input.obj.ioConnections, connectConfig),1);
+		}
+		//may need to change the input obj, as it needs to be an element
+		if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
+		{
+			var inputCom = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
+				
+		}
+		else
+		{
+			var inputCom = connectConfig.input.obj;
+		}
+		//delete from vertices, if this is the last ioconnection for this and input
+		var foundCon  = _.find(connectConfig.output.obj.ioConnections,function(ioCon)
+						{
+							return _.isEqual(ioCon.input.obj,inputCom) && _.isEqual(ioCon.output.obj,connectConfig.output.obj);
+						});
+		//if its undefined that means there should not be a connection
+		if (foundCon == undefined)
+		{
+			//need to delete
+			//find the connection in vertices
+			var that = this;
+			foundCon = _.find(this.vertices, function(vert)
+						{
+							return vert.start == that && vert.end == connectConfig.input.obj;
+						});
+			foundCon.remove();
+			this.getLayer().draw();
+			
+		}
+		
 	},
 	addConnectionsToLayer : function ()
 	{
