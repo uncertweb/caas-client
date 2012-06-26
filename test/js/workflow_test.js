@@ -670,18 +670,26 @@
 
       this.encoder = UncertWeb.Encode;
       var w = new UncertWeb.Workflow(),
+          w2 = new UncertWeb.Workflow(),
           c,
-          c2;
+          c2,
+          c3;
 
       UncertWeb.broker.all().done(function (results) {
         c = new UncertWeb.Component(results.results[0]);
         c2 = new UncertWeb.Component(results.results[1]);
-        w.append([c, c2]);
+        c3 = new UncertWeb.Component(results.results[2]);
+        w2.append(c3);
+        c.connect(c._outputs[0], c2._inputs[0]);
+        c.connect(c._outputs[1], c2._inputs[1]);
+        // c.connect(c._outputs[0], c2._inputs[1]);
+        w.append([c, c2, w2]);
         self.bpmn = UncertWeb.Encode.asBPMN(w);
         self.$bpmn = $(self.bpmn);
         self.workflow = w;
         self.component1 = c;
         self.component2 = c2;
+        self.component3 = c3;
         start();
       });
     }
@@ -751,42 +759,53 @@
 
   test('BPMN start events', function() {
     // Start and end events
-    var $start = this.$bpmn.find('startEvent'),
-        start = $start.get(0);
-    equal($start.length, 1, "A workflow should have a start event");
+    var self = this,
+        $starts = this.$bpmn.find('startEvent');
 
-    var startID = $start.attr('id');
-    ok(startID, "and it should have an ID");
-    equal(startID, this.workflow.id + "_start", "that is equal to the workflow ID and _start");
+    $starts.each(function () {
+      var $start = $(this),
+          start = $start.get(0);
+      equal($start.length, 1, "there should be a start event for each workflow");
 
-    var startIsInterrupting = start.getAttribute('isInterrupting');
-    ok(startIsInterrupting, "and it should have an isInterrupting attribute");
-    equal(startIsInterrupting, "true", "that is set to true");
+      var startID = $start.attr('id');
+      ok(startID, "and it should have an ID");
 
-    var startName = start.getAttribute('name');
-    ok(startName, "and it should have a name");
-    equal(startName, "Start", "that is equal to Start");
+      var startIsInterrupting = start.getAttribute('isInterrupting');
+      ok(startIsInterrupting, "and it should have an isInterrupting attribute");
+      equal(startIsInterrupting, "true", "that is set to true");
 
-    var startParellel = start.getAttribute('parallelMultiple');
-    ok(startParellel, "it should also have a parallelMultiple attribute");
-    equal(startParellel, "false", "that is false");
+      var startName = start.getAttribute('name');
+      ok(startName, "and it should have a name");
+      equal(startName, "Start", "that is equal to Start");
+
+      var startParellel = start.getAttribute('parallelMultiple');
+      ok(startParellel, "it should also have a parallelMultiple attribute");
+      equal(startParellel, "false", "that is false");
+    });
+
   });
 
   test('BPMN end events', function() {
-    var $end = this.$bpmn.find('endEvent');
-    equal($end.length, 1, "A workflow should have a single end event");
+    var $ends = this.$bpmn.find('endEvent');
 
-    var endID = $end.attr('id');
-    ok(endID, "and it should have an ID attribute");
-    equal(endID, this.workflow.id + "_end", "and it should be equal to the workflow ID + _end");
+    $ends.each(function () {
+      var $end = $(this);
+      equal($end.length, 1, "A workflow should have a single end event");
 
-    var endName = $end.attr('name');
-    ok(endName, "and it should have a name attribute");
-    equal(endName, "End", "that is equal to End");
+      var endID = $end.attr('id');
+      ok(endID, "and it should have an ID attribute");
 
-    var ed = $end.find('terminateEventDefinition');
+      var endName = $end.attr('name');
+      ok(endName, "and it should have a name attribute");
+      equal(endName, "End", "that is equal to End");
+    });
+
+    var $theEnd = $ends.last();
+
+    var ed = $theEnd.find('terminateEventDefinition');
     ok(ed, "An end event should have a terminateEventDefinition child");
     ok(ed.attr('id'), 'with an ID attribute');
+
   });
 
   test('BPMN script task', function() {
@@ -816,8 +835,216 @@
     equal(taskID, this.component1.id, 'that is equal to the component ID');
   });
 
-  test('BPMN IO linking', function() {
-    var $tasks = this.$bpmn.find('scriptTask');
+  test('incoming/outgoing', function() {
+    console.log(this.$bpmn);
+    var self = this,
+        $tasks = this.$bpmn.find('scriptTask'),
+        $start = this.$bpmn.find('startEvent'),
+        $end = this.$bpmn.find('endEvent');
+
+    $tasks.each(function () {
+      var $task = $(this),
+          $incoming = $task.find('incoming'),
+          $outgoing = $task.find('outgoing'),
+          $inSeqFlow = self.$bpmn.find('sequenceFlow[targetRef="' + $task.attr('id') + '"]'),
+          $outSeqFlow = self.$bpmn.find('sequenceFlow[sourceRef="' + $task.attr('id') + '"]');
+
+      equal($incoming.length, 1, "every script task should have an incoming element");
+      equal($outgoing.length, 1, "every script task should have an outgoing element");
+
+      equal($incoming.text(), $inSeqFlow.attr('id') , "the incoming value should be equal to the sequence flow ID that references this script task in its targetRef attribute");
+      equal($outgoing.text(), $outSeqFlow.attr('id'), "the outgoing value should be equal to the sequence flow ID that references this task in its sourceRef attribute");
+    });
+
+    $start.each(function () {
+      equal($(this).find('outgoing').length, 1, "start events should have an outgoing element");
+      equal($(this).find('incoming').length, 0, "but no incoming element");
+    });
+
+    $end.each(function () {
+      equal($(this).find('incoming').length, 1, "the end event should have an incoming element");
+      equal($(this).find('outgoing').length, 0, "and no outgoing element");
+    });
+  });
+
+  test('BPMN ioSpecification', function() {
+    var self = this,
+        $outIO = this.$bpmn.find('scriptTask[id="' + this.component1.id + '"]').find('ioSpecification'),
+        $inIO = this.$bpmn.find('scriptTask[id="' + this.component2.id + '"]').find('ioSpecification'),
+        $noIO = this.$bpmn.find('scriptTask[id="' + this.component3.id + '"]').find('ioSpecification');
+
+    equal($outIO.length, 1, "a scriptTask with specified IO linking should have an ioSpecification element");
+    equal($inIO.length, 1, "a scriptTask with specified IO linking should have an ioSpecification element");
+    equal($noIO.length, 0, "but a scriptTask with no specified IO shouldnt have an ioSpecification element");
+
+    $([$outIO, $inIO]).each(function () {
+      var $io = $(this);
+      equal($io.find('inputSet').length, 1, 'an ioSpecification should have an inputSet element');
+      equal($io.find('outputSet').length, 1, 'an ioSpecification should have an outputSet element');
+    });
+
+    var $dataOut = $outIO.find('dataOutput');
+    equal($dataOut.length, 2, "an ioSpecification should have 1 dataOutput element for every connected output");
+    equal($outIO.find('dataInput').length, 0, "an ioSpecification should not have a dataInput element if it has no connected inputs");
+
+    var $dataIn = $inIO.find('dataInput');
+    equal($dataIn.length, 2, "an ioSpecification should have 1 dataInput element for every connected input");
+    equal($inIO.find('dataOutput').length, 0, "an ioSpecification should not have a dataOutput if it has no connected outputs");
+  });
+
+  test('BPMN dataOutput', function() {
+    var self = this,
+        $outIO = this.$bpmn.find('scriptTask[id="' + this.component1.id + '"]').find('ioSpecification');
+
+    var $dataOuts = $outIO.find('dataOutput');
+
+    $dataOuts.each(function (index) {
+      var $dataOut = $(this);
+      ok($dataOut.attr('id'), 'a dataOutput element should have an ID attribute');
+      equal($dataOut.attr('id'), self.component1._outputs[index].id, "that is equal to the ID of the output");
+
+      ok($dataOut.get(0).getAttribute('isCollection'), 'it should also have an isCollection attribute');
+      equal($dataOut.get(0).getAttribute('isCollection'), 'false', 'that is equal to false');
+
+      ok($dataOut.attr('name'), 'and a name attribute');
+      equal($dataOut.attr('name'), self.component1._outputs[index].name, "that is equal to the output name");
+    });
+
+  });
+
+  test('BPMN dataInput', function() {
+    var self = this,
+        $inIO = this.$bpmn.find('scriptTask[id="' + this.component2.id + '"]').find('ioSpecification');
+
+    var $dataIns = $inIO.find('dataInput');
+
+    $dataIns.each(function (index) {
+      var $dataIn = $(this);
+      ok($dataIn.attr('id'), 'a dataInput element should have an ID attribute');
+      equal($dataIn.attr('id'), self.component2._inputs[index].id, "that is equal to the ID of the input");
+
+      ok($dataIn.get(0).getAttribute('isCollection'), 'it should also have an isCollection attribute');
+      equal($dataIn.get(0).getAttribute('isCollection'), 'false', 'that is equal to false');
+
+      ok($dataIn.attr('name'), 'and a name attribute');
+      equal($dataIn.attr('name'), self.component2._inputs[index].name, "that is equal to the input name");
+    });
+
+  });
+
+  test('BPMN outputSet', function() {
+    console.log(this.$bpmn);
+    var self = this,
+        $outIO = this.$bpmn.find('scriptTask[id="' + this.component1.id + '"]').find('ioSpecification'),
+        $set = $outIO.find('outputSet');
+
+    equal($set.find('dataOutputRefs').length, 2, 'an outputSet should have the same number of dataOutputRefs as connected outputs');
+    equal($outIO.find('inputSet').children().length, 0, 'an inputSet should be empty if there are no connected inputs');
+    $set.find('dataOutputRefs').each(function (index) {
+      var $ref = $(this);
+      equal($ref.text(), self.component1._outputs[index].id, 'the value of a dataOutputRefs element should be the ID of an output');
+    });
+
+  });
+
+  test('BPMN inputSet', function() {
+    console.log(this.$bpmn);
+    var self = this,
+        $inIO = this.$bpmn.find('scriptTask[id="' + this.component2.id + '"]').find('ioSpecification'),
+        $set = $inIO.find('inputSet');
+
+    equal($set.find('dataInputRefs').length, 2, 'an inputSet should have the same number of dataInputRefs as connected inputs');
+    equal($inIO.find('outputSet').children().length, 0, 'an outputSet should be empty if there are no connected inputs');
+    $set.find('dataInputRefs').each(function (index) {
+      var $ref = $(this);
+      equal($ref.text(), self.component2._inputs[index].id, 'the value of a dataInputRefs element should be the ID of an input');
+    });
+  });
+
+  test('BPMN dataObject', function () {
+    var self = this,
+        $dos = this.$bpmn.find('dataObject');
+    console.log(this.$bpmn);
+    equal($dos.length, 2, "there should be a dataObject element for each connection");
+
+    $dos.each(function (index) {
+      var $do = $(this);
+
+      ok($do.attr('id'), 'a dataObject should have an ID attribute');
+      equal(self.$bpmn.find('[id="' + $do.attr('id') + '"]').length, 1, 'that is unique');
+
+      ok($do.get(0).getAttribute('isCollection'), "and it should have an isCollection attribute");
+      equal($do.get(0).getAttribute('isCollection'), 'false', 'that is false');
+
+      ok($do.attr('name'), 'and a name attribute');
+      equal($do.attr('name'), 'ParameterName', 'that is equal to ParameterName');
+
+    });
+
+  });
+
+  test('BPMN dataObjectReference', function () {
+    var self = this,
+        $dors = this.$bpmn.find('dataObjectReference');
+    console.log(this.$bpmn);
+    equal($dors.length, 2, "there should be a dataObjectReference element for each connection");
+
+    $dors.each(function (index) {
+      var $dor = $(this);
+
+      ok($dor.get(0).getAttribute('dataObjectRef'), 'a dataObjectReference should have a dataObjectRef attribute');
+      equal(self.$bpmn.find('dataObject[id="' + $dor.get(0).getAttribute('dataObjectRef') + '"]').length, 1, 'that references a dataObject element');
+
+      ok($dor.attr('id'), 'it should also have an ID attribute');
+
+    });
+  });
+
+  test("BPMN dataOutputAssociation", function () {
+    console.log(this.$bpmn);
+    var self = this,
+        $outIO = this.$bpmn.find('scriptTask[id="' + this.component1.id + '"]'),
+        $doas = $outIO.find('dataOutputAssociation');
+
+    equal($doas.length, 2, 'a scriptTask should have a dataOutputAssociation for every connected output');
+
+    $doas.each(function (index) {
+      var $doa = $(this);
+
+      ok($doa.attr('id'), 'a dataOutputAssociation should have an ID attribute');
+      equal(self.$bpmn.find('[id="' + $doa.attr('id') + '"]').length, 1, 'that is unique');
+
+      equal($doa.find('sourceRef').length, 1, 'and it should have a sourceRef child');
+      equal($doa.find('targetRef').length, 1, 'and a targetRef child');
+
+      equal($doa.find('sourceRef').text(), self.component1._outputs[index].id, 'the sourceRef value should be the same as the output ID');
+      var targetRef = $doa.find('targetRef').text();
+      equal(self.$bpmn.find('dataObjectReference[id="' + targetRef + '"]').length,1, 'that references a dataObjectReference');
+    });
+  });
+
+  test('BPMN dataInputAssociation', function() {
+    console.log(this.$bpmn);
+    var self = this,
+        $inIO = this.$bpmn.find('scriptTask[id="' + this.component2.id + '"]'),
+        $dias = $inIO.find('dataInputAssociation');
+
+    equal($dias.length, 2, 'a scriptTask should have a dataInputAssociation for every connected input');
+
+    $dias.each(function (index) {
+      var $dia = $(this);
+
+      ok($dia.attr('id'), 'a dataInputAssociation should have an ID attribute');
+      equal(self.$bpmn.find('[id="' + $dia.attr('id') + '"]').length, 1, 'that is unique');
+
+      equal($dia.find('sourceRef').length, 1, 'and it should have a sourceRef child');
+      equal($dia.find('targetRef').length, 1, 'and a targetRef child');
+
+      var sourceRef = $dia.find('sourceRef').text();
+      equal(self.$bpmn.find('dataObjectReference[id="' + sourceRef + '"]').length, 1, 'the sourceRef value should reference a dataObjectReference element');
+      // var targetRef = $dia.find('targetRef').text();
+      equal($dia.find('targetRef').text(), self.component2._inputs[index].id, 'and the targetRef value should be the ID of the connected input');
+    });
   });
 
   test("BPMN sequence flow", function () {
@@ -830,7 +1057,7 @@
     // Sequence flow
     var $sequences = this.$bpmn.find('sequenceFlow');
     ok($sequences.length, "A workflow should have at least 1 sequenceFlow element");
-    equal($sequences.length, this.workflow.length + 1, "actually it should have 1 for each child plus 1 to start");
+    equal($sequences.length, 6, "actually it should have 1 for each child plus 1 to start");
 
     var startSeq = $sequences.filter(function (index) {
       return this.getAttribute('sourceRef') == startID;
@@ -895,7 +1122,7 @@
     equal(sp.getAttribute('triggeredByEvent'), 'false', 'that is equal to false');
 
     var nestedEnd = $sp.find('endEvent');
-    ok(nestedEnd.children().length === 0, "A nested end event does not have a terminateEventDefinition child");
+    equal(nestedEnd.find('terminateEventDefinition').length, 0, "A nested end event does not have a terminateEventDefinition child");
 
     var $loopChars = $sp.find('multiInstanceLoopCharacteristics').eq(0),
         loopChars = $loopChars.get(0);
@@ -1010,15 +1237,15 @@
   });
 
   test('IO structure', function() {
-    ok(this.component.inputs, "A component should have inputs");
-    ok(this.component.outputs, "and it should have outputs");
-    ok(this.component.inputs.length !== undefined, "inputs should have a length");
-    ok(this.component.outputs.length !== undefined, "outputs should have a length");
+    ok(this.component.inputs(), "A component should have inputs");
+    ok(this.component.outputs(), "and it should have outputs");
+    ok(this.component.inputs().length !== undefined, "inputs should have a length");
+    ok(this.component.outputs().length !== undefined, "outputs should have a length");
   });
 
   test('IO object', function() {
-    var input = this.component.inputs[0];
-    var output = this.component.outputs[0];
+    var input = this.component._inputs[0];
+    var output = this.component._outputs[0];
     ok(UncertWeb.isObject(input), "an input should be an object");
     ok(UncertWeb.isObject(output), "an output should be an object");
 
@@ -1052,8 +1279,8 @@
   });
 
   test("Creating a connection between an output and input object", function () {
-    var output = this.component.outputs[0];
-    var input = this.component2.inputs[0];
+    var output = this.component._outputs[0];
+    var input = this.component2._inputs[0];
     ok(this.component.connect, "A component should have a connect property");
     ok(UncertWeb.isFunction(this.component.connect), "that is a function");
 
@@ -1072,8 +1299,8 @@
   });
 
   test("Creating a connection between an ouput ID and an input ID", function () {
-    var output = this.component.outputs[0];
-    var input = this.component2.inputs[0];
+    var output = this.component._outputs[0];
+    var input = this.component2._inputs[0];
     ok(this.component.connect, "A component should have a connect property");
     ok(UncertWeb.isFunction(this.component.connect), "that is a function");
 
@@ -1092,8 +1319,8 @@
 
   test("Finding connections between components", function () {
     var connectedTo = this.component.connectedTo;
-    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
-    this.component.connect(this.component.outputs[0], this.component2.inputs[1]);
+    this.component.connect(this.component._outputs[0], this.component2._inputs[0]);
+    this.component.connect(this.component._outputs[0], this.component2._inputs[1]);
 
     ok(connectedTo, "A component should provide a connectedTo attribute");
     ok(UncertWeb.isFunction(connectedTo), "that is a function");
@@ -1117,9 +1344,25 @@
     equal(this.component.connectionsTo(this.component).length, 0, "no connections should exist between the same component");
   });
 
+  test("Finding connected outputs", function () {
+    this.component.connect(this.component.outputs()[0], this.component2.inputs()[0]);
+
+    equal(this.component.outputs().length, 2, "outputs with no parameter should return all outputs");
+    equal(this.component.outputs(true).length, 1, "outputs with true supplied returns only those outputs that are connected");
+    equal(this.component.outputs(true)[0], this.component._outputs[0], "and it should return the connected output");
+  });
+
+  test("Finding connected inputs", function () {
+    this.component.connect(this.component.inputs()[0], this.component2.inputs()[0]);
+
+    equal(this.component2.inputs().length, 2, "inputs with no parameter should return all inputs");
+    equal(this.component2.inputs(true).length, 1, "inputs with true supplied returns only those inputs that are connected");
+    equal(this.component2.inputs(true)[0], this.component2._inputs[0], "and it should return the connected input");
+  });
+
   test("Disconnecting components by connection", function () {
     var disconnect = this.component.disconnect;
-    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
+    this.component.connect(this.component._outputs[0], this.component2._inputs[0]);
 
     ok(disconnect, "a component should have a disconnect attribute");
     ok(UncertWeb.isFunction(disconnect), "that is a function");
@@ -1134,8 +1377,8 @@
   });
 
   test('Disconnectiong components by component', function() {
-    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
-    this.component2.connect(this.component2.outputs[1], this.component.inputs[0]);
+    this.component.connect(this.component._outputs[0], this.component2._inputs[0]);
+    this.component2.connect(this.component2._outputs[1], this.component._inputs[0]);
     equal(this.component.connections.length, 2, "A connection is established");
     equal(this.component2.connections.length, 2, "on both sides");
     this.component2.disconnect(this.component2.connections[0]);
@@ -1143,7 +1386,7 @@
     equal(this.component.connections.length, 1, "And when disconnected it is removed");
     equal(this.component2.connections.length, 1, "from both sides");
 
-    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
+    this.component.connect(this.component._outputs[0], this.component2._inputs[0]);
 
     equal(this.component.connections.length, 2, "A connection is established");
     equal(this.component2.connections.length, 2, "on both sides");
@@ -1155,8 +1398,8 @@
   });
 
   test('Disconnection all connections of a component', function() {
-    this.component.connect(this.component.outputs[0], this.component2.inputs[0]);
-    this.component2.connect(this.component2.outputs[1], this.component.inputs[0]);
+    this.component.connect(this.component._outputs[0], this.component2._inputs[0]);
+    this.component2.connect(this.component2._outputs[1], this.component._inputs[0]);
 
     equal(this.component.connections.length, 2, "A connection is established");
     equal(this.component2.connections.length, 2, "on both sides");

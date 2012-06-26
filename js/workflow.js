@@ -244,7 +244,7 @@
 
   function searchComponent (component, id) {
     if (UncertWeb.isComponent(component)) {
-      var arr = component.inputs.concat(component.outputs);
+      var arr = component._inputs.concat(component._outputs);
       for (i = 0; i < arr.length; i++) {
         if(arr[i].id == id) {
           return arr[i];
@@ -274,21 +274,59 @@
     this.description = opts.description || "";
     this.annotation = opts.annotation || "";
 
-    this.inputs = opts.inputs || [];
-    this.outputs = opts.outputs || [];
+    this._inputs = opts.inputs || [];
+    this._outputs = opts.outputs || [];
     this.connections = [];
 
     this.root = _root;
 
     // setup parent references in the IO objects
     var i;
-    for (i = 0; i < this.inputs.length; i++) {
-      this.inputs[i].component = this;
+    for (i = 0; i < this._inputs.length; i++) {
+      this._inputs[i].component = this;
     }
 
-    for (i = 0; i < this.outputs.length; i++) {
-      this.outputs[i].component = this;
+    for (i = 0; i < this._outputs.length; i++) {
+      this._outputs[i].component = this;
     }
+
+    this.outputs = function (isConnected) {
+      if(isConnected) {
+        var _conns = this.connections,
+            _res = [];
+        for (var i = 0; i < _conns.length; i++) {
+          if(_conns[i].output.component.id === this.id) {
+            _res.push(_conns[i].output);
+          }
+        }
+        return _res;
+      }
+
+      return this._outputs;
+    };
+
+    this.inputs = function (connected) {
+      if(connected) {
+        var _conns = this.connections,
+            _res = [];
+        for (var i = 0; i < _conns.length; i++) {
+          if(_conns[i].input.component.id === this.id) {
+            _res.push(_conns[i].input);
+          }
+        }
+        return _res;
+      }
+
+      return this._inputs;
+    };
+
+    this.findConnection = function (io) {
+      for (var i = 0; i < this.connections.length; i++) {
+        if(this.connections[i].input == io || this.connections[i].output == io) {
+          return this.connections[i];
+        }
+      }
+    };
 
     this.connect = function (output, input) {
       output = UncertWeb.isObject(output) ? output : searchWorkflow(this.root(), output);
@@ -393,6 +431,7 @@
         return false;
       }
     };
+
   };
 
 
@@ -615,13 +654,16 @@
 
   // Helper function to generate a scriptTask node for a component
   function scriptTask(component) {
-    return XML('scriptTask', {
-      completionQuantity: 1,
-      isForCompensation: false,
-      name: component.annotation,
-      startQuantity: 1,
-      id: component.id
-    });
+    return XML(
+        'scriptTask',
+        {
+          completionQuantity: 1,
+          isForCompensation: false,
+          name: component.annotation,
+          startQuantity: 1,
+          id: component.id
+        }
+    );
   }
 
   // Create a subProcess element
@@ -720,19 +762,201 @@
     appendTo.appendChild(endEvent(endID, !isNestedWorkflow));
 
     // Add the sequence flow
-    appendTo.appendChild(sequenceFlow(startID, workflow[0].id));
+    createLink(appendTo, startID, workflow[0]);
 
     // Assume workflow is in order of execution
     for ( i = 0; i < workflow.length - 1; i++) {
       var c = workflow[i];
       var end = workflow[i+1];
-      appendTo.appendChild(sequenceFlow(c.id, end.id));
+      createLink(appendTo, c, end);
     }
 
     // Add end sequence
-    appendTo.appendChild(sequenceFlow(workflow[workflow.length - 1].id, endID));
+    createLink(appendTo, workflow[workflow.length - 1], endID);
   }
 
+  // Creates a link between 2 components
+  function createLink (doc, from, to) {
+    var fromID = from.id || from,
+        toID = to.id || to;
+
+    // Append the sequenceFlow attribute
+    doc.appendChild(sequenceFlow(fromID, toID));
+    // update the script tasks
+    var $doc = $(doc),
+        start = $doc.find('[id="' + fromID + '"]').get(0),
+        end = $doc.find('[id="' + toID + '"]').get(0);
+
+    end.appendChild(incoming(fromID, toID));
+    start.appendChild(outgoing(fromID, toID));
+
+    if(from.connections && from.connections.length > 0) {
+      start.appendChild(ioSpecification(from));
+      appendDataOutputAssociations(doc, start, end, from);
+    }
+  }
+
+  function incoming (from, to) {
+    return XML(
+      'incoming',
+      from + '-' + to
+    );
+  }
+
+  function outgoing (from, to) {
+    return XML(
+      'outgoing',
+      from + '-' + to
+    );
+  }
+
+  function ioSpecification (component) {
+    var io = XML('ioSpecification'),
+        i;
+
+    for(i = 0; i < component.outputs(true).length; i++) {
+      io.appendChild(dataOutput(component.outputs(true)[i]));
+    }
+
+    for(i = 0; i < component.inputs(true).length; i++) {
+      io.appendChild(dataInput(component.inputs(true)[i]));
+    }
+
+    io.appendChild(inputSet(component));
+    io.appendChild(outputSet(component));
+
+    return io;
+  }
+
+  function dataOutput (output) {
+    return XML(
+      'dataOutput',
+      {
+        id: output.id,
+        isCollection: false,
+        name: output.name
+      }
+    );
+  }
+
+  function dataInput (input) {
+    return XML(
+      'dataInput',
+      {
+        id: input.id,
+        isCollection: false,
+        name: input.name
+      }
+    );
+  }
+
+  function inputSet (component) {
+    var set =XML(
+      'inputSet'
+    );
+
+    for (var i = 0; i < component.inputs(true).length; i++) {
+      set.appendChild(dataInputRef(component.inputs(true)[i]));
+    }
+
+    return set;
+  }
+
+  function outputSet (component) {
+    var set = XML(
+      'outputSet'
+    );
+
+    for (var i = 0; i < component.outputs(true).length; i++) {
+      set.appendChild(dataOutputRef(component.outputs(true)[i]));
+    }
+
+    return set;
+  }
+
+  function dataOutputRef (output) {
+    return XML(
+      'dataOutputRefs',
+      output.id
+    );
+  }
+
+  function dataInputRef (input) {
+    return XML(
+      'dataInputRefs',
+      input.id
+    );
+  }
+
+  function appendDataOutputAssociations (doc, scriptTaskFrom, scriptTaskTo, component) {
+    for (var i = 0; i < component.outputs(true).length; i++) {
+      var id = appendDataObject(doc),
+          connection = component;
+      scriptTaskFrom.appendChild(dataOutputAssociation(component.outputs(true)[i].id, id));
+      scriptTaskTo.appendChild(dataInputAssociation(component.findConnection(component.outputs(true)[i]).input.id, id));
+    }
+  }
+
+  function dataOutputAssociation (source, target) {
+    return XML(
+      'dataOutputAssociation',
+      {
+        id: UncertWeb.uid()
+      },
+      XML(
+        'sourceRef',
+        source
+      ),
+      XML(
+        'targetRef',
+        target
+      )
+    );
+  }
+
+  function dataInputAssociation (target, source) {
+    return XML(
+      'dataInputAssociation',
+      {
+        id: UncertWeb.uid()
+      },
+      XML(
+        'sourceRef',
+        source
+      ),
+      XML(
+        'targetRef',
+        target
+      )
+    );
+  }
+
+  function appendDataObject (doc) {
+    var id = UncertWeb.uid(),
+        refID = UncertWeb.uid();
+
+    var _obj = XML(
+      'dataObject',
+      {
+        id: id,
+        isCollection: false,
+        name: 'ParameterName'
+      }
+    );
+
+    var _ref = XML(
+      'dataObjectReference',
+      {
+        dataObjectRef: id,
+        id: refID
+      }
+    );
+
+    doc.appendChild(_obj);
+    doc.appendChild(_ref);
+
+    return refID;
+  }
 
   // Create the Uncertweb.Encode module
   UncertWeb.Encode = {
