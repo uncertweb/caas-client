@@ -89,7 +89,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		
 		//text that was in the main element should go to the top of the screen as a title
 		//create a new workflow, with standalone set to true, this will stop the mainElement rendering
-		this.standAloneWF = new Kinetic.WorkFlow({text:'[3] Mulitple Instances (one for each environmental dataset',x:100,y:10,draggable:false,layer:this,standalone:true});
+		this.standAloneWF = new Kinetic.WorkFlow({text:workFlow.title,x:100,y:10,draggable:false,layer:this,standalone:true});
 		this.standAloneWF.setVertices(workFlow.vertices,workFlow);
 		this.add(this.standAloneWF);
 		
@@ -129,7 +129,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		{
 						//update the currentElements, using standAloneWF
 			//standAloneWF has to updated,as the layout is different
-			tempEl = new Kinetic.WorkFlow({text:'test moveUp',x:100,y:10,draggable:true,layer:this,standalone:false});
+			tempEl = new Kinetic.WorkFlow({text:this.standAloneWF.title,x:100,y:10,draggable:true,layer:this,standalone:false});
 			this.add(tempEl);
 			//the reference in the array has to be updated to the new element
 			tempEl.setVertices(this.standAloneWF.vertices,this.standAloneWF);
@@ -169,6 +169,7 @@ Kinetic.WorkFlowLayer.prototype = {
 	{
 		if(this.ioMode)
 		{
+			$("#io").html('Toggle Input/Output Mode - On');
 			if(this.standAloneWF == null)
 			{
 				//all currentEls need to be clickable
@@ -221,6 +222,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		else
 		{
+			$("#io").html('Toggle Input/Output Mode - Off');
 			this.ioObjects = {input:null,output:null};
 			if(this.standAloneWF == null)
 			{

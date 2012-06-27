@@ -329,9 +329,10 @@ Kinetic.WorkFlow.prototype = {
 	},
 	addConnectionsToLayer : function ()
 	{
-		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
-		if(this.standAlone ==false)
+		
+		if(this.standAlone == false)
 		{
+			for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
 			this.mainElement.addConnectionsToLayer();
 		}
 		
