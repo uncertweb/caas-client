@@ -65,11 +65,9 @@ Kinetic.WorkFlow = function (config)
 			_.each(this.components, function(com){
 				allOutputsCons  = allOutputsCons.concat(
 					_.filter(com.ioConnections, 
-						function(io){ return _.find(input.components, 
-										function(comInput)				
-										{ 
-											return _.isEqual(io.input.obj,comInput);
-										}) != undefined;
+						function(io){  
+								var found = _.find(input.components, function(comInput)	{return _.isEqual(io.input.obj,comInput);}) 
+								return (found != undefined);
 									})
 				);
 			});
@@ -112,6 +110,9 @@ Kinetic.WorkFlow = function (config)
 		
 		this.startElement = new Kinetic.WorkFlowStart({x:config.layer.getStage().getWidth()/2, y:30,text:"Start",draggable:true});
 		this.add(this.startElement);
+		//this.endElement = new Kinetic.WorkFlowStart({x:config.layer.getStage().getWidth()-10, y:30,text:"End",draggable:true});
+		//this.add(this.endElement);
+
 	}
 	else
 	{
@@ -146,7 +147,7 @@ Kinetic.WorkFlow.prototype = {
  	addElement : function(config)  
 	{  
 		
-		config.text = '[' + config.brokerProperties.annotation + '] ' + config.brokerProperties.title;
+		config.text = '[' + config.brokerProperties.annotation + '] ' + config.brokerProperties.name;
 		//create new group for rectangle and text
 		if(this.standAlone)
 		{
@@ -248,8 +249,11 @@ Kinetic.WorkFlow.prototype = {
 			outputCom.ioConnections.push(connectConfig);
 			if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
 			{
+				var oldInput = connectConfig.input.obj;
 				var inputCom = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
-				inputCom.ioConnections.push(connectConfig);	
+				connectConfig.input.obj = inputCom;
+				inputCom.ioConnections.push(connectConfig);
+				connectConfig.input.obj = oldInput;
 			}
 			else
 			{

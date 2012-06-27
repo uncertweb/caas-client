@@ -103,18 +103,24 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	addElement : function (el)
 	{
-		this.add(el);
-		if(this.currentElements[this.currentElements.length -1] instanceof Kinetic.WorkFlowEnd)
+		if(this.standAloneWF == null)
 		{
-			end = this.currentElements.pop();
-			this.currentElements.push(el);
-			this.currentElements.push(end);
+			this.add(el);
+			if(this.currentElements[this.currentElements.length -1] instanceof Kinetic.WorkFlowEnd)
+			{
+				end = this.currentElements.pop();
+				this.currentElements.push(el);
+				this.currentElements.push(end);
+			}
+			else
+			{
+				this.currentElements.push(el);
+			}
 		}
 		else
 		{
-			this.currentElements.push(el);
+			this.standAloneWF.addElements([el]);
 		}
-		
 		this.draw();
 	},
 	moveUp : function ()
@@ -256,10 +262,10 @@ Kinetic.WorkFlowLayer.prototype = {
 		{
 			//get width of current element
 			this.currentElements[iCEls].setPosition({x:0,y:0});
-			currentWidth = this.currentElements[iCEls].getWidth() + 20;
+			currentWidth = this.currentElements[iCEls].getWidth() + 15;
 				
 			//check if adding this current width will overflow the canvas
-			if((rowWidth+currentWidth)>this.getStage().getWidth()-50)
+			if((rowWidth+currentWidth)>this.getStage().getWidth()-40)
 			{
 				
 				//update the X,Ys

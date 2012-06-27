@@ -19,6 +19,7 @@ Kinetic.WorkFlowElement = function (config)
 	};
 	this.textElements = new Array();
 	this.text = config.text;
+	this.title = config.text;
 	//we need to put a line break if too long, currently crude needs to be update
 	this.brokerProperties = config.brokerProperties;
 	this.getInputs = function ()
@@ -75,7 +76,7 @@ Kinetic.WorkFlowElement = function (config)
 	}
 	else if(config.type == "addElement")
 	{
-		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.title;
+		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
 		config.fill = "#51A351";
 		config.alpha = 1;
 		config.text = this.cleanText(config.text);
@@ -85,7 +86,7 @@ Kinetic.WorkFlowElement = function (config)
 	}
 	else
 	{
-		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.title;
+		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
 		config.fill = "#51A351";
 		config.alpha = 1;
 		//newXY = config.layer.findNextPositionVertical();
@@ -147,7 +148,17 @@ Kinetic.WorkFlowElement.prototype = {
 			//this is not a current connection
 			//so we need to save it in the list
 			this.ioConnections.push(connectConfig);
-			connectConfig.input.obj.ioConnections.push(connectConfig);
+			if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
+			{
+				var inputCom = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
+				inputCom.ioConnections.push(connectConfig);	
+			}
+			else
+			{
+				connectConfig.input.obj.ioConnections.push(connectConfig);
+			}
+
+			
 			//check whether we should draw a connection, ie whether the connection has not already been drawn
 			var that = this;
 			foundCon = _.find(this.vertices, function(vert)
@@ -274,7 +285,7 @@ Kinetic.WorkFlowStart = function (config)
           x: config.x,
           y: config.y,
           radius: radius,
-          fill: "51A351",
+          fill: "#51A351",
           stroke: "black",
           strokeWidth: 2
     });
@@ -316,11 +327,11 @@ Kinetic.WorkFlowStart.prototype = {
 	},
 	getHeight : function ()
 	{
-		return this.circle.getRadius() * 2;
+		return this.circle.getRadius();
 	},
 	getWidth : function()
 	{
-		return this.circle.getRadius() * 2;
+		return this.circle.getRadius();
 	}
 
 
