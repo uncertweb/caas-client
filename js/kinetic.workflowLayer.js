@@ -248,6 +248,19 @@ Kinetic.WorkFlowLayer.prototype = {
 			}
 		}
 	},
+	clearIOMode : function()
+	{
+		if (this.ioObjects.input != null)
+		{
+			this.ioObjects.input.setStroke('black');
+		} 
+		if (this.ioObjects.output != null)
+		{
+			this.ioObjects.output.setStroke('black');
+		} 
+		this.ioObjects = {input:null,output:null};
+		this.draw();
+	},
 	reDrawLayer : function ()
 	{
 		//when a new element is added
