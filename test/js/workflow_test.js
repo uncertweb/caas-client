@@ -1171,7 +1171,30 @@
   });
 
 
-  module('CaaS');
+  module('CaaS', {
+    setup: function () {
+      var self = this;
+      stop();
+      var w = new UncertWeb.Workflow(),
+          w2 = new UncertWeb.Workflow(),
+          c,
+          c2,
+          c3;
+
+      UncertWeb.broker.all().done(function (results) {
+        c = new UncertWeb.Component(results.results[0]);
+        c2 = new UncertWeb.Component(results.results[1]);
+        c3 = new UncertWeb.Component(results.results[2]);
+        w2.append(c3);
+        c.connect(c._outputs[0], c2._inputs[0]);
+        c.connect(c._outputs[1], c2._inputs[1]);
+        // c.connect(c._outputs[0], c2._inputs[1]);
+        w.append([c, c2, w2]);
+        self.workflow = w;
+        start();
+      });
+    }
+  });
 
   test("CaaS interface", function () {
     ok(UncertWeb.CaaS, "CaaS should exist");
@@ -1220,6 +1243,23 @@
       start();
     });
 
+  });
+
+  test('CaaS publication with IO', function() {
+    stop();
+    expect(1);
+
+    var promise = UncertWeb.CaaS.publish(this.workflow, {
+      title: 'IO Workflow',
+      description: 'Simple workflow with IO linking',
+      organisation: 'Aston University'
+    });
+
+    promise.done(function (result) {
+      ok(true, "Publishing a BPMN with IO linking should work");
+    }).always(function () {
+      start();
+    });
   });
 
   module("IO", {
