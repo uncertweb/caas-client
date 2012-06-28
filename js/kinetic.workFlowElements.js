@@ -19,9 +19,11 @@ Kinetic.WorkFlowElement = function (config)
 	};
 	this.textElements = new Array();
 	this.text = config.text;
-	this.title = config.text;
-	//we need to put a line break if too long, currently crude needs to be update
+		//we need to put a line break if too long, currently crude needs to be update
 	this.brokerProperties = config.brokerProperties;
+	
+	this.title = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
+
 	this.getInputs = function ()
 	{
 		return this.brokerProperties.inputs;
