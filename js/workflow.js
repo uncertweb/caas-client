@@ -60,6 +60,7 @@
   UncertWeb.options = {
     broker_url: 'lib/broker.php',
     caas_url:   'lib/caas.php',
+    caas_delete_url: 'lib/caas_delete.php',
     // Setup default search options for the broker.
     //
     //- **si**: Start index
@@ -153,7 +154,8 @@
       // Make an AJAX request to the proxy service with the configuration options
       $.ajax({
         url: base_url,
-        data: config
+        data: config,
+        async: false
         // When the AJAX query responds
       }).done(function (data) {
         $data = $(data);
@@ -1242,6 +1244,15 @@
 
       // return the promise straight away
       return $promise;
+    },
+
+    'delete': function(id) {
+      $.ajax({
+        url: UncertWeb.options.caas_delete_url,
+        data: {
+          id: id
+        }
+      });
     }
   };
 

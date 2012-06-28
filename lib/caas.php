@@ -26,7 +26,8 @@ class Proxy
 }
 
 $proxy_url = 'http://174.129.9.172/gi-caas/services/rest/processes';
-$proxy_url = 'http://localhost/~williamw/client/test/test_caas.php';
+// $proxy_url = 'http://174.129.9.172/uncertweb-gi-caas/services/rest/processes';
+// $proxy_url = 'http://localhost/~williamw/client/test/test_caas.php';
 $opts = array(
   CURLOPT_URL => $proxy_url,
   CURLOPT_HEADERFUNCTION => array('setHeaders'),

@@ -2,6 +2,7 @@
 
   UncertWeb.options.broker_url = "../lib/broker.php";
   UncertWeb.options.caas_url = "../lib/caas.php";
+  UncertWeb.options.caas_delete_url = "../lib/caas_delete.php";
 
   // helper functions
   var generateComponent = function () {
