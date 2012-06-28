@@ -107,18 +107,18 @@ WorkFlow_UI.io =
    			 if(IO.input instanceof Kinetic.WorkFlow)
    			 {
 	   			 //set the type
-	   			 $('#inputHeading').html('Input Description ' + IO.input.title);
-	   			 $('#inputDesc').html('<h4>Title: ' + IO.input.title + '</h4>');
-	   			 $('#inputDesc').append('<h4>Type: Nested Workflow</h4>');
+	   			 $('#inputHeading').html('To: ' + IO.input.title);
+	   			 $('#inputDesc').html('<h4>Title:</h4> ' + IO.input.title);
+	   			 $('#inputDesc').append('<h4>Type:</h4> Nested Workflow');
 	   			 $('#inputDesc').append('<h4>Description</h4>');
 	   			 $('#inputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
    			 }
    			 else if (IO.input instanceof Kinetic.WorkFlowElement)
    			 {
 	   			 //set the type
-	   			 $('#inputHeading').html('Input Description ' + IO.input.title);
-	   			 $('#inputDesc').html('<h4>Title: ' + IO.input.title + '</h4>');
-	   			 $('#inputDesc').append('<h4>Type: Component</h4>');
+	   			 $('#inputHeading').html('To: ' + IO.input.title);
+	   			 $('#inputDesc').html('<h4>Title:</h4> ' + IO.input.title);
+	   			 $('#inputDesc').append('<h4>Type:</h4> Component');
 	   			 $('#inputDesc').append('<h4>Description</h4>');
 	   			 $('#inputDesc').append('<p>' + IO.input.brokerProperties.description +'</p>');
 
@@ -127,9 +127,9 @@ WorkFlow_UI.io =
    			 if(IO.output instanceof Kinetic.WorkFlow)
    			 {
 	   			 //set the type
-	   			 $('#outputHeading').html('Output Description ' + IO.output.title);
-	   			 $('#outputDesc').append('<h4>Title: ' + IO.output.title + '</h4>');
-	   			 $('#outputDesc').append('<h4>Type: Nested Workflow</h4>');
+	   			 $('#outputHeading').html('From: ' + IO.output.title);
+	   			 $('#outputDesc').append('<h4>Title:</h4> ' + IO.output.title);
+	   			 $('#outputDesc').append('<h4>Type:</h4> Nested Workflow');
 	   			 $('#outputDesc').append('<h4>Description</h4>');
 	   			 $('#outputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
 	   			 
@@ -137,9 +137,9 @@ WorkFlow_UI.io =
    			 else if (IO.output instanceof Kinetic.WorkFlowElement)
    			 {
 	   			 //set the type
-	   			 $('#outputHeading').html('Output Description: ' + IO.output.title);
-	   			 $('#outputDesc').append('<h4>Title: ' + IO.output.title + '</h4>');
-	   			 $('#outputDesc').append('<h4>Type: Component</h4>');
+	   			 $('#outputHeading').html('From: ' + IO.output.title);
+	   			 $('#outputDesc').append('<h4>Title:</h4> ' + IO.output.title);
+	   			 $('#outputDesc').append('<h4>Type:</h4> Component');
 	   			 $('#outputDesc').append('<h4>Description</h4>');
 	   			 $('#outputDesc').append('<p>' + IO.output.brokerProperties.description +'</p>');
 
