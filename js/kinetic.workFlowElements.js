@@ -7,6 +7,12 @@ Kinetic.WorkFlowElement = function (config)
 				output:{obj:components.ouput,outputIO:components.output.getIOObject(outputObId)}
 			}*/
 	this.ioConnections = new Array();
+	this.textElements = new Array();
+	this.text = config.text;
+	//we need to put a line break if too long, currently crude needs to be update
+	this.brokerProperties = config.brokerProperties;
+
+	
 	this.getInputConnections = function(output)
 	{
 		//find all connections that have the output as the output
@@ -17,13 +23,6 @@ Kinetic.WorkFlowElement = function (config)
 		//find all connections that have the output as the output
 		return _.filter(this.ioConnections, function(io){ return _.isEqual(io.input.obj,input);});
 	};
-	this.textElements = new Array();
-	this.text = config.text;
-		//we need to put a line break if too long, currently crude needs to be update
-	this.brokerProperties = config.brokerProperties;
-	
-	this.title = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
-
 	this.getInputs = function ()
 	{
 		return this.brokerProperties.inputs;
@@ -47,6 +46,8 @@ Kinetic.WorkFlowElement = function (config)
 		//return null;
 	};
 	
+	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
+	
 	config = {
 		  x:config.x,
 		  y:config.y,
@@ -60,7 +61,8 @@ Kinetic.WorkFlowElement = function (config)
           layer: config.layer,
           type:config.type,
           cornerRadius:5,
-          draggable:config.draggable
+          draggable: config.draggable,
+          fontsize: fontSize
 	};
 	
 	//choose the colour based on what type of element this is
@@ -68,62 +70,68 @@ Kinetic.WorkFlowElement = function (config)
 	if(config.type == "mainRect")
 	{
 		config.fill = "#736AFF";
-		config.alpha = 1;
 		array = new Array();
 		array.push(config.text);
-		config.text = array;
+		config.text = config.text;
 		ctx = config.layer.getContext();
-		this.textLength = ctx.measureText(config.text[0]).width * 1.5;
+		this.textLength = ctx.measureText(config.text).width * 1.5;
 		config.width = this.textLength;
-	}
-	else if(config.type == "addElement")
-	{
-		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
-		config.fill = "#51A351";
-		config.alpha = 1;
-		config.text = this.cleanText(config.text);
-		ctx = config.layer.getContext();
-		this.textLength = ctx.measureText(config.text[0]).width * 1.5;
-		config.width = this.textLength;
-	}
-	else
-	{
-		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
-		config.fill = "#51A351";
-		config.alpha = 1;
-		//newXY = config.layer.findNextPositionVertical();
-		//config.x = newXY.x;
-		//config.y = newXY.y;
-		config.text = this.cleanText(config.text);
-		ctx = config.layer.getContext();
-		this.textLength = ctx.measureText(config.text[0]).width * 1.5;
-		config.width = this.textLength;
-		
-	}
-	//need to ensure that the x and y given are not over lapping anything else
-	//so call the stage, to check all children
-	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
-	this.text = config.text;
-	this.rect = new Kinetic.Rect(config);
-	this.add(this.rect);
-    xText = config.x + (this.textLength/2);
-    for(i=0;i<config.text.length;i++)
-    {
-    	this.textElements.push(new Kinetic.Text({
+        this.rect = new Kinetic.Rect(config);
+        this.add(this.rect);
+        xText = config.x + (this.textLength/2);
+    
+    	this.text = new Kinetic.Text({
           x: xText,
-          y: config.y+10+(i*10),
-          text: config.text[i],
+          y: config.y+10,
+          text: config.text,
           fontSize: fontSize,
           fontFamily: "Calibri",
           textFill: "black",
           align: "center",
-          verticalAlign: "middle"
-    	}))
-    	this.add(this.textElements[i]);
+          verticalAlign: "middle"});
+       	this.add(this.text);
 
-    }
     
-    
+
+	}
+	else if(config.type == "addElement")
+	{
+		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
+		this.title = config.text,
+		config.fill = "#51A351";
+		//config.text = this.cleanText(config.text);
+		ctx = config.layer.getContext();
+		this.textLength = ctx.measureText(config.text).width * 1.5;
+		config.width = this.textLength;
+		config.padding = 10;
+		config.align = 'center';
+		config.fontFamily = "Calibri";
+        config.textFill = "black";
+        config.fontSize = fontSize;
+        this.rect = new Kinetic.Text(config);
+        this.add(this.rect);
+
+	}
+	else
+	{
+		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
+		this.title = config.text,
+		config.fill = "#51A351";
+		config.alpha = 1;
+		//config.text = this.cleanText(config.text);
+		ctx = config.layer.getContext();
+		this.textLength = ctx.measureText(config.text).width * 1.5;
+		config.width = this.textLength;
+		config.padding = 10;
+		config.align = 'center';
+		config.fontFamily = "Calibri";
+        config.textFill = "black";
+        config.fontSize = fontSize;
+        this.rect = new Kinetic.Text(config);
+        this.add(this.rect);
+		
+	}
+    this.config = config;
     this.on("dragmove", function() { 
     	this.updateAllVertices(); 
     });
@@ -229,13 +237,13 @@ Kinetic.WorkFlowElement.prototype = {
 	},
 	setAllPositions : function(config)
 	{
-		xText = config.x + (this.textLength/2);
-	    for(itEls=0;itEls<this.textElements.length;itEls++)
-	    {
-	    	this.textElements[itEls].setPosition(xText,config.y+10+(itEls*10));
-	    }
     	this.rect.setPosition(config.x,config.y);
- 
+    	if(this.config.type == "mainRect")
+    	{
+    		xText = (config.x + this.rect.getAttrs().width/2) - (this.textLength/2);
+	    	this.text.setPosition(xText,config.y+5);
+    	}
+    	
 		
 	},
 	cleanText : function (text)
@@ -293,7 +301,7 @@ Kinetic.WorkFlowStart = function (config)
     });
 	this.add(this.circle);
 	this.textElement = new Kinetic.Text({
-          x: config.x,
+          x: config.x - radius,
           y: config.y+radius+10,
           text: "Start",
           fontSize: 10,
@@ -319,7 +327,7 @@ Kinetic.WorkFlowStart.prototype = {
 	},
 	setAllPositions : function(config)
 	{
-	    this.textElement.setPosition(config.x,config.y+radius+10);
+	    this.textElement.setPosition(config.x-radius,config.y+radius+5);
     	this.circle.setPosition(config.x,config.y);
 	},
  	updateAllVertices : function ()
@@ -329,11 +337,11 @@ Kinetic.WorkFlowStart.prototype = {
 	},
 	getHeight : function ()
 	{
-		return this.circle.getRadius();
+		return this.circle.getRadius().y;
 	},
 	getWidth : function()
 	{
-		return this.circle.getRadius();
+		return this.circle.getRadius().x;
 	}
 
 

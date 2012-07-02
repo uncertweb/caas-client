@@ -64,7 +64,7 @@
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
-    <script type="text/javascript" src="js/lib/kinetic-v3.9.8.js"></script>
+    <script type="text/javascript" src="js/lib/kinetic-v3.10.2.js"></script>
     <script src="js/lib/kinetic.line.js"></script>
 	<script src="js/lib/kinetic.bezier.js"></script>
 	<script type="text/javascript" src="js/kinetic.workflowLayer.js"></script>
@@ -207,9 +207,9 @@
 	        
 	        
 	        stage.draw();
-	        layer.reDrawLayer();
+	        //layer.reDrawLayer();
 	        layer.updateAllVertices();
-	        layer.convertToBPMN();
+	        //layer.convertToBPMN();
 	        
 	        document.getElementById('moveup').addEventListener('click', function() {
           		layer.moveUp();

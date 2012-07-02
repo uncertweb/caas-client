@@ -7,49 +7,81 @@ WorkFlow_UI.search =
         {
         	$("#searchResults").empty();
         	var searchTerm = $('#search').val();
-        	UncertWeb.broker.search(searchTerm,
+        	var target = $("#searchResults");
+        	
+        	var opts = {
+			  lines: 13, // The number of lines to draw
+			  length: 7, // The length of each line
+			  width: 4, // The line thickness
+			  radius: 10, // The radius of the inner circle
+			  rotate: 0, // The rotation offset
+			  color: '#000', // #rgb or #rrggbb
+			  speed: 1, // Rounds per second
+			  trail: 60, // Afterglow percentage
+			  shadow: false, // Whether to render a shadow
+			  hwaccel: false, // Whether to use hardware acceleration
+			  className: 'spinner', // The CSS class to assign to the spinner
+			  zIndex: 2e9, // The z-index (defaults to 2000000000)
+			  top: 'auto', // Top position relative to parent in px
+			  left: 'auto' // Left position relative to parent in px
+			};
+			var spinner = new Spinner(opts).spin();
+			target.append(spinner.el);
+          	UncertWeb.broker.search(searchTerm,
 	        function(data)
 	        {
 	        	brokerInfo = data;
+	        	var list = $('<ul></ul>');
+	        	
+	        	_.each(brokerInfo.results,function(res)
+	        	{
+		        	spinner.stop();
+		        	
+		        	$("#searchResults").append('<li class="draggable" id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');
+		        	
+		        	
+		        	_.each(brokerInfo.results,function(res)
+			        {
+			        	res["inputs"] =  new Array();
+			        	for(var i =0;i<5;i++)
+			        	{
+				        	var inOb = {id:idCount,desc:'description for input ' + idCount,title:'title for input ' + idCount};
+				        	res["inputs"].push(inOb);
+				        	idCount++;
+			        	}
+			        	
+			        	res["outputs"] =  new Array();
+			        	for(var i =0;i<5;i++)
+			        	{
+				        	var outOb = {id:idCount,desc:'description for output ' + idCount,title:'title for output ' + idCount};
+				        	res["outputs"].push(outOb);
+				        	idCount++;
+			        	}
+			        	
+			        		
+			        });	        	
+	        	});
+	        	$('.draggable').draggable({
+		        revert: true
+		        });  
+	        	//$("#searchResults").append(list);
+	        	
+	        	if(brokerInfo.results.length == 0)
+			        {
+			        	spinner.stop();
+				        $("#searchResults").html('<p>No Results</p>');
+			        }
+	        	
 	        },
 	        function (data)
 	        {
 	        	 $("#searchResults").append('<p>An Error has occured</p>');
 	        }
 	        );
-	        _.each(brokerInfo.results,function(res)
-	        {
-	        	$("#searchResults").append('<ul>');
-	        	$("#searchResults").append('<li class="draggable" id=' + _.indexOf(brokerInfo.results, res) + '>' + res.annotation + '</li>');
-	        	$("#searchResults").append('</ul>');	        	
-	        });
-	        if(brokerInfo.results.length == 0)
-	        {
-		        $("#searchResults").append('<p>No Results</p>');
-	        }
-	        $('.draggable').draggable({
-		        revert: true
-		        });   
-		    _.each(brokerInfo.results,function(res)
-	        {
-	        	res["inputs"] =  new Array();
-	        	for(var i =0;i<5;i++)
-	        	{
-		        	var inOb = {id:idCount,desc:'description for input ' + idCount,title:'title for input ' + idCount};
-		        	res["inputs"].push(inOb);
-		        	idCount++;
-	        	}
-	        	
-	        	res["outputs"] =  new Array();
-	        	for(var i =0;i<5;i++)
-	        	{
-		        	var outOb = {id:idCount,desc:'description for output ' + idCount,title:'title for output ' + idCount};
-		        	res["outputs"].push(outOb);
-		        	idCount++;
-	        	}
-	        	
-	        		
-	        }); 
+	        
+	        
+	         
+		   
 
 	    },
 	    doDrop : function (ev,ui,layer)
@@ -62,7 +94,7 @@ WorkFlow_UI.search =
              offset = layer.getStage()._getContentPosition();
                 //get search meta data using this id
                 
-                var wFlowEle = new Kinetic.WorkFlowElement({text:'',x:ui.position.left + offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var wFlowEle = new Kinetic.WorkFlowElement({text:'',x:ui.position.left - offset.left,y:ui.position.top - offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
 		    

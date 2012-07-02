@@ -2,12 +2,14 @@ var fontSize = 10;
 
 Kinetic.WorkFlow = function (config)
 {
-	this.vertices = new Array();
-	
+	//call the super, i.e group
 	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
+	this.vertices = new Array();
 	this.classType = "WorkFlow";
 	this.components = new Array();
 	this.title = config.text;
+	//mainElement is the box around the entire workflow. All other elements sit inside this
+	this.standAlone = config.standalone;
 	this.setStroke = function (colour)
 	{
 		this.mainElement.setStroke(colour);
@@ -101,39 +103,38 @@ Kinetic.WorkFlow = function (config)
 		});
 		return collectedOuts;
 	};
-	//mainElement is the box around the entire workflow. All other elements sit inside this
-	this.standAlone = config.standalone;
+	
 	if(this.standAlone == true)
 	{
 		//create the start element for the workflow
 		//put it in the centre of the stage
-		
 		this.startElement = new Kinetic.WorkFlowStart({x:config.layer.getStage().getWidth()/2, y:30,text:"Start",draggable:true});
 		this.add(this.startElement);
-		//this.endElement = new Kinetic.WorkFlowStart({x:config.layer.getStage().getWidth()-10, y:30,text:"End",draggable:true});
-		//this.add(this.endElement);
-
 	}
 	else
-	{
-		//newXY = config.layer.findNextPositionVertical();
-		this.mainElement = new Kinetic.WorkFlowElement({draggable:true,text:config.text,brokerProperties:config.brokerProperties,x:config.x,y:config.y,type:"mainRect",layer:config.layer});
+	{	config["type"] = "mainRect";
+		config["draggable"] = true;
+		this.mainElement = new Kinetic.WorkFlowElement(config);
 		this.add(this.mainElement);
-		//create the start element for the workflow
-		this.startElement = new Kinetic.WorkFlowStart({x:this.mainElement.rect.getPosition().x + 20, y:this.mainElement.rect.getPosition().y+60,text:"Start"});
-	
+		//create the start element for the workflow and add it to the layer
+		config = {
+			x:this.mainElement.rect.getPosition().x + 20,
+			y:this.mainElement.rect.getPosition().y+60,
+			text:"Start"
+		}
+		this.startElement = new Kinetic.WorkFlowStart(config);
 		this.add(this.startElement);
-	
 		//move the mainElement to the bottom, so Workflows can be seen
 		this.mainElement.moveToBottom();
 		
+		
+		//events for this work flow
 		this.on("dblclick",function()
 		{
 			//here we want to clear the screen and just render this workflow
 			config.layer.renderWorkFlow(this);
 		
 		});
-
 	}
 	//update the size of the element, to ensure it covers all internal elements
 	this.updateSizeAndPosOfMainEl();
@@ -395,7 +396,7 @@ Kinetic.WorkFlow.prototype = {
 				//as there are other elements we need t, put it next ot that
 				lastShape = this.components[this.components.length-1].rect;				
 				xPos = ((lastShape.getPosition().x + (lastShape.getWidth()/2)) - width/2)
-				position = {x:xPos,y:(lastShape.getPosition().y + lastShape.getSize().height+40)}
+				position = {x:xPos,y:(lastShape.getPosition().y + lastShape.getAttrs().height+40)}
 				
 			}
 		}
@@ -404,7 +405,7 @@ Kinetic.WorkFlow.prototype = {
 			if(this.components.length == 0)
 			{
 				//if there is only a start then just place it under that
-				position = {x:(this.startElement.circle.getPosition().x+this.startElement.circle.getAttrs().radius+20),y:(this.startElement.circle.getPosition().y-30)};
+				position = {x:(this.startElement.circle.getPosition().x+this.startElement.circle.getAttrs().radius.x+20),y:(this.startElement.circle.getPosition().y-30)};
 			
 			
 			}
@@ -412,7 +413,7 @@ Kinetic.WorkFlow.prototype = {
 			{
 				//as there are other elements we need t, put it next ot that
 				lastShape = this.components[this.components.length-1].rect;
-				position = {x:(lastShape.getPosition().x+lastShape.getSize().width +20),y:(lastShape.getPosition().y)}
+				position = {x:(lastShape.getPosition().x+lastShape.getAttrs().width +20),y:(lastShape.getPosition().y)}
 				
 			}
 		}
@@ -430,13 +431,15 @@ Kinetic.WorkFlow.prototype = {
 		smallestX = -1;
 		if(this.components.length == 0)
 		{
-			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius)
+			x = this.startElement.circle.getAbsolutePosition().x;
+			rad = this.startElement.circle.getAttrs().radius;
+			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x)
 			
-			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius)
+			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
 		
-			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius)
+			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
 		
-			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius)
+			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
 			
 			if((this.mainElement.textLength)+20>(biggestX-smallestX))
 			{
@@ -480,21 +483,21 @@ Kinetic.WorkFlow.prototype = {
 			}
 		}
 		//check the startElement to see if that contains the smallest or biggest of x and y
-		if(smallestX>(this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius))
+		if(smallestX>(this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x))
 		{
-			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius)
+			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x)
 		}
-		if(smallestY>(this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius))
+		if(smallestY>(this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x))
 		{
-			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius)
+			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
 		}
-		if(biggestX<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius))
+		if(biggestX<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x))
 		{
-			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius)
+			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
 		}
-		if(biggestY<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius))
+		if(biggestY<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x))
 		{
-			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius)
+			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
 		}
 		if((this.mainElement.textLength)+20>(biggestX-smallestX))
 		{
