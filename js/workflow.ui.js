@@ -40,7 +40,7 @@ WorkFlow_UI.search =
 	        	{
 		        	spinner.stop();
 		        	
-		        	$("#searchResults").append('<li class="draggable" id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');
+		        	$("#searchResults").append('<li class="draggable" rel="popover" data-content="' + res.description + '" data-original-title="' + res.name + '"id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');
 		        	
 		        	
 		        	_.each(brokerInfo.results,function(res)
@@ -64,9 +64,13 @@ WorkFlow_UI.search =
 			        		
 			        });	        	
 	        	});
+	        	$(function() {
+    				$('li[rel="popover"]').popover();
+    			});
 	        	$('.draggable').draggable({
 		        revert: true
 		        });  
+		        
 	        	//$("#searchResults").append(list);
 	        	
 	        	if(brokerInfo.results.length == 0)
