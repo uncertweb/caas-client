@@ -74,12 +74,12 @@ Kinetic.WorkFlowElement = function (config)
 		array.push(config.text);
 		config.text = config.text;
 		ctx = config.layer.getContext();
-		this.textLength = ctx.measureText(config.text).width * 1.5;
+		this.textLength = ctx.measureText(config.text).width;
 		config.width = this.textLength;
         this.rect = new Kinetic.Rect(config);
         this.add(this.rect);
+        
         xText = config.x + (this.textLength/2);
-    
     	this.text = new Kinetic.Text({
           x: xText,
           y: config.y+10,
@@ -99,11 +99,12 @@ Kinetic.WorkFlowElement = function (config)
 		config.text = '[' + this.brokerProperties.annotation + '] ' + this.brokerProperties.name;
 		this.title = config.text,
 		config.fill = "#51A351";
-		//config.text = this.cleanText(config.text);
 		ctx = config.layer.getContext();
-		this.textLength = ctx.measureText(config.text).width * 1.5;
+		split = config.text.length < 40 ? 40 : config.text.search(" ");
+		ctx.font = 'normal 10pt Calibri';
+		this.textLength = ctx.measureText(config.text.substring(0, split+5)).width;
 		config.width = this.textLength;
-		config.padding = 10;
+		config.padding = 5;
 		config.align = 'center';
 		config.fontFamily = "Calibri";
         config.textFill = "black";
@@ -120,7 +121,9 @@ Kinetic.WorkFlowElement = function (config)
 		config.alpha = 1;
 		//config.text = this.cleanText(config.text);
 		ctx = config.layer.getContext();
-		this.textLength = ctx.measureText(config.text).width * 1.5;
+		split = config.text.length < 40 ? 40 : config.text.search(" ");
+		ctx.font = 'normal 10pt Calibri';
+		this.textLength = ctx.measureText(config.text.substring(0, split+5)).width;
 		config.width = this.textLength;
 		config.padding = 10;
 		config.align = 'center';
@@ -178,13 +181,19 @@ Kinetic.WorkFlowElement.prototype = {
 			if(foundCon == undefined)
 			{
 				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black"}); 
+				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [33, 10]}); 
 				this.getLayer().add(connection);
 				
 				this.getLayer().draw();
 			}
 			return true;
 		}
+	},
+	connectITo : function(config)
+	{
+		//need to connect this to the main element as thats the outer layer
+		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
+		this.getLayer().add(connection);
 	},
 	disconnect :function(connectConfig)
 	{
@@ -244,26 +253,6 @@ Kinetic.WorkFlowElement.prototype = {
 	    	this.text.setPosition(xText,config.y+5);
     	}
     	
-		
-	},
-	cleanText : function (text)
-	{
-		result = Array();
-		if(text.length > 40)
-		{
-			var left = text.substring(0, 40);
-			result.push(left);
-			var right = text.substring(40,text.length);
-			if(right.length > 40)
-			{
-				right = this.cleanText(right);
-				result.push(right);
-			}
-			result.push(right);
-			return result;
-		}
-		result.push(text);
-		return result;
 		
 	},
 	updateAllVertices : function ()
@@ -403,11 +392,11 @@ Kinetic.WorkFlowEnd.prototype = {
 	},
 	getHeight : function ()
 	{
-		return this.circle.getRadius() * 2;
+		return this.circle.getRadius().y * 2;
 	},
 	getWidth : function()
 	{
-		return this.circle.getRadius() * 2;
+		return this.circle.getRadius().x * 2;
 	}
 
 };
@@ -426,7 +415,8 @@ Kinetic.Connection = function (config) {
 						endPoint  : this._getEndPt(config.start,config.end),
 						lineWidth : config.lineWidth,
 						color     : config.color,
-						hasArrow  : true
+						hasArrow  : true,
+						dashArray: config.dashArray
 					}) 
 		: new Kinetic.Bezier({ // draw curve, we have only start -- self-referencing vertex
 						startPoint 		: {x:r.attrs.x+r.getWidth()/2,y:r.attrs.y+r.getHeight()},
@@ -490,26 +480,26 @@ Kinetic.Connection.prototype = {
 				switch( this._getOrientation(r1,r2) ) {
 					case 1:
 						return {
-							x:r1.getAbsolutePosition().x + r1.getRadius(), 
+							x:r1.getAbsolutePosition().x + r1.getRadius().x, 
 							y:r1.getAbsolutePosition().y
 						}
 						break;
 					case 2:
 						return {
-							x:r1.getAbsolutePosition().x - r1.getRadius(), 
+							x:r1.getAbsolutePosition().x - r1.getRadius().x, 
 							y:r1.getAbsolutePosition().y
 						}
 						break;
 					case 3:
 						return {
 							x:r1.getAbsolutePosition().x, 
-							y:r1.getAbsolutePosition().y + r1.getRadius()
+							y:r1.getAbsolutePosition().y + r1.getRadius().x
 						}
 						break;
 					case 4:
 						return {
 							x:r1.getAbsolutePosition().x, 
-							y:r1.getAbsolutePosition().y - r1.getRadius()
+							y:r1.getAbsolutePosition().y - r1.getRadius().x
 						}
 						break;
 				}
@@ -519,25 +509,25 @@ Kinetic.Connection.prototype = {
 				switch( this._getOrientation(r1,r2) ) {
 					case 1:
 						return {
-							x:r1.getAbsolutePosition().x + r1.getSize().width, 
-							y:r1.getAbsolutePosition().y + r1.getSize().height/2
+							x:r1.getAbsolutePosition().x + r1.getAttrs().width, 
+							y:r1.getAbsolutePosition().y + r1.getAttrs().height/2
 						}
 						break;
 					case 2:
 						return {
 							x:r1.getAbsolutePosition().x, 
-							y:r1.getAbsolutePosition().y + r1.getSize().height/2
+							y:r1.getAbsolutePosition().y + r1.getAttrs().height/2
 						}
 						break;
 					case 3:
 						return {
-							x:r1.getAbsolutePosition().x + r1.getSize().width/2, 
-							y:r1.getAbsolutePosition().y + r1.getSize().height
+							x:r1.getAbsolutePosition().x + r1.getAttrs().width/2, 
+							y:r1.getAbsolutePosition().y + r1.getAttrs().height
 						}
 						break;
 					case 4:
 						return {
-							x:r1.getAbsolutePosition().x + r1.getSize().width/2, 
+							x:r1.getAbsolutePosition().x + r1.getAttrs().width/2, 
 							y:r1.getAbsolutePosition().y
 						}
 						break;
@@ -578,26 +568,26 @@ Kinetic.Connection.prototype = {
 				switch( this._getOrientation(r1,r2) ) {
 					case 1:
 						return {
-							x:r2.getAbsolutePosition().x - r2.getRadius(), 
+							x:r2.getAbsolutePosition().x - r2.getRadius().x, 
 							y:r2.getAbsolutePosition().y
 						}
 						break;
 					case 2:
 						return {
-							x:r2.getAbsolutePosition().x + r2.getRadius(), 
+							x:r2.getAbsolutePosition().x + r2.getRadius().x, 
 							y:r2.getAbsolutePosition().y
 						}
 						break;
 					case 3:
 						return {
 							x:r2.getAbsolutePosition().x, 
-							y:r2.getAbsolutePosition().y - r2.getRadius()
+							y:r2.getAbsolutePosition().y - r2.getRadius().x
 						}
 						break;
 					case 4:
 						return {
 							x:r2.getAbsolutePosition().x, 
-							y:r2.getAbsolutePosition().y + r2.getRadius()
+							y:r2.getAbsolutePosition().y + r2.getRadius().x
 						}
 						break;
 				}
@@ -608,25 +598,25 @@ Kinetic.Connection.prototype = {
 					case 1:
 						return {
 							x:r2.getAbsolutePosition().x, 
-							y:r2.getAbsolutePosition().y + r2.getSize().height/2
+							y:r2.getAbsolutePosition().y + r2.getAttrs().height/2
 						}
 						break;
 					case 2:
 						return {
-							x:r2.getAbsolutePosition().x + r2.getSize().width, 
-							y:r2.getAbsolutePosition().y + r2.getSize().height/2
+							x:r2.getAbsolutePosition().x + r2.getAttrs().width, 
+							y:r2.getAbsolutePosition().y + r2.getAttrs().height/2
 						}
 						break;
 					case 3:
 						return {
-							x:r2.getAbsolutePosition().x + r2.getSize().width/2, 
+							x:r2.getAbsolutePosition().x + r2.getAttrs().width/2, 
 							y:r2.getAbsolutePosition().y
 						}
 						break;
 					case 4:
 						return {
-							x:r2.getAbsolutePosition().x + r2.getSize().width/2, 
-							y:r2.getAbsolutePosition().y + r2.getSize().height
+							x:r2.getAbsolutePosition().x + r2.getAttrs().width/2, 
+							y:r2.getAbsolutePosition().y + r2.getAttrs().height
 						}
 						break;
 				}
@@ -645,20 +635,20 @@ Kinetic.Connection.prototype = {
 		var pos2 = box2.getAbsolutePosition();
 		if(box1 instanceof Kinetic.Circle)
 		{
-			if( pos1.x + box1.getRadius() <= pos2.x ) { return 1; }
-			if( pos2.x + box2.getSize().width <= pos1.x ) {  return 2 }
+			if( pos1.x + box1.getRadius().x <= pos2.x ) { return 1; }
+			if( pos2.x + box2.getAttrs().width <= pos1.x ) {  return 2 }
 			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 4; }
 			return 3;
 		}
 		if(box2 instanceof Kinetic.Circle)
 		{
-			if( pos2.x + box2.getRadius() <= pos1.x ) {  return 2; }
-			if( pos1.x + box1.getWidth() <= pos2.x ) {  return 1; }
+			if( pos2.x + box2.getRadius().x <= pos1.x ) {  return 2; }
+			if( pos1.x + box1.getAttrs() <= pos2.x ) {  return 1; }
 			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 4; }
 			return 3;
 		}
-		if( pos1.x + box1.getSize().width <= pos2.x ) { return 1; }
-		if( pos2.x + box2.getSize().width <= pos1.x ) {  return 2 }
+		if( pos1.x + box1.getAttrs().width <= pos2.x ) { return 1; }
+		if( pos2.x + box2.getAttrs().width <= pos1.x ) {  return 2 }
 		if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 4; }
 		return 3;
 	}

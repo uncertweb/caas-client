@@ -8,6 +8,7 @@ Kinetic.WorkFlow = function (config)
 	this.classType = "WorkFlow";
 	this.components = new Array();
 	this.title = config.text;
+	this.config = config.config;
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.standAlone = config.standalone;
 	this.setStroke = function (colour)
@@ -29,10 +30,6 @@ Kinetic.WorkFlow = function (config)
 		var allInputsCons = new Array();
 		if(output instanceof Kinetic.WorkFlow)
 		{
-			//if the input is a component then we need to check for inputs.components
-			//so loop all components
-			//find if one of the input.components equals the io input
-			//if it does, then this is a ioConnection to return
 			_.each(this.components, function(com){
 				allInputsCons  = allInputsCons.concat(
 					_.filter(com.ioConnections, 
@@ -103,7 +100,13 @@ Kinetic.WorkFlow = function (config)
 		});
 		return collectedOuts;
 	};
-	
+	this.getLastComponentIndex = function ()
+	{	
+		if(this.components.length != 0)
+		{
+			return this.components.length - 1;
+		}
+	}
 	if(this.standAlone == true)
 	{
 		//create the start element for the workflow
@@ -117,12 +120,12 @@ Kinetic.WorkFlow = function (config)
 		this.mainElement = new Kinetic.WorkFlowElement(config);
 		this.add(this.mainElement);
 		//create the start element for the workflow and add it to the layer
-		config = {
+		configStart = {
 			x:this.mainElement.rect.getPosition().x + 20,
 			y:this.mainElement.rect.getPosition().y+60,
 			text:"Start"
 		}
-		this.startElement = new Kinetic.WorkFlowStart(config);
+		this.startElement = new Kinetic.WorkFlowStart(configStart);
 		this.add(this.startElement);
 		//move the mainElement to the bottom, so Workflows can be seen
 		this.mainElement.moveToBottom();
@@ -195,14 +198,14 @@ Kinetic.WorkFlow.prototype = {
 			//need to reset the group position
 			el.setPosition({x:0,y:0});
 			ctx = t.getLayer().getContext();
-			TL = ctx.measureText(el.text[0].substring(0, 40)).width * 1.5;
-			position = t.findWhereToPutNewElement(TL);
+			position = t.findWhereToPutNewElement(el.rect.getAttrs().width);
 			t.add(el);
 			t.components.push(el);
 			el.setAllPositions(position);
 			
 			el.setAttrs({draggable:t.standAlone});
 		});
+		
 		this.updateSizeAndPosOfMainEl();	
 		
 	},
@@ -388,7 +391,7 @@ Kinetic.WorkFlow.prototype = {
 			if(this.components.length == 0)
 			{
 				//if there is only a start then just place it under that
-				position = {x:(this.startElement.circle.getPosition().x-(width/2)),y:(this.startElement.circle.getPosition().y+(this.startElement.circle.getAttrs().radius + 30))};
+				position = {x:(this.startElement.circle.getPosition().x-(width/2)),y:(this.startElement.circle.getPosition().y+(this.startElement.circle.getAttrs().radius.x + 30))};
 			
 			}
 			else

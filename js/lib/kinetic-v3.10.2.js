@@ -1429,12 +1429,12 @@ Kinetic.Container.prototype = {
             this._setChildrenIndices();
 
             // remove children
-            if(child.children) {
+            /*if(child.children) {
                 for(var n = 0; n < child.children.length; n++) {
                     child.remove(child.children[n]);
                 }
             }
-
+            */
             // do extra stuff if needed
             if(this._remove !== undefined) {
                 this._remove(child);

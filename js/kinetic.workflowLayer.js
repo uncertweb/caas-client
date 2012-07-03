@@ -61,6 +61,7 @@ Kinetic.WorkFlowLayer = function (config)
 		{
 			//this should not happen, as after two have been clicked.
 			//popup should appear, and after ioObjects should be cleared
+			console.error('Both ioObjects set, they have not been cleared correctly');
 		}
 		
 			
@@ -81,11 +82,14 @@ Kinetic.WorkFlowLayer = function (config)
 Kinetic.WorkFlowLayer.prototype = {
 	renderWorkFlow : function(workFlow)
 	{
+		//if the argument is a number then it is the index of a component which should be rendered
+		workFlow = _.isNumber(workFlow) ? this.currentElements[workFlow] : workFlow;
+		//need to save the index of the render workflow, as thsi will need to overwritten
 		this.standAloneIndex = this.getStandAloneIndex(workFlow);
 		//clear the stage so it is blank
 		this.clear();
 		this.removeChildren();
-		//create new layer
+		
 		
 		//text that was in the main element should go to the top of the screen as a title
 		//create a new workflow, with standalone set to true, this will stop the mainElement rendering
@@ -95,33 +99,47 @@ Kinetic.WorkFlowLayer.prototype = {
 		
 		this.standAloneWF.addElements(workFlow.components);
 		this.standAloneWF.addConnectionsToLayer();
+		
+		//turn off io Mode and remove onClicks
 		this.ioMode = false;
-			//remove all events listening for the click
 		this.setUpIOMode();
+		
 		this.draw();
 		this.standAloneWF.updateAllVertices();
 	},
 	addElement : function (el)
 	{
+		//need to return the index, its used for adding a new workflow
+		var returnIndex;
 		if(this.standAloneWF == null)
 		{
+			//add element to the viewing layer
 			this.add(el);
+			//if there is an workflow end, we need to add the element before this
 			if(this.currentElements[this.currentElements.length -1] instanceof Kinetic.WorkFlowEnd)
 			{
+				
 				end = this.currentElements.pop();
 				this.currentElements.push(el);
 				this.currentElements.push(end);
+				returnIndex = this.currentElements.length - 2;
 			}
 			else
 			{
 				this.currentElements.push(el);
+				returnIndex = this.currentElements.length - 1;
 			}
 		}
 		else
 		{
+			//add the element to the standalone workflow, send it as an array
 			this.standAloneWF.addElements([el]);
+			returnIndex = this.standAloneWF.getLastComponentIndex();
+			
 		}
+		//redraw the layer
 		this.draw();
+		return returnIndex;
 	},
 	moveUp : function ()
 	{

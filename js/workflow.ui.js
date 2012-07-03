@@ -11,7 +11,7 @@ WorkFlow_UI.search =
         	
         	var opts = {
 			  lines: 13, // The number of lines to draw
-			  length: 7, // The length of each line
+			  length: 5, // The length of each line
 			  width: 4, // The line thickness
 			  radius: 10, // The radius of the inner circle
 			  rotate: 0, // The rotation offset
@@ -25,8 +25,11 @@ WorkFlow_UI.search =
 			  top: 'auto', // Top position relative to parent in px
 			  left: 'auto' // Left position relative to parent in px
 			};
-			var spinner = new Spinner(opts).spin();
-			target.append(spinner.el);
+			//var spinner = new Spinner(opts).spin();
+			//target.append(spinner.el);
+			
+			var spinner = new Spinner(opts).spin(target[0]);
+			
           	UncertWeb.broker.search(searchTerm,
 	        function(data)
 	        {
@@ -99,6 +102,60 @@ WorkFlow_UI.search =
                 
 		    
 	    }
+};
+WorkFlow_UI.addWF =
+{
+	open : function()
+	{
+		$('#newWFModal').modal('show');
+		$('#newWFModal').modal
+		({
+    		backdrop: true,
+   			keyboard: true
+		}).css
+		({
+			'overflow-y':'auto',
+			'max-height':'90%',
+    		width: 'auto',
+    		'margin-left': function () {
+        		return -($(this).width() / 2);
+   		 	}
+			 });	
+	},
+	add : function()
+	{
+		//check that the required fields have been entered
+		if($('#titleWF').val() == '')
+		{
+			$('#titleGroup').append('<p class="help-block">Enter title of Workflow</p>');
+			$('#titleGroup').attr("class","control-group error");
+			return false;
+		}
+		if($('#abstractWF').val() == '')
+		{
+			$('#abstractGroup').append('<p class="help-block">Enter abstract for Workflow</p>');
+			$('#abstractGroup').attr("class","control-group error");
+			return false;
+		}
+		config = {
+			name:$('#titleWF').val(),
+			description:$('#abstractGroup').val()
+		}
+		//create workflow from
+		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),config:config,x:100,y:10,draggable:true,layer:layer});
+		var index = layer.addElement(newWFlow);
+		//move down a layer to start editing this workflow
+		layer.renderWorkFlow(index);
+		
+		
+		//close the modal
+		$('#newWFModal').modal('hide');
+		
+		
+		//remove the errors from the form
+		$('#titleGroup').attr("class","control-group");
+		$('#abstractGroup').attr("class","control-group");
+	}
 };
 WorkFlow_UI.io =
 {
