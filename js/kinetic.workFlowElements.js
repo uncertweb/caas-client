@@ -181,7 +181,7 @@ Kinetic.WorkFlowElement.prototype = {
 			if(foundCon == undefined)
 			{
 				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [33, 10]}); 
+				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: []}); 
 				this.getLayer().add(connection);
 				
 				this.getLayer().draw();
