@@ -67,7 +67,7 @@ Kinetic.WorkFlowLayer = function (config)
 			
 	};
 	
-	this.getStandAloneIndex = function (workflow)
+	this.getIndexOfElement = function (workflow)
 		{
 			for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 			{
@@ -78,14 +78,49 @@ Kinetic.WorkFlowLayer = function (config)
 			}
 		};
 	this.standAloneIndex = -1;
+	this.renderRubbishBin();
+	
+		
 }
 Kinetic.WorkFlowLayer.prototype = {
+	renderRubbishBin : function()
+	{
+		//add the trash bin to the top right
+		var self = this;
+		var imageObj = new Image();
+		    imageObj.onload = function() {
+		      self.image = new Kinetic.Image({
+		        x: $(document).width()-100,
+		        y: 0,
+		        image: imageObj,
+		        width: 100,
+		        height: 100
+		      });
+		      self.add(self.image);
+		      self.draw();
+		   };
+		   
+		   imageObj.src = "img/trash.png";
+
+	},
+	checkOverBin : function(el,ev)
+	{
+		if(ev.layerX > this.image.getAttrs().x && ev.layerX < (this.image.getAttrs().x + this.image.getAttrs().width))
+		{
+			//within x boundaries
+			if(ev.layerY > this.image.getAttrs().y && ev.layerY < (this.image.getAttrs().y + this.image.getAttrs().height))
+			{
+				//over bin so delete the element
+				this.deleteElement(el);
+			}
+		}
+	},
 	renderWorkFlow : function(workFlow)
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
 		workFlow = _.isNumber(workFlow) ? this.currentElements[workFlow] : workFlow;
 		//need to save the index of the render workflow, as thsi will need to overwritten
-		this.standAloneIndex = this.getStandAloneIndex(workFlow);
+		this.standAloneIndex = this.getIndexOfElement(workFlow);
 		//clear the stage so it is blank
 		this.clear();
 		this.removeChildren();
@@ -103,6 +138,9 @@ Kinetic.WorkFlowLayer.prototype = {
 		//turn off io Mode and remove onClicks
 		this.ioMode = false;
 		this.setUpIOMode();
+		
+		//create bin for lower layer
+		this.renderRubbishBin();
 		
 		this.draw();
 		this.standAloneWF.updateAllVertices();
@@ -141,11 +179,22 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.draw();
 		return returnIndex;
 	},
+	deleteElement : function (el)
+	{
+		//if the argument is a number then it is the index of a component which should be rendered
+		el = _.isNumber(el) ? this.currentElements[el] : el;
+		
+		el.deleteAllIOs();
+		//remove the element from the currentElements
+		this.currentElements.splice(this.getIndexOfElement(el), 1);
+		this.remove(el);
+		this.draw();
+	},
 	moveUp : function ()
 	{
 		if(this.standAloneWF != null)
 		{
-						//update the currentElements, using standAloneWF
+			//update the currentElements, using standAloneWF
 			//standAloneWF has to updated,as the layout is different
 			tempEl = new Kinetic.WorkFlow({text:this.standAloneWF.title,x:100,y:10,draggable:true,layer:this,standalone:false});
 			this.add(tempEl);
@@ -178,6 +227,9 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.draw();
 			this.reDrawLayer();
 			this.updateAllVertices();
+			
+			//render rubbish bin for the top layer
+			this.renderRubbishBin();
 					
 			this.standAloneWF = null;
 			this.standAloneIndex = -1;

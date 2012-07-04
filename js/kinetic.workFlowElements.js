@@ -135,8 +135,10 @@ Kinetic.WorkFlowElement = function (config)
 		
 	}
     this.config = config;
-    this.on("dragmove", function() { 
-    	this.updateAllVertices(); 
+    var self = this;
+    this.on("dragmove", function(ev) { 
+    	this.updateAllVertices();
+    	config.layer.checkOverBin(this,ev);
     });
 		    
 }
@@ -230,6 +232,18 @@ Kinetic.WorkFlowElement.prototype = {
 			
 		}
 		
+	},
+	//this is used to delete all the IOs for this element
+	//it is used when element is deleted
+	deleteAllIOs : function ()
+	{
+		//loop through all the ioConnections
+		//call disconnect on the ouput	
+		_.each(this.ioConnections,function(io)
+		{
+			io.output.obj.disconnect(io);
+		});
+
 	},
 	addConnectionsToLayer : function ()
 	{

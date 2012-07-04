@@ -121,27 +121,6 @@
 	        	console.log('error');
 	        }
 	        );
-	        var idCount = 0;
-	        _.each(brokerInfo.results,function(res)
-	        {
-	        	res["inputs"] =  new Array();
-	        	for(var i =0;i<5;i++)
-	        	{
-		        	var inOb = {id:idCount,desc:'description for input ' + idCount,title:'title for input ' + idCount};
-		        	res["inputs"].push(inOb);
-		        	idCount++;
-	        	}
-	        	
-	        	res["outputs"] =  new Array();
-	        	for(var i =0;i<5;i++)
-	        	{
-		        	var outOb = {id:idCount,desc:'description for output ' + idCount,title:'title for output ' + idCount};
-		        	res["outputs"].push(outOb);
-		        	idCount++;
-	        	}
-	        	
-	        		
-	        });
 	    	layer = new Kinetic.WorkFlowLayer();
 	        stage.add(layer);
 	        ctx = stage.children[0].getContext();

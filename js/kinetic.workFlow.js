@@ -141,9 +141,10 @@ Kinetic.WorkFlow = function (config)
 	}
 	//update the size of the element, to ensure it covers all internal elements
 	this.updateSizeAndPosOfMainEl();
-	this.on("dragmove", function() 
+	this.on("dragmove", function(ev) 
 	{ 
 		this.updateAllVertices();
+		config.layer.checkOverBin(this,ev);
 	});
 }
 Kinetic.WorkFlow.prototype = {
@@ -330,6 +331,15 @@ Kinetic.WorkFlow.prototype = {
 			
 		}
 		
+	},
+	deleteAllIOs : function ()
+	{
+		//call deleteAllIOs for all components
+		_.each(this.components,function(com)
+		{
+			com.deleteAllIOs();
+		});
+
 	},
 	addConnectionsToLayer : function ()
 	{

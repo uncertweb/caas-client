@@ -31,59 +31,49 @@ WorkFlow_UI.search =
 			var spinner = new Spinner(opts).spin(target[0]);
 			
           	UncertWeb.broker.search(searchTerm,
-	        function(data)
-	        {
-	        	brokerInfo = data;
-	        	var list = $('<ul></ul>');
-	        	
-	        	_.each(brokerInfo.results,function(res)
-	        	{
+		        function(data)
+		        {
+		        	brokerInfo = data;
 		        	spinner.stop();
 		        	
-		        	$("#searchResults").append('<li class="draggable" rel="popover" data-content="' + res.description + '" data-original-title="' + res.name + '"id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');
-		        	
-		        	
+		        	//output results of the search
 		        	_.each(brokerInfo.results,function(res)
-			        {
-			        	res["inputs"] =  new Array();
-			        	for(var i =0;i<5;i++)
-			        	{
-				        	var inOb = {id:idCount,desc:'description for input ' + idCount,title:'title for input ' + idCount};
-				        	res["inputs"].push(inOb);
-				        	idCount++;
-			        	}
+		        	{
 			        	
-			        	res["outputs"] =  new Array();
-			        	for(var i =0;i<5;i++)
-			        	{
-				        	var outOb = {id:idCount,desc:'description for output ' + idCount,title:'title for output ' + idCount};
-				        	res["outputs"].push(outOb);
-				        	idCount++;
-			        	}
-			        	
-			        		
-			        });	        	
-	        	});
-	        	$(function() {
-    				$('li[rel="popover"]').popover();
-    			});
-	        	$('.draggable').draggable({
-		        revert: true
-		        });  
-		        
-	        	//$("#searchResults").append(list);
-	        	
-	        	if(brokerInfo.results.length == 0)
-			        {
-			        	spinner.stop();
-				        $("#searchResults").html('<p>No Results</p>');
-			        }
-	        	
-	        },
-	        function (data)
-	        {
-	        	 $("#searchResults").append('<p>An Error has occured</p>');
-	        }
+			        	$("#searchResults").append('<li class="draggable" rel="popover" data-content="' + res.description + '" data-original-title="' + res.name + '"id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');    	
+		        	});
+		        	
+		        	//enable the popovers that give the info for the component
+		        	$(function() {
+	    				$('li[rel="popover"]').popover();
+	    			});
+		        	
+		        	//set the options for the draggable component
+		        	$('.draggable').draggable({
+			        	revert: true,
+			        	 
+						start: function() {
+							//on drag start, we want to remove the popover
+							//this gets in the way when dragging
+							$("li[rel=popover]").popover('hide');
+							$("li[rel=popover]").popover('disable');
+						},
+						stop: function(){
+							$("li[rel=popover]").popover('enable');
+						}
+					});
+					//if there are no results, tell the user
+		        	if(brokerInfo.results.length == 0)
+				        {
+				        	spinner.stop();
+					        $("#searchResults").html('<p>No Results</p>');
+				        }
+		        	
+		        },
+		        function (data)
+		        {
+		        	 $("#searchResults").append('<p>An Error has occured</p>');
+		        }
 	        );
 	        
 	        
@@ -101,7 +91,7 @@ WorkFlow_UI.search =
              offset = layer.getStage()._getContentPosition();
                 //get search meta data using this id
                 
-                var wFlowEle = new Kinetic.WorkFlowElement({text:'',x:ui.position.left - offset.left,y:ui.position.top - offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var wFlowEle = new Kinetic.WorkFlowElement({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
 		    
@@ -303,7 +293,7 @@ WorkFlow_UI.io =
 			{
 				//data attribute will store the actual ioObject from the broker
 				//the value in the select will be the title of the ioObject
-				select.append('<option value=' + oIO.id + ' data-ioObjectid=' + oIO.id + '>' + oIO.title + '</option>');
+				select.append('<option value=' + oIO.id + ' data-ioObjectid=' + oIO.id + '>' + oIO.name + '</option>');
 				
 			});     
 			
@@ -330,7 +320,7 @@ WorkFlow_UI.io =
 			{
 				//data attribute will store the actual ioObject from the broker
 				//the value in the select will be the title of the ioObject
-				select.append('<option value=' + iIO.id + ' data-ioObjectid=' + iIO.id + '>' + iIO.title + '</option>');
+				select.append('<option value=' + iIO.id + ' data-ioObjectid=' + iIO.id + '>' + iIO.name + '</option>');
 				
 			});
 			
@@ -357,7 +347,7 @@ WorkFlow_UI.io =
 			var id =  select.data('ioobjectid');
 			//have the id, now need to find the object using the input object
 			ioObject = components.input.getIOObject(id);
-			$('#inputDetails_' + rowDetail).html(ioObject.desc);
+			$('#inputDetails_' + rowDetail).html(ioObject.description);
 			
 		},
 		displayOutputDetails : function(rowDetail,el)
@@ -366,7 +356,7 @@ WorkFlow_UI.io =
 			var id =  select.data('ioobjectid');
 			//have the id, now need to find the object using the input object
 			ioObject = components.output.getIOObject(id);
-			$('#outputDetails_' + rowDetail).html(ioObject.desc);
+			$('#outputDetails_' + rowDetail).html(ioObject.description);
 			
 		},
 		clearDetails : function ()
@@ -409,7 +399,7 @@ WorkFlow_UI.io =
 				//display new IO, to map new IO
 				this.displayIO();
 				this.clearDetails();
-				//
+				//the row, that has been set
 				this.disableRow(row);
 				//change the button to delete, to give the ability to delete the connection
 				var button = $('#button_' + row)
