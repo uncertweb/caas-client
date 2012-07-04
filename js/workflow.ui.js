@@ -101,7 +101,7 @@ WorkFlow_UI.addWF =
 {
 	open : function()
 	{
-		$('#newWFModal').modal('show');
+		
 		$('#newWFModal').modal
 		({
     		backdrop: true,
@@ -114,7 +114,10 @@ WorkFlow_UI.addWF =
     		'margin-left': function () {
         		return -($(this).width() / 2);
    		 	}
-			 });	
+		});
+		$('#newWFModal').modal('show');
+		$('#titleWF').empty();
+		$('#abstractWF').empty();	
 	},
 	add : function()
 	{
@@ -178,6 +181,7 @@ WorkFlow_UI.io =
     		({
     			'overflow-y':'auto',
     			'max-height':'90%',
+    			'max-width' : '65%',
         		width: 'auto',
         		'margin-left': function () {
             		return -($(this).width() / 2);
