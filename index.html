@@ -3,54 +3,7 @@
   <head>
    <link href="css/bootstrap-responsive.css" rel="stylesheet">
     <link href="css/bootstrap.css" rel="stylesheet">
-    <style>
-      body {
-        margin: 0px;
-        padding: 0px;
-      }
-      canvas {
-        border: 0px solid #9C9898;
-        margin:5px;
-      }
-      #container {
-        display: inline-block;
-        overflow: scroll;
-      }
-      .alert {
-		  margin-bottom: 5px;
-		  }
-	  .navbar{
-		  margin-bottom: 5px;
-	  }
-	  /*
-	Navbar forms
-	Adding a Drop Down Login Form to Bootstrap’s Navbar
-	http://mifsud.me/adding-dropdown-login-form-bootstraps-navbar/
-	*/
-	
-	div.dropdown-menu {
-	    padding: 15px;
-	    padding-bottom: 0px;
-	}
-	
-	div.dropdown-menu input.text {
-	    margin-bottom: 15px;
-	}
-	
-	div.dropdown-menu input.remember {
-	    float: left;
-	    margin-right: 10px;
-	}
-	
-	div.dropdown-menu input.btn {
-	    clear: left;
-	    width: 100%;
-	    height: 32px;
-	    font-size: 13px;
-	}
-​
-    </style>
-   
+    <link href="css/override_stylesheet.css" rel="stylesheet">
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
@@ -95,7 +48,7 @@
 	    	var stage = new Kinetic.Stage({
 	          container: "container",
 	          width: $(document).width()-10,
-	          height:$(document).height() - 60
+	          height:$(document).height()
 	        });
 	        
 	        
@@ -112,26 +65,6 @@
 	        layer.updateAllVertices();
 	        //layer.convertToBPMN();
 	        
-	        document.getElementById('moveup').addEventListener('click', function() {
-          		layer.moveUp();
-        	}, false);
-        	document.getElementById('addWF').addEventListener('click', function() {
-          		WorkFlow_UI.addWF.open();
-        	}, false);
-        	document.getElementById('io').addEventListener('click', function() {
-          		
-          		if(layer.toggleIOMode())
-          		{
-          			$("#io").html('Toggle Input/Output Mode - On');
-          		}
-          		else
-          		{
-          			$("#io").html('Toggle Input/Output Mode - Off');
-          		}
-          	}, false);
-          	document.getElementById('redraw').addEventListener('click', function() {
-          		layer.reDrawLayer();
-	        },false);
 
           	var con = $('#container');
           	con.droppable({
@@ -143,51 +76,14 @@
 		    $('#ioModal').on('hidden', function () {
 			    layer.clearIOMode();
 			})
-          	
+          	WorkFlow_UI.toolbox.open();
        
 	
         };
     </script>
    </head>
   <body>
-  <div class="navbar">
-    <div class="navbar-inner">
-      <div class="container">
-        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </a>
-        <ul class="nav">
-        <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    
-                    <b class="caret"></b>
-                </a>
-                <div class="dropdown-menu">
-                    
-                        <input class="text" type="text" id="search" name="search"
-                            size="50" onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords" />
-                    
-                    <div class="well draggable" id="searchResults">
-                    </div>
-                </div>
-            </li>
-        </ul>
-        <a class="brand" href="">Uncert Web</a>
-        <div class="nav-collapse">
-          <ul class="nav">
-           
-           <li><a id="addWF">Add WorkFlow</a></li>
-          	<li><a id="moveup">Move Up</a></li>
-            <li><a id="io">Toggle Input/Output Mode - Off</a></li>
-            <li><a id="redraw">Auto Layout</a></li>
-          </ul>
-        </div><!-- /.nav-collapse -->
-      </div>
-    </div><!-- /navbar-inner -->
-  </div>
-    <div id="container" class="droppable"></div>
+      <div id="container" class="droppable"></div>
         
     
     <div id="ioModal" class="modal hide fade" style="display: none; ">
@@ -274,6 +170,39 @@
               <!--<button href="#" class="btn btn-primary" onclick="WorkFlow_UI.io.test()">Save changes</button>-->
             </div>
      </div>
-     
+     <div id="toolbox" class="modal hide draggable" style="display: none; ">
+            <div class="modal-header">
+              <a class="accordion-toggle" data-toggle="collapse" data-parent="#toolboxBody" href="#toolboxBody">Toolbox - Main Workflow</a>
+            </div>
+            <div class="modal-body collapse" id="toolboxBody">
+            
+            	<div class="accordion" id="toolBoxAccordion">
+		           <div class="accordion-group">
+		              <div class="toolboxaccordion-heading">
+		                <a class="accordion-toggle" data-toggle="collapse" data-parent="#toolBoxAccordion" href="#activeControls">
+		                  Active Controls
+		                </a>
+		              </div>
+		              <div id="activeControls" class="toolboxaccordion-body collapse ">
+		                
+		              </div>
+		            </div>
+		            <div class="accordion-group">
+		              <div class="toolboxaccordion-heading">
+		                <a class="accordion-toggle" data-toggle="collapse" data-parent="#toolBoxAccordion" href="#collapseSearch">
+		                  Search for Components
+		                </a>
+		              </div>
+		              <div id="collapseSearch" class="toolboxaccordion-body collapse">
+		                <input class="text" type="text" id="search" name="search"
+                            width="198px" onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords"></input>
+                    
+		                    <ul class="well draggable unstyled" id="searchResults">
+		                    </ul>
+		              </div>
+		            </div>
+            </div>
+     </div>
+
   </body>
 </html>

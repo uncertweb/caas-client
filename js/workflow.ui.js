@@ -1,5 +1,95 @@
 var WorkFlow_UI = {};
 var idCount = 100;
+WorkFlow_UI.toolbox =
+{
+	 activeButtons : new Array(),
+	 allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn",'data-toggle':"", onclick:"layer.moveUp();"},
+					  {id:"io",text:"Toggle IO Mode", class:"btn btn-primary",'data-toggle':"button", onclick:"WorkFlow_UI.addWF.click();"},
+					  {id:"reDraw", text:"Auto Layout", class:"btn btn-primary",'data-toggle':"", onclick:"layer.reDrawLayer();"},
+					  {id:"addWF",text:"Add Workflow",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.addWF.open();"}
+					 ),
+	open: function ()
+	{	
+		this.activeButtons = this.setActiveControl(["io","reDraw","addWF"]);
+		
+		$('#toolbox').modal
+		({
+    		backdrop: false,
+   			keyboard: false
+		}).css
+		({
+			'overflow-y':'auto',
+			'max-height':'50%',
+    		 width: '250px',
+    		'margin-top':'0px',
+    		'margin-left':'0px',
+    		'top':'0px',
+    		'left':'0px',
+    		 opacity:1
+    		
+		});
+		
+		//set the tool box so it is draggable
+		$('#toolbox').draggable(
+		{
+			cursor: "move",
+			start: function()
+			{
+				//remove droppable event when dragging the toolbox
+				var con = $('#container');
+	          	con.droppable({
+			              drop: function(el,ui) {
+	                        	
+	                    }
+				});
+			},
+			drag : function()
+			{
+				$('#toolbox').css(
+				{
+					opacity:0.6
+				});
+			},
+			stop: function()
+			{
+				var con = $('#container');
+				con.droppable({
+		              drop: function(el,ui) {
+                        	WorkFlow_UI.search.doDrop(el,ui,layer)
+                    }
+		               				               		
+                    });
+                $('#toolbox').css(
+				{
+					opacity:1
+				});
+			}
+		})
+		//close the toolbox, for neatness
+		$('#toolbox').modal('show');
+		this.displayActiveControls(this.activeButtons,'activeControls');
+	},
+	setActiveControl:function(controls)
+	{
+		var activeButtons = [];
+		var self = this;
+		_.each(controls,function(control)
+		{
+			activeButtons.push(_.find(self.allButtons,function(button){return button.id == control;}));
+		});
+		return activeButtons;
+	},
+	displayActiveControls :function(active,divId)
+	{
+		_.each(active,function(ac){
+			html = '<div class="span"><button ';
+			_.each(ac,function(v,k){ html += ' ' + k + '="' + v + '"'});
+			html += '>' + ac.text + '</button></div>';
+			$('#' + divId).append(html);
+		})
+		
+	}
+};
 WorkFlow_UI.search =
 {
 		brokerInfo: new Array(),
@@ -40,7 +130,25 @@ WorkFlow_UI.search =
 		        	_.each(brokerInfo.results,function(res)
 		        	{
 			        	
-			        	$("#searchResults").append('<li class="draggable" rel="popover" data-content="' + res.description + '" data-original-title="' + res.name + '"id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');    	
+			        	$("#searchResults").append('<li class="draggable" rel="popover" data-content="' + res.description + '" data-original-title="' + res.name + '"id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');   
+			        	
+			        $('#' + _.indexOf(brokerInfo.results, res)).draggable({
+				        	revert: true,
+				        	appendTo: "body",
+				        	helper: "clone",
+							start: function() {
+								//on drag start, we want to remove the popover
+								//this gets in the way when dragging
+								$("li[rel=popover]").popover('hide');
+								$("li[rel=popover]").popover('disable');
+							},
+							stop: function(){
+								$("li[rel=popover]").popover('enable');
+							}
+						}).css
+						({
+							zIndex:5000
+						});	
 		        	});
 		        	
 		        	//enable the popovers that give the info for the component
@@ -49,19 +157,7 @@ WorkFlow_UI.search =
 	    			});
 		        	
 		        	//set the options for the draggable component
-		        	$('.draggable').draggable({
-			        	revert: true,
-			        	 
-						start: function() {
-							//on drag start, we want to remove the popover
-							//this gets in the way when dragging
-							$("li[rel=popover]").popover('hide');
-							$("li[rel=popover]").popover('disable');
-						},
-						stop: function(){
-							$("li[rel=popover]").popover('enable');
-						}
-					});
+		        	
 					//if there are no results, tell the user
 		        	if(brokerInfo.results.length == 0)
 				        {
@@ -99,9 +195,23 @@ WorkFlow_UI.search =
 };
 WorkFlow_UI.addWF =
 {
+	click: function()
+	{
+		if(layer.toggleIOMode())
+  		{
+  			$("#io").html('Toggle Input/Output Mode - On');
+  		}
+  		else
+  		{
+  			$("#io").html('Toggle Input/Output Mode - Off');
+  		}
+	},
 	open : function()
 	{
-		
+		$('#toolbox').modal('hide')
+		$('#newWFModal').on('hidden', function () {
+			$('#toolbox').modal('show')
+		});
 		$('#newWFModal').modal
 		({
     		backdrop: true,
@@ -160,8 +270,13 @@ WorkFlow_UI.io =
 		noRows: 1,
 		components : {},
 		currentIOs : {},
+		
 		open : function(IO)
 		{
+			$('#toolbox').modal('hide')
+			$('#ioModal').on('hidden', function () {
+				$('#toolbox').modal('show')
+			});
 			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
 			components = IO;
 			currentIOs = this.getAllCurrentIOs();
