@@ -247,7 +247,15 @@ Kinetic.WorkFlowElement.prototype = {
 	},
 	addConnectionsToLayer : function ()
 	{
-		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
+		//add connections to th elayer, but only when this element is the start node
+		//this avoids duplicates
+		for(Vi=0;Vi<this.vertices.length;Vi++) 
+		{ 
+			if(this.vertices[Vi].start == this)
+			{
+				this.getLayer().add(this.vertices[Vi]);
+			}
+		}
 
 	},
 	moveToTop : function ()

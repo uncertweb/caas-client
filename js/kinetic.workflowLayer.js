@@ -181,13 +181,23 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	deleteElement : function (el)
 	{
-		//if the argument is a number then it is the index of a component which should be rendered
-		el = _.isNumber(el) ? this.currentElements[el] : el;
+		if(this.standAloneWF == null)
+		{
+			//if the argument is a number then it is the index of a component which should be rendered
+			el = _.isNumber(el) ? this.currentElements[el] : el;
+			
+			el.deleteAllIOs();
+			//remove the element from the currentElements
+			this.currentElements.splice(this.getIndexOfElement(el), 1);
+			this.remove(el);
 		
-		el.deleteAllIOs();
-		//remove the element from the currentElements
-		this.currentElements.splice(this.getIndexOfElement(el), 1);
-		this.remove(el);
+		}
+		else
+		{
+			//delete the component from the standAlone workflow
+			this.standAloneWF.deleteElement(el);
+			
+		}
 		this.draw();
 	},
 	moveUp : function ()

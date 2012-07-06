@@ -107,6 +107,16 @@ Kinetic.WorkFlow = function (config)
 			return this.components.length - 1;
 		}
 	}
+	this.getIndexOfElement = function (workflow)
+	{
+		for(iCEls=0;iCEls<this.components.length;iCEls++)
+		{
+			if (_.isEqual(workflow,this.components[iCEls]))
+			{
+				return iCEls;
+			}
+		}
+	};
 	if(this.standAlone == true)
 	{
 		//create the start element for the workflow
@@ -141,11 +151,15 @@ Kinetic.WorkFlow = function (config)
 	}
 	//update the size of the element, to ensure it covers all internal elements
 	this.updateSizeAndPosOfMainEl();
-	this.on("dragmove", function(ev) 
-	{ 
-		this.updateAllVertices();
-		config.layer.checkOverBin(this,ev);
-	});
+	if(this.standAlone == false)
+	{
+		this.on("dragmove", function(ev) 
+		{ 
+			this.updateAllVertices();
+			config.layer.checkOverBin(this,ev);
+		});
+	}
+	
 }
 Kinetic.WorkFlow.prototype = {
 
@@ -331,6 +345,17 @@ Kinetic.WorkFlow.prototype = {
 			
 		}
 		
+	},
+	deleteElement : function(el)
+	{
+		//if the argument is a number then it is the index of a component which should be rendered
+		el = _.isNumber(el) ? this.components[el] : el;
+		
+		el.deleteAllIOs();
+		//remove the element from the currentElements
+		this.components.splice(this.getIndexOfElement(el), 1);
+		this.remove(el);
+
 	},
 	deleteAllIOs : function ()
 	{
