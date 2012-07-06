@@ -22,6 +22,12 @@ Kinetic.WorkFlowLayer = function (config)
 		}
 		return this.ioMode;
 	};
+	this.setIOMode = function(mode)
+	{
+		this.ioMode = mode;
+		//setup the IO mode, based on the setting
+		this.setUpIOMode();
+	}
 	this.setIoObjects = function(el)
 	{
 		//if user has clicked an item again then, this means they do not want to select it
@@ -105,16 +111,18 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	checkOverBin : function(el,ev)
 	{
-		if(ev.layerX > this.image.getAttrs().x && ev.layerX < (this.image.getAttrs().x + this.image.getAttrs().width))
+		imgAttrs = this.image.getAttrs();
+		if(ev.layerX > imgAttrs.x && ev.layerX < (imgAttrs.x + imgAttrs.width))
 		{
 			//within x boundaries
-			if(ev.layerY > this.image.getAttrs().y && ev.layerY < (this.image.getAttrs().y + this.image.getAttrs().height))
+			if(ev.layerY > imgAttrs.y && ev.layerY < (imgAttrs.y + imgAttrs.height))
 			{
 				//over bin so delete the element
 				this.deleteElement(el);
 			}
 		}
 	},
+	
 	renderWorkFlow : function(workFlow)
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
@@ -125,9 +133,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.clear();
 		this.removeChildren();
 		
-		
-		//text that was in the main element should go to the top of the screen as a title
-		//create a new workflow, with standalone set to true, this will stop the mainElement rendering
+		//create
 		this.standAloneWF = new Kinetic.WorkFlow({text:workFlow.title,x:100,y:10,draggable:false,layer:this,standalone:true});
 		this.standAloneWF.setVertices(workFlow.vertices,workFlow);
 		this.add(this.standAloneWF);
@@ -136,8 +142,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.standAloneWF.addConnectionsToLayer();
 		
 		//turn off io Mode and remove onClicks
-		this.ioMode = false;
-		this.setUpIOMode();
+		this.setIOMode(false);
 		
 		//create bin for lower layer
 		this.renderRubbishBin();
@@ -204,14 +209,17 @@ Kinetic.WorkFlowLayer.prototype = {
 	{
 		if(this.standAloneWF != null)
 		{
-			//update the currentElements, using standAloneWF
-			//standAloneWF has to updated,as the layout is different
+			//create a new workflow from the standAlone workflow
 			tempEl = new Kinetic.WorkFlow({text:this.standAloneWF.title,x:100,y:10,draggable:true,layer:this,standalone:false});
+			//add this to the layer, as it will need a reference to a layer whilst
+			//setting vertices
 			this.add(tempEl);
-			//the reference in the array has to be updated to the new element
+			//set the vertices of the new temp workflow
 			tempEl.setVertices(this.standAloneWF.vertices,this.standAloneWF);
-			
+			//add all the standalone element to the temp workflow
 			tempEl.addElements(this.standAloneWF.components);
+			
+			//add the tempWF to the current elements, overwrite it if an index has been found
 			if(this.standAloneIndex == -1)
 			{
 				this.currentElements.push(tempEl);
@@ -221,9 +229,11 @@ Kinetic.WorkFlowLayer.prototype = {
 			{
 				this.currentElements[this.standAloneIndex] = tempEl;
 			}
+			//now clear the layer so all components can be rendered
 			this.clear();
 			this.removeChildren();
 			
+			//add all the current elements to the l
 			for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 			{
 				this.add(this.currentElements[iCEls]);
@@ -231,9 +241,8 @@ Kinetic.WorkFlowLayer.prototype = {
 				this.currentElements[iCEls].addConnectionsToLayer();
 				
 			}
-			this.ioMode = false;
-			//remove all events listening for the click
-			this.setUpIOMode();
+			this.setIOMode(false);
+			
 			this.draw();
 			this.reDrawLayer();
 			this.updateAllVertices();
@@ -325,6 +334,7 @@ Kinetic.WorkFlowLayer.prototype = {
 					this.standAloneWF.components[iCEls].off('click');
 					this.standAloneWF.components[iCEls].setStroke('black');
 				}
+				this.getLayer().draw();
 			}
 		}
 	},
@@ -343,39 +353,37 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	reDrawLayer : function ()
 	{
-		//when a new element is added
-		//if this.standaloneWF == null
-		//loop through all the current elements
-		
-		currentWidth = 0;
-		rowWidth = 0;
-		rowArray = new Array();
-		lastYRow = 50;
+		//width of the current element
+		var currentWidth = 0;
+		//current width of the row, ie elements that will be in it
+		var rowWidth = 0;
+		//row to be rendered, when it is correct width
+		var rowArray = [];
+		//Y position of the last row, rows start at 50
+		var lastYRow = 50;
 		nextRowY = 0;
-		noRows = 0;
+		//number of rows rendered
+		var noRows = 0;
 		for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 		{
-			//get width of current element
+			//overwrite the position of the group, as this causes offset problems
 			this.currentElements[iCEls].setPosition({x:0,y:0});
 			currentWidth = this.currentElements[iCEls].getWidth() + 15;
 				
 			//check if adding this current width will overflow the canvas
 			if((rowWidth+currentWidth)>this.getStage().getWidth()-40)
 			{
-				
-				//update the X,Ys
+				//row needs to be rendered
 				noRows++;
-				if (noRows%2 == 0)
-					nextRowY = this.setUpBackwardsRow(rowArray,lastYRow,rowWidth);
-				else
-					nextRowY = this.setUpForwardsRow(rowArray,lastYRow,rowWidth);
-				
+				//render the row
+				nextRowY = this.renderRow(noRows,rowArray,lastYRow,rowWidth);
+				//incease position of last row
 				lastYRow = nextRowY+40;
 				
 				//clear the row array
-				rowArray = new Array();
+				rowArray = [];
 				rowWidth = 0;
-				//add the current element to the row, for next row
+				//add current element to rowArray, for the next row
 				rowArray.push(this.currentElements[iCEls]);
 				rowWidth +=currentWidth;
 				
@@ -386,153 +394,89 @@ Kinetic.WorkFlowLayer.prototype = {
 				rowArray.push(this.currentElements[iCEls]);
 				rowWidth +=currentWidth;
 			}
-			//first loop until have found widths that add up to a first row
-			//when you have that, loop through that row array
-			//update the x and ys of the group
 		}
+		//output the last row, that was not exectuted during the loop
 		noRows++;
-		if (noRows%2 == 0)
-			nextRowY = this.setUpBackwardsRow(rowArray,lastYRow,rowWidth);
-		else
-			nextRowY = this.setUpForwardsRow(rowArray,lastYRow,rowWidth);		
+		this.renderRow(noRows,rowArray,lastYRow,rowWidth);
 		this.draw();
 		this.updateAllVertices();
 		//
 	},
+	renderRow : function(noRows,rowArray,lastYRow,rowWidth)
+	{
+		if (noRows%2 == 0)
+		{
+			return this.setUpBackwardsRow(rowArray,lastYRow,rowWidth);
+		}
+		else
+		{
+			return this.setUpForwardsRow(rowArray,lastYRow,rowWidth);
+		}	
+	},
 	setUpForwardsRow : function(rowArray,lastYRow,rowWidth)
 	{
-		currentX = 40;
-		for(iR=0;iR<rowArray.length;iR++)
+		//the X value to write to next
+		var currentX = 40;
+		var self = this;
+		var ys = this.findYPosForRow(rowArray);
+		var minY = _.min(_.values(ys));
+		lastYRow += Math.abs(minY);
+		var nextYRow = 0;
+		_.each(rowArray,function(rowEl)
 		{
-			//find the margin
-			margin = (this.getStage().getWidth()-rowWidth +40)/rowArray.length - 1
-			if(rowArray[iR] instanceof Kinetic.WorkFlow || rowArray[iR] instanceof Kinetic.WorkFlowElement)
+			//find the margin between elements
+			margin = (self.getStage().getWidth()-rowWidth +40)/rowArray.length - 1
+			rowEl.setAllPositions({x:currentX,y:lastYRow+ys[rowEl._id]});
+			if(nextRowY<rowEl.getHeight()+lastYRow)
 			{
-				if(iR != 0)
-				{
-					if(rowArray[iR-1] instanceof Kinetic.WorkFlowStart)
-					{
-						rowArray[iR].setAllPositions({x:currentX+rowArray[iR-1].getWidth()/2,y:lastYRow});
-					}
-					else
-					{
-						
-						y = rowArray[iR-1].getHeight()/2-rowArray[iR].getHeight()/2;
-						y += lastYRow;
-						lastYRow = y;
-						rowArray[iR].setAllPositions({x:currentX,y:y});
-					}
-					
-				}
-				else
-				{
-					//as this is the first element, need to move down to allow room for el with greatest height
-					greatestHeight = this.findGreatestHeight(rowArray);
-					y = greatestHeight/2-rowArray[iR].getHeight()/2;
-					y += lastYRow;
-					lastYRow = y;
-					rowArray[iR].setAllPositions({x:currentX,y:y});
-				}
-				
-				if(nextRowY<rowArray[iR].getHeight()+lastYRow)
-				{
-					nextRowY = rowArray[iR].getHeight()+lastYRow;
-				}
-				
-			}
-			else if (rowArray[iR] instanceof Kinetic.WorkFlowStart || rowArray[iR] instanceof Kinetic.WorkFlowEnd)
-			{
-				if(iR != rowArray.length-1)
-				{
-					//if its a start node it needs to be moved a little down so rectangles can be lined up without going off the top
-					nextElH = rowArray[iR+1].getHeight()/2;
-					y = lastYRow + nextElH;
-					rowArray[iR].setAllPositions({x:currentX,y:y});
-				}
-				else
-				{
-					y = rowArray[iR-1].getHeight()/2;
-					y += lastYRow;
-					lastYRow = y;
-					rowArray[iR].setAllPositions({x:currentX,y:y});
-				}
-				
-				if(nextRowY<rowArray[iR].getHeight()+lastYRow)
-				{
-					nextRowY = rowArray[iR].getHeight()+lastYRow;
-				}
+				nextRowY = rowEl.getHeight()+lastYRow;
 			}
 			currentX += margin;
-			currentX += rowArray[iR].getWidth();
-		}
+			currentX += rowEl.getWidth();
+		})
 		return nextRowY;
 	},
 	setUpBackwardsRow : function(rowArray,lastYRow,rowWidth)
 	{
-		currentX = this.getStage().getWidth()-20 ;
-		for(iR=0;iR<rowArray.length;iR++)
+		//the X value to write to next
+		var currentX = this.getStage().getWidth()-20 ;;
+		var self = this;
+		var ys = this.findYPosForRow(rowArray);
+		var minY = _.min(_.values(ys));
+		lastYRow += Math.abs(minY);
+		
+		_.each(rowArray,function(rowEl)
 		{
 			//find the margin
-			margin = (this.getStage().getWidth()+40-rowWidth)/rowArray.length - 1
-			if(rowArray[iR] instanceof Kinetic.WorkFlow || rowArray[iR] instanceof Kinetic.WorkFlowElement)
+			margin = (self.getStage().getWidth()+40-rowWidth)/rowArray.length - 1
+			rowEl.setAllPositions({x:currentX- rowEl.getWidth(),y:lastYRow+ys[rowEl._id]});
+			if(nextRowY<rowEl.getHeight()+lastYRow)
 			{
-				if(iR != 0)
-				{
-					if(rowArray[iR-1] instanceof Kinetic.WorkFlowStart)
-					{
-						rowArray[iR].setAllPositions({x:currentX - rowArray[iR].getWidth()/2,y:lastYRow});
-					}
-					else
-					{
-						
-						y = rowArray[iR-1].getHeight()/2-rowArray[iR].getHeight()/2;
-						y += lastYRow;
-						lastYRow = y;
-						rowArray[iR].setAllPositions({x:currentX - rowArray[iR].getWidth(),y:y});
-					}
-					
-				}
-				else
-				{
-					//as this is the first element, need to move down to allow room for el with greatest height
-					greatestHeight = this.findGreatestHeight(rowArray);
-					y = greatestHeight/2-rowArray[iR].getHeight()/2;
-					y += lastYRow;
-					lastYRow = y;
-					rowArray[iR].setAllPositions({x:currentX - rowArray[iR].getWidth(),y:y});
-				}
-				
-				if(nextRowY<rowArray[iR].getHeight()+lastYRow)
-				{
-					nextRowY = rowArray[iR].getHeight()+lastYRow;
-				}
-				
-			}
-			else if (rowArray[iR] instanceof Kinetic.WorkFlowStart || rowArray[iR] instanceof Kinetic.WorkFlowEnd)
-			{
-				if(iR != rowArray.length-1)
-				{
-					//if its a start node it needs to be moved a little down so rectangles can be lined up without going off the top
-					nextElH = rowArray[iR+1].getHeight()/2;
-					y = lastYRow + nextElH;
-				}
-				else
-				{
-					y = rowArray[iR-1].getHeight()/2;
-					y += lastYRow;
-					lastYRow = y;
-				}
-				rowArray[iR].setAllPositions({x:currentX,y:y});
-				if(nextRowY<rowArray[iR].getHeight()+lastYRow)
-				{
-					nextRowY = rowArray[iR].getHeight()+lastYRow;
-				}
+				nextRowY = rowEl.getHeight()+lastYRow;
 			}
 			currentX -= margin;
-			currentX -= rowArray[iR].getWidth();
+			currentX -= rowEl.getWidth();
 	
-		}
+		});
 		return nextRowY;
+	},
+	findYPosForRow : function(rowArray)
+	{
+		var last = null;
+		var ys = {};
+		_.each(rowArray, function(rowEl)
+		{
+			if(last == null)
+			{
+				ys[rowEl._id] = 0;
+			}
+			else
+			{
+				ys[rowEl._id] = (ys[last._id] + last.getHeight()/2) - rowEl.getHeight()/2;
+			}
+			last = rowEl;
+		});
+		return ys;
 	},
 	findGreatestHeight : function (rowArray)
 	{
@@ -564,35 +508,35 @@ Kinetic.WorkFlowLayer.prototype = {
 			for(i1=0;i1<rectArray.length;i1++)
 			{
 				rect = rectArray[i1];
-				
+				rectAttrs = rect.getAttrs();
 				//now need to find a new position
 				if(rect instanceof Kinetic.Circle)
 				{
 					if(smallestX == -1)
 					{
-						smallestX = rect.getPosition().x - rect.getAttrs().radius;
-						biggestX = rect.getPosition().x + rect.getAttrs().radius;
-						smallestY = rect.getPosition().y - rect.getAttrs().radius
-						biggestY = rect.getPosition().y + rect.getAttrs().radius;
-						biggestYH = rect.getPosition().radius;
+						smallestX = rectAttrs.x - rectAttrs.radius;
+						biggestX = rectAttrs.x + rectAttrs.radius;
+						smallestY = rectAttrs.y - rectAttrs.radius
+						biggestY = rectAttrs.y + rectAttrs.radius;
+						biggestYH = rectAttrs.radius;
 					}
-					if(rect.getPosition().x < smallestX)
+					if(rectAttrs.x < smallestX)
 					{
-						smallestX = rect.getPosition().x - rect.getAttrs().radius;
+						smallestX = rectAttrs.x - rectAttrs.radius;
 					}
-					if(rect.getPosition().y < smallestY)
+					if(rectAttrs.y < smallestY)
 					{
-						smallestY = rect.getPosition().y -rect.getAttrs().radius;
+						smallestY = rectAttrs.y - rectAttrs.radius;
 					}
 					
-					if((rect.getPosition().x + rect.getAttrs().width) > biggestX)
+					if((rectAttrs.x + rectAttrs.width) > biggestX)
 					{
-						biggestX = (rect.getPosition().x + rect.getAttrs().radius);
+						biggestX = (rectAttrs.x + rectAttrs.radius);
 					}
-					if((rect.getPosition().y + rect.getAttrs().height) > biggestY)
+					if((rectAttrs.y + rectAttrs.height) > biggestY)
 					{
-						biggestY = (rect.getPosition().y + rect.rect.getAttrs().radius);
-						biggestYH = rect.getAttrs().radius;
+						biggestY = (rectAttrs.y + rectAttrs.radius);
+						biggestYH = rectAttrs.radius;
 					}
 				}
 				else
@@ -600,29 +544,29 @@ Kinetic.WorkFlowLayer.prototype = {
 					
 					if(smallestX == -1)
 					{
-						smallestX = rect.getPosition().x;
-						biggestX = rect.getPosition().x + rect.getAttrs().width;
-						smallestY = rect.getPosition().y
-						biggestY = rect.getPosition().y + rect.getAttrs().height;
-						biggestYH = rect.getPosition().y;
+						smallestX = rectAttrs.x;
+						biggestX = rectAttrs.x + rectAttrs.width;
+						smallestY = rectAttrs.y
+						biggestY = rectAttrs.y + rectAttrs.height;
+						biggestYH = rectAttrs.y;
 					}
-					if(rect.getPosition().x < smallestX)
+					if(rectAttrs.x < smallestX)
 					{
-						smallestX = rect.getPosition().x;
+						smallestX = rectAttrs.x;
 					}
-					if(rect.getPosition().y < smallestY)
+					if(rectAttrs.y < smallestY)
 					{
-						smallestY = rect.getPosition().y;
+						smallestY = rectAttrs.y;
 					}
 					
-					if((rect.getPosition().x + rect.getAttrs().width) > biggestX)
+					if((rectAttrs.x + rectAttrs.width) > biggestX)
 					{
-						biggestX = (rect.getPosition().x + rect.getAttrs().width);
+						biggestX = (rectAttrs.x + rectAttrs.width);
 					}
-					if((rect.getPosition().y + rect.getAttrs().height) > biggestY)
+					if((rectAttrs.y + rectAttrs.height) > biggestY)
 					{
-						biggestY = (rect.getPosition().y + rect.getAttrs().height);
-						biggestYH = rect.getAttrs().height;
+						biggestY = (rectAttrs.y + rectAttrs.height);
+						biggestYH = rectAttrs.height;
 					}
 				}
 

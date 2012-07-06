@@ -105,10 +105,11 @@
 	        ctx = stage.children[0].getContext();
 	        ctx.font = fontSize + "Calibri";
 	       
-	        
+	        start = new Kinetic.WorkFlowStart({x:20,y:20,text:"Start",draggable:true});
+	        layer.addElement(start);
 	        	        
 	        stage.draw();
-	        layer.reDrawLayer();
+	        //layer.reDrawLayer();
 	        layer.updateAllVertices();
 	        //layer.convertToBPMN();
 	        
@@ -169,7 +170,7 @@
                         <input class="text" type="text" id="search" name="search"
                             size="50" onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords" />
                     
-                    <div class="well draggable" id="searchResults">
+                    <div class="well" id="searchResults">
                     </div>
                 </div>
             </li>
