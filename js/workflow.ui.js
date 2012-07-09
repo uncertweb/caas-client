@@ -3,14 +3,14 @@ var idCount = 100;
 WorkFlow_UI.toolbox =
 {
 	 activeButtons : new Array(),
-	 allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn",'data-toggle':"", onclick:"layer.moveUp();"},
+	 allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn  btn-primary",'data-toggle':"", onclick:"layer.moveUp();"},
 					  {id:"io",text:"Toggle IO Mode", class:"btn btn-primary",'data-toggle':"button", onclick:"WorkFlow_UI.addWF.click();"},
 					  {id:"reDraw", text:"Auto Layout", class:"btn btn-primary",'data-toggle':"", onclick:"layer.reDrawLayer();"},
 					  {id:"addWF",text:"Add Workflow",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.addWF.open();"}
 					 ),
 	open: function ()
 	{	
-		this.activeButtons = this.setActiveControl(["io","reDraw","addWF"]);
+		this.setActiveControl(["io","reDraw","addWF"]);
 		
 		$('#toolbox').modal
 		({
@@ -67,7 +67,12 @@ WorkFlow_UI.toolbox =
 		})
 		//close the toolbox, for neatness
 		$('#toolbox').modal('show');
-		this.displayActiveControls(this.activeButtons,'activeControls');
+		this.displayActiveControls('activeControls');
+	},
+	changeToolBoxTitle :function (title)
+	{
+		$('#toolboxTitle').html(title);
+		
 	},
 	setActiveControl:function(controls)
 	{
@@ -77,11 +82,12 @@ WorkFlow_UI.toolbox =
 		{
 			activeButtons.push(_.find(self.allButtons,function(button){return button.id == control;}));
 		});
-		return activeButtons;
+		this.activeButtons = activeButtons;
 	},
-	displayActiveControls :function(active,divId)
+	displayActiveControls :function(divId)
 	{
-		_.each(active,function(ac){
+		$('#' + divId).empty();
+		_.each(this.activeButtons,function(ac){
 			html = '<div class="span"><button ';
 			_.each(ac,function(v,k){ html += ' ' + k + '="' + v + '"'});
 			html += '>' + ac.text + '</button></div>';
@@ -226,8 +232,8 @@ WorkFlow_UI.addWF =
    		 	}
 		});
 		$('#newWFModal').modal('show');
-		$('#titleWF').empty();
-		$('#abstractWF').empty();	
+		$('#titleWF').val('');
+		$('#abstractWF').val('');	
 	},
 	add : function()
 	{

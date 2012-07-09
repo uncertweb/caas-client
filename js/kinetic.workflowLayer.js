@@ -141,6 +141,9 @@ Kinetic.WorkFlowLayer.prototype = {
 		
 		//create bin for lower layer
 		this.renderRubbishBin();
+		WorkFlow_UI.toolbox.setActiveControl(["io","reDraw","moveUp"]);
+		WorkFlow_UI.toolbox.displayActiveControls('activeControls');
+		WorkFlow_UI.toolbox.changeToolBoxTitle("Toolbox - " + workFlow.title );
 		
 		this.draw();
 		this.standAloneWF.updateAllVertices();
@@ -233,6 +236,9 @@ Kinetic.WorkFlowLayer.prototype = {
 					
 			this.standAloneWF = null;
 			this.standAloneIndex = -1;
+			WorkFlow_UI.toolbox.setActiveControl(["io","reDraw","addWF"]);
+			WorkFlow_UI.toolbox.displayActiveControls('activeControls');
+			WorkFlow_UI.toolbox.changeToolBoxTitle("Toolbox - Main WorkFlow" );
 		}
 	},
 	setUpIOMode : function ()
