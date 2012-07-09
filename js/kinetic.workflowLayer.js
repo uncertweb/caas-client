@@ -351,6 +351,13 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.ioObjects = {input:null,output:null};
 		this.draw();
 	},
+	clearLayer : function ()
+	{
+		this.currentElements = [];
+		this.clear();
+		this.removeChildren();
+		this.renderRubbishBin();
+	},
 	reDrawLayer : function ()
 	{
 		//width of the current element
@@ -477,18 +484,6 @@ Kinetic.WorkFlowLayer.prototype = {
 			last = rowEl;
 		});
 		return ys;
-	},
-	findGreatestHeight : function (rowArray)
-	{
-		greatestHeight =0;
-		for(iGH=0;iGH<rowArray.length;iGH++)
-		{
-			if(greatestHeight<rowArray[iGH].getHeight())
-			{
-				greatestHeight = rowArray[iGH].getHeight();
-			}
-		}
-		return greatestHeight;
 	},
 	findNextPosition : function()
 	{
@@ -707,7 +702,7 @@ Kinetic.WorkFlowLayer.prototype = {
         	this.currentElements[wFs].updateAllVertices();
         }
 	},
-	convertToBPMN : function()
+	createWorkFlow : function()
 	{
 		var mainWorkFlow = new UncertWeb.Workflow();
 		for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
@@ -728,8 +723,12 @@ Kinetic.WorkFlowLayer.prototype = {
 				mainWorkFlow.append(new UncertWeb.Component(this.currentElements[iCEls].brokerProperties))
 			}
 		}
-		var BPNM = UncertWeb.Encode.asBPMN(mainWorkFlow);
-		console.log(BPNM);
+		return mainWorkFlow;
+		
+		
+	},
+	publishWorkFlow : function()
+	{
 		
 	}
 	
