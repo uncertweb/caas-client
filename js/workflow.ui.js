@@ -15,7 +15,33 @@ WorkFlow_UI.orderComponents =
 			$(function() {
 				$( "#sortable" ).sortable({
 					placeholder: "ui-state-highlight",
-					stop: function(event, ui) { WorkFlow_UI.orderComponents.updateOrder(); }
+					start: function()
+					{
+						//remove droppable event when dragging the toolbox
+						var con = $('#container');
+			          	con.droppable({
+					              drop: function(el,ui) {
+			                        	
+			                    }
+						});
+					},
+					drag : function()
+					{
+						$('#toolbox').css(
+						{
+							opacity:0.6
+						});
+					},
+					stop: function()
+					{
+						var con = $('#container');
+						con.droppable({
+				              drop: function(el,ui) {
+		                        	WorkFlow_UI.search.doDrop(el,ui,layer)
+		                    }
+		               	});
+		               	WorkFlow_UI.orderComponents.updateOrder();
+					}
 				});
 				$( "#sortable" ).disableSelection();
 			});
