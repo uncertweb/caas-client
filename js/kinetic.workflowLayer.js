@@ -6,7 +6,23 @@ Kinetic.WorkFlowLayer = function (config)
 	this.standAloneWF = null;
 	this.ioMode = false;
 	this.ioObjects = {input:null,output:null};
-	
+	this.getComponents = function(includeStartEnd)
+	{
+		if(includeStartEnd)
+		{
+			return this.currentElements;
+		}
+		else
+		{
+			//gets all the components that are not start or ends
+			var returnEls =  _.filter(this.currentElements,function(el)
+			{
+				return ((el instanceof Kinetic.WorkFlow) || (el instanceof Kinetic.WorkFlowElement))
+			});	
+			return returnEls;
+		}
+		
+	};
 	this.toggleIOMode = function ()
 	{
 		if(this.ioMode)
@@ -72,7 +88,29 @@ Kinetic.WorkFlowLayer = function (config)
 		
 			
 	};
-	
+	this.updateComponentOrder = function(order)
+	{
+		var newOrder = [];
+		var self = this;
+		_.each(order,function(comId)
+		{
+			var next = _.find(self.currentElements, function(com)
+			{
+				return com._id == comId;
+			});
+			
+			newOrder.push(next);
+		});
+		if(this.currentElements[0] instanceof Kinetic.WorkFlowStart)
+		{
+			newOrder.unshift(this.currentElements[0]);
+		}
+		if(this.currentElements[this.currentElements.length - 1] instanceof Kinetic.WorkFlowEnd)
+		{
+			newOrder.push(this.currentElements[this.currentElements.length - 1]);
+		}
+		this.currentElements = newOrder;
+	};
 	this.getIndexOfElement = function (workflow)
 		{
 			for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
