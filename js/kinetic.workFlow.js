@@ -234,20 +234,17 @@ Kinetic.WorkFlow.prototype = {
 		for(Ci=0;Ci<this.components.length;Ci++) { this.components[Ci].updateAllVertices(); }
 		this.startElement.updateAllVertices();
 	},
-	/*connectTo : function (el)
+	connectToEl : function (el)
 	{
 		//need to connect this to the main element as thats the outer layer
 		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
 		this.getLayer().add(connection);
-
-	
-	},*/
+	},
 	connectTo : function (connectConfig)
 	{
 		//this is always the output as its being connected to an input
 		//need to check whether this map already exists
 		//as this is a workflow, we need to check the element
-		
 		//output component
 		var outputCom = this.getComponentOfIO(connectConfig.output.outputIO.id);
 		//change the output from workflow to component
@@ -350,12 +347,10 @@ Kinetic.WorkFlow.prototype = {
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
 		el = _.isNumber(el) ? this.components[el] : el;
-		
 		el.deleteAllIOs();
 		//remove the element from the currentElements
 		this.components.splice(this.getIndexOfElement(el), 1);
 		this.remove(el);
-
 	},
 	deleteAllIOs : function ()
 	{
@@ -364,7 +359,22 @@ Kinetic.WorkFlow.prototype = {
 		{
 			com.deleteAllIOs();
 		});
-
+		//delete all vertices that are for ordering
+		this.disconnectAllVertices();
+	},
+	disconnectAllVertices : function ()
+	{
+		var deleteVerts = this.vertices.slice();
+		//remove all the vertices for this workflow
+		_.each(deleteVerts,function(vert)
+		{
+			vert.remove();
+		});
+		//disconnect the vertices of all components
+		_.each(this.components,function(el)
+		{
+			el.disconnectAllVertices();
+		});
 	},
 	addConnectionsToLayer : function ()
 	{

@@ -160,7 +160,43 @@ Kinetic.WorkFlowLayer.prototype = {
 			}
 		}
 	},
-	
+	updateConnectionOrders : function()
+	{
+		if(this.standAlone == null)
+		{
+			//get rid of all the current vertices
+			_.each(this.currentElements,function(el)
+			{
+				el.disconnectAllVertices();
+			});
+			this.draw();
+			//now we need to setup the all the vertices
+			this.setOrderedVertices();
+			//then we need connect all the input/outputs
+			_.each(this.getComponents(false),function(el)
+			{
+				el.connectAllIOs();
+			});
+			this.draw();
+		}
+		else
+		{
+			
+		}
+		
+	},
+	setOrderedVertices : function ()
+	{
+		//loop all elements
+		for(var elI = 0; elI < this.currentElements.length; elI++)
+		{
+			//if not the last element, then join to the next elements
+			if(elI != this.currentElements.length -1)
+			{
+				this.currentElements[elI].connectToEl(this.currentElements[elI+1]);
+			}
+		}
+	},
 	renderWorkFlow : function(workFlow)
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
@@ -210,6 +246,8 @@ Kinetic.WorkFlowLayer.prototype = {
 				this.currentElements.push(el);
 				returnIndex = this.currentElements.length - 1;
 			}
+			//add connections to the workflow
+			this.updateConnectionOrders();
 		}
 		else
 		{
@@ -241,6 +279,8 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.standAloneWF.deleteElement(el);
 			
 		}
+		//update the ordering connections
+		this.updateConnectionOrders();
 		this.draw();
 	},
 	moveUp : function ()
@@ -256,7 +296,6 @@ Kinetic.WorkFlowLayer.prototype = {
 			tempEl.setVertices(this.standAloneWF.vertices,this.standAloneWF);
 			//add all the standalone element to the temp workflow
 			tempEl.addElements(this.standAloneWF.components);
-			
 			//add the tempWF to the current elements, overwrite it if an index has been found
 			if(this.standAloneIndex == -1)
 			{
@@ -270,24 +309,18 @@ Kinetic.WorkFlowLayer.prototype = {
 			//now clear the layer so all components can be rendered
 			this.clear();
 			this.removeChildren();
-			
 			//add all the current elements to the l
 			for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 			{
 				this.add(this.currentElements[iCEls]);
-				
 				this.currentElements[iCEls].addConnectionsToLayer();
-				
 			}
 			this.setIOMode(false);
-			
 			this.draw();
 			this.reDrawLayer();
 			this.updateAllVertices();
-			
 			//render rubbish bin for the top layer
 			this.renderRubbishBin();
-					
 			this.standAloneWF = null;
 			this.standAloneIndex = -1;
 		}
@@ -617,7 +650,6 @@ Kinetic.WorkFlowLayer.prototype = {
 			size.x = biggestX+20;
 			size.y = biggestY;
 			return size;
-			
 		}
 		else
 		{
@@ -640,7 +672,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		smallestX = -1;
 		//need to find if the rect drawn will cover any other element
 		
-			//if workflow, then check mainElement.rect x,y,w,h
+		//if workflow, then check mainElement.rect x,y,w,h
 		rectArray = this.recurseToFindAllChildRect(this);
 		for(i1=0;i1<rectArray.length;i1++)
 		{
@@ -694,12 +726,9 @@ Kinetic.WorkFlowLayer.prototype = {
 			if(size.y>this.getStage().getHeight())
 			{
 				this.getStage().setSize(this.getStage().getWidth(),size.y + 200);
-							}
+			}
 			return size;
-		}
-		
-				
-		
+		}		
 	},
 	recurseToFindAllChildRect : function(child)
 	{

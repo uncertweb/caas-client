@@ -41,6 +41,8 @@ WorkFlow_UI.orderComponents =
 		                    }
 		               	});
 		               	WorkFlow_UI.orderComponents.updateOrder();
+		               	//set up connections
+		               	layer.updateConnectionOrders();
 					}
 				});
 				$( "#sortable" ).disableSelection();
