@@ -8,19 +8,27 @@ Kinetic.WorkFlowLayer = function (config)
 	this.ioObjects = {input:null,output:null};
 	this.getComponents = function(includeStartEnd)
 	{
-		if(includeStartEnd)
+		if(this.standAloneWF == null)
 		{
-			return this.currentElements;
+			if(includeStartEnd)
+			{
+				return this.currentElements;
+			}
+			else
+			{
+				//gets all the components that are not start or ends
+				var returnEls =  _.filter(this.currentElements,function(el)
+				{
+					return ((el instanceof Kinetic.WorkFlow) || (el instanceof Kinetic.WorkFlowElement))
+				});	
+				return returnEls;
+			}
 		}
 		else
 		{
-			//gets all the components that are not start or ends
-			var returnEls =  _.filter(this.currentElements,function(el)
-			{
-				return ((el instanceof Kinetic.WorkFlow) || (el instanceof Kinetic.WorkFlowElement))
-			});	
-			return returnEls;
+			return this.standAloneWF.components;
 		}
+		
 		
 	};
 	this.toggleIOMode = function ()
@@ -94,22 +102,30 @@ Kinetic.WorkFlowLayer = function (config)
 		var self = this;
 		_.each(order,function(comId)
 		{
-			var next = _.find(self.currentElements, function(com)
+			var next = _.find(self.getComponents(false), function(com)
 			{
 				return com._id == comId;
 			});
 			
 			newOrder.push(next);
 		});
-		if(this.currentElements[0] instanceof Kinetic.WorkFlowStart)
+		if(this.standAloneWF == null)
 		{
-			newOrder.unshift(this.currentElements[0]);
+			if(this.currentElements[0] instanceof Kinetic.WorkFlowStart)
+			{
+				newOrder.unshift(this.currentElements[0]);
+			}
+			if(this.currentElements[this.currentElements.length - 1] instanceof Kinetic.WorkFlowEnd)
+			{
+				newOrder.push(this.currentElements[this.currentElements.length - 1]);
+			}
+			this.currentElements = newOrder;
 		}
-		if(this.currentElements[this.currentElements.length - 1] instanceof Kinetic.WorkFlowEnd)
+		else
 		{
-			newOrder.push(this.currentElements[this.currentElements.length - 1]);
+			this.standAloneWF.components = newOrder;
 		}
-		this.currentElements = newOrder;
+		
 	};
 	this.getIndexOfElement = function (workflow)
 		{
@@ -162,14 +178,13 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	updateConnectionOrders : function()
 	{
-		if(this.standAlone == null)
+		if(this.standAloneWF == null)
 		{
 			//get rid of all the current vertices
 			_.each(this.currentElements,function(el)
 			{
 				el.disconnectAllVertices();
 			});
-			this.draw();
 			//now we need to setup the all the vertices
 			this.setOrderedVertices();
 			//then we need connect all the input/outputs
@@ -177,24 +192,41 @@ Kinetic.WorkFlowLayer.prototype = {
 			{
 				el.connectAllIOs();
 			});
-			this.draw();
+			
 		}
 		else
 		{
-			
+			_.each(this.standAloneWF.components,function(el)
+			{
+				el.disconnectAllVertices();
+			});
+			//now we need to setup the all the vertices
+			this.setOrderedVertices();
+			//then we need connect all the input/outputs
+			_.each(this.standAloneWF.components,function(el)
+			{
+				el.connectAllIOs();
+			});
 		}
-		
+		this.draw();
 	},
 	setOrderedVertices : function ()
 	{
-		//loop all elements
-		for(var elI = 0; elI < this.currentElements.length; elI++)
+		if(this.standAloneWF == null)
 		{
-			//if not the last element, then join to the next elements
-			if(elI != this.currentElements.length -1)
+			//loop all elements
+			for(var elI = 0; elI < this.currentElements.length; elI++)
 			{
-				this.currentElements[elI].connectToEl(this.currentElements[elI+1]);
+				//if not the last element, then join to the next elements
+				if(elI != this.currentElements.length -1)
+				{
+					this.currentElements[elI].connectToEl(this.currentElements[elI+1]);
+				}
 			}
+		}
+		else
+		{
+			this.standAloneWF.setOrderedVertices();
 		}
 	},
 	renderWorkFlow : function(workFlow)
@@ -210,8 +242,9 @@ Kinetic.WorkFlowLayer.prototype = {
 		//create
 		this.standAloneWF = new Kinetic.WorkFlow({text:workFlow.title,x:100,y:10,draggable:false,layer:this,standalone:true});
 		this.standAloneWF.setVertices(workFlow.vertices,workFlow);
+		this.standAloneWF.setStartEl(workFlow);
 		this.add(this.standAloneWF);
-		
+		this.standAloneWF.configStart = workFlow.configStart;
 		this.standAloneWF.addElements(workFlow.components);
 		this.standAloneWF.addConnectionsToLayer();
 		
@@ -294,6 +327,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.add(tempEl);
 			//set the vertices of the new temp workflow
 			tempEl.setVertices(this.standAloneWF.vertices,this.standAloneWF);
+			tempEl.setStartEl(this.standAloneWF);
 			//add all the standalone element to the temp workflow
 			tempEl.addElements(this.standAloneWF.components);
 			//add the tempWF to the current elements, overwrite it if an index has been found

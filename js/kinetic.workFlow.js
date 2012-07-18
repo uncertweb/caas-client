@@ -8,7 +8,8 @@ Kinetic.WorkFlow = function (config)
 	this.classType = "WorkFlow";
 	this.components = new Array();
 	this.title = config.text;
-	this.config = config.config;
+	this.brokerProperties = {};
+	this.brokerProperties["name"] = this.title;
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.standAlone = config.standalone;
 	this.setStroke = function (colour)
@@ -130,12 +131,12 @@ Kinetic.WorkFlow = function (config)
 		this.mainElement = new Kinetic.WorkFlowElement(config);
 		this.add(this.mainElement);
 		//create the start element for the workflow and add it to the layer
-		configStart = {
+		this.configStart = {
 			x:this.mainElement.rect.getPosition().x + 20,
 			y:this.mainElement.rect.getPosition().y+60,
 			text:"Start"
 		}
-		this.startElement = new Kinetic.WorkFlowStart(configStart);
+		this.startElement = new Kinetic.WorkFlowStart(this.configStart);
 		this.add(this.startElement);
 		//move the mainElement to the bottom, so Workflows can be seen
 		this.mainElement.moveToBottom();
@@ -159,7 +160,7 @@ Kinetic.WorkFlow = function (config)
 			config.layer.checkOverBin(this,ev);
 		});
 	}
-	
+
 }
 Kinetic.WorkFlow.prototype = {
 
@@ -233,6 +234,22 @@ Kinetic.WorkFlow.prototype = {
 		}
 		for(Ci=0;Ci<this.components.length;Ci++) { this.components[Ci].updateAllVertices(); }
 		this.startElement.updateAllVertices();
+	},
+	setStartEl : function (flow)
+	{
+		this.startConfig = flow.startConfig;
+		this.startElement.vertices = flow.startElement.vertices;
+		var self = this;
+		_.each(this.startElement.vertices,function(vert){
+			if(_.isEqual(vert.start,flow.startElement))
+			{
+				vert.start = self.startElement;
+			}
+			if(_.isEqual(vert.end,flow.startElement))
+			{
+				vert.end = self.startElement;
+			} 
+		});	
 	},
 	connectToEl : function (el)
 	{
@@ -362,6 +379,10 @@ Kinetic.WorkFlow.prototype = {
 		//delete all vertices that are for ordering
 		this.disconnectAllVertices();
 	},
+	connectAllIOs : function()
+	{
+		
+	},
 	disconnectAllVertices : function ()
 	{
 		var deleteVerts = this.vertices.slice();
@@ -404,6 +425,22 @@ Kinetic.WorkFlow.prototype = {
 			} 
 		}
 		this.vertices = verticesArray;
+	},
+	setOrderedVertices : function ()
+	{
+		if(this.components.length != 0)
+		{
+			this.startElement.connectToEl(this.components[0]);
+		}
+		//loop all elements
+		for(var elI = 0; elI < this.components.length; elI++)
+		{
+			//if not the last element, then join to the next elements
+			if(elI != this.components.length -1)
+			{
+				this.components[elI].connectToEl(this.components[elI+1]);
+			}
+		}
 	},
 	updateSizeAndPosOfMainEl : function()
 	{
