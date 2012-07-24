@@ -167,7 +167,7 @@ WorkFlow_UI.search =
              offset = layer.getStage()._getContentPosition();
                 //get search meta data using this id
                 
-                var wFlowEle = new Kinetic.WorkFlowElement({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
 		    
@@ -215,7 +215,7 @@ WorkFlow_UI.addWF =
 			description:$('#abstractGroup').val()
 		}
 		//create workflow from
-		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),config:config,x:100,y:10,draggable:true,layer:layer});
+		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer});
 		var index = layer.addElement(newWFlow);
 		//move down a layer to start editing this workflow
 		layer.renderWorkFlow(index);
@@ -276,7 +276,7 @@ WorkFlow_UI.io =
 	   			 $('#inputDesc').append('<h4>Description</h4>');
 	   			 $('#inputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
    			 }
-   			 else if (IO.input instanceof Kinetic.WorkFlowElement)
+   			 else if (IO.input instanceof Kinetic.WorkFlowComponent)
    			 {
 	   			 //set the type
 	   			 $('#inputHeading').html('To: ' + IO.input.title);
@@ -297,7 +297,7 @@ WorkFlow_UI.io =
 	   			 $('#outputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
 	   			 
    			 }
-   			 else if (IO.output instanceof Kinetic.WorkFlowElement)
+   			 else if (IO.output instanceof Kinetic.WorkFlowComponent)
    			 {
 	   			 //set the type
 	   			 $('#outputHeading').html('From: ' + IO.output.title);

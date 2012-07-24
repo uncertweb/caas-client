@@ -3,104 +3,16 @@ var fontSize = 10;
 Kinetic.WorkFlow = function (config)
 {
 	//call the super, i.e group
-	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
-	this.vertices = new Array();
+	this.title = config.text;
+	Kinetic.WorkFlowElement.apply(this, [{draggable:config.draggable,brokerProperties:config.brokerProperties}]);
 	this.classType = "WorkFlow";
 	this.components = new Array();
-	this.title = config.text;
-	this.brokerProperties = {};
-	this.brokerProperties["name"] = this.title;
 	this.endElement = {};
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.standAlone = config.standalone;
 	this.setStroke = function (colour)
 	{
 		this.mainElement.setStroke(colour);
-	};
-	this.getComponentOfIO = function(id)
-	{
-		return _.find(this.components, function(com){ return com.getIOObject(id) != undefined; })
-	}
-	this.getIOObject = function(id)
-	{
-		//loop through all components
-		return this.getComponentOfIO(id).getIOObject(id);
-	};
-	this.getInputConnections = function(output)
-	{
-		//find all connections that have the output as the output, for each component
-		var allInputsCons = new Array();
-		if(output instanceof Kinetic.WorkFlow)
-		{
-			_.each(this.components, function(com){
-				allInputsCons  = allInputsCons.concat(
-					_.filter(com.ioConnections, 
-						function(io){ return _.find(output.components, 
-										function(comOutput)				
-										{ 
-											return _.isEqual(io.output.obj,comOutput);
-										}) != undefined;
-									})
-				);
-			});
-
-		}
-		else
-		{
-			_.each(this.components, function(com){
-				allInputsCons =  allInputsCons.concat(_.filter(com.ioConnections, function(io){ return _.isEqual(io.output.obj,output);}));
-			});
-		}
-		return allInputsCons;
-	};
-	this.getOutputConnections = function(input)
-	{
-		//find all connections that have the output as the output
-		var allOutputsCons = new Array();
-		if(input instanceof Kinetic.WorkFlow)
-		{
-			//if the input is a component then we need to check for inputs.components
-			//so loop all components
-			//find if one of the input.components equals the io input
-			//if it does, then this is a ioConnection to return
-			_.each(this.components, function(com){
-				allOutputsCons  = allOutputsCons.concat(
-					_.filter(com.ioConnections, 
-						function(io){  
-								var found = _.find(input.components, function(comInput)	{return _.isEqual(io.input.obj,comInput);}) 
-								return (found != undefined);
-									})
-				);
-			});
-
-		}
-		else
-		{
-			_.each(this.components, function(com){
-				allOutputsCons  = allOutputsCons.concat(_.filter(com.ioConnections, function(io){ return _.isEqual(io.input.obj,input);}));
-			});
-		}
-		return allOutputsCons;
-	};
-	//to get input and outputs of a workflow, need to loop components
-	//this may change, dependant on if we do not include taken ones
-	this.getInputs = function ()
-	{
-		var collectedIns = new Array();
-		_.each(this.components, function(com)
-		{
-			collectedIns = collectedIns.concat(com.getInputs());
-		});
-		return collectedIns;
-	};
-	this.getOutputs = function ()
-	{
-		var collectedOuts = new Array();
-		_.each(this.components, function(com)
-		{
-			collectedOuts = collectedOuts.concat(com.getOutputs());
-		});
-		return collectedOuts;
 	};
 	this.getLastComponentIndex = function ()
 	{	
@@ -129,7 +41,7 @@ Kinetic.WorkFlow = function (config)
 	else
 	{	config["type"] = "mainRect";
 		config["draggable"] = true;
-		this.mainElement = new Kinetic.WorkFlowElement(config);
+		this.mainElement = new Kinetic.WorkFlowComponent(config);
 		this.add(this.mainElement);
 		//create the start element for the workflow and add it to the layer
 		this.configStart = {
@@ -141,8 +53,6 @@ Kinetic.WorkFlow = function (config)
 		this.add(this.startElement);
 		//move the mainElement to the bottom, so Workflows can be seen
 		this.mainElement.moveToBottom();
-		
-		
 		//events for this work flow
 		this.on("dblclick",function()
 		{
@@ -178,14 +88,14 @@ Kinetic.WorkFlow.prototype = {
 			ctx = config.layer.getContext();
 			TL = ctx.measureText(config.text.substring(0, 40)).width * 1.5;
 			position = this.findWhereToPutNewElement(TL);
-			comGroup = new Kinetic.WorkFlowElement({draggable:true,text:config.text,x:position.x,y:position.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
+			comGroup = new Kinetic.WorkFlowComponent({draggable:true,text:config.text,x:position.x,y:position.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
 		}
 		else
 		{
 			ctx = config.layer.getContext();
 			TL = ctx.measureText(config.text.substring(0, 40)).width * 1.5;
 			position = this.findWhereToPutNewElement(TL);
-			comGroup = new Kinetic.WorkFlowElement({draggable:false,text:config.text,x:position.x,y:position.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
+			comGroup = new Kinetic.WorkFlowComponent({draggable:false,text:config.text,x:position.x,y:position.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
 		}
 		
 		//need to connect it to the element before, or the start
@@ -289,12 +199,6 @@ Kinetic.WorkFlow.prototype = {
 				vert.end = self.startElement;
 			} 
 		});	
-	},
-	connectToEl : function (el)
-	{
-		//need to connect this to the main element as thats the outer layer
-		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
 	},
 	connectTo : function (connectConfig)
 	{
@@ -408,20 +312,6 @@ Kinetic.WorkFlow.prototype = {
 		this.components.splice(this.getIndexOfElement(el), 1);
 		this.remove(el);
 	},
-	deleteAllIOs : function ()
-	{
-		//call deleteAllIOs for all components
-		_.each(this.components,function(com)
-		{
-			com.deleteAllIOs();
-		});
-		//delete all vertices that are for ordering
-		this.disconnectAllVertices();
-	},
-	connectAllIOs : function()
-	{
-		//connect the IOs of all the 
-	},
 	disconnectAllVertices : function ()
 	{
 		var deleteVerts = this.vertices.slice();
@@ -438,7 +328,6 @@ Kinetic.WorkFlow.prototype = {
 	},
 	addConnectionsToLayer : function ()
 	{
-		
 		if(this.standAlone == false)
 		{
 			for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
@@ -686,7 +575,7 @@ Kinetic.WorkFlow.prototype = {
 
 };
 
-Kinetic.GlobalObject.extend(Kinetic.WorkFlow, Kinetic.Group);
+Kinetic.GlobalObject.extend(Kinetic.WorkFlow, Kinetic.WorkFlowElement);
 
 
 

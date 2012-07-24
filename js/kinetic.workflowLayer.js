@@ -19,7 +19,7 @@ Kinetic.WorkFlowLayer = function (config)
 				//gets all the components that are not start or ends
 				var returnEls =  _.filter(this.currentElements,function(el)
 				{
-					return ((el instanceof Kinetic.WorkFlow) || (el instanceof Kinetic.WorkFlowElement))
+					return ((el instanceof Kinetic.WorkFlow) || (el instanceof Kinetic.WorkFlowComponent))
 				});	
 				return returnEls;
 			}
@@ -249,7 +249,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.removeChildren();
 		
 		//create
-		this.standAloneWF = new Kinetic.WorkFlow({text:workFlow.title,x:100,y:10,draggable:false,layer:this,standalone:true});
+		this.standAloneWF = new Kinetic.WorkFlow({text:workFlow.title,brokerProperties:workFlow.brokerProperties,x:100,y:10,draggable:false,layer:this,standalone:true});
 		this.standAloneWF.setVertices(workFlow.vertices,workFlow);
 		this.standAloneWF.setStartEl(workFlow);
 		this.add(this.standAloneWF);
@@ -330,7 +330,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		if(this.standAloneWF != null)
 		{
 			//create a new workflow from the standAlone workflow
-			tempEl = new Kinetic.WorkFlow({text:this.standAloneWF.title,x:100,y:10,draggable:true,layer:this,standalone:false});
+			tempEl = new Kinetic.WorkFlow({text:this.standAloneWF.title,brokerProperties:this.standAloneWF.brokerProperties,x:100,y:10,draggable:true,layer:this,standalone:false});
 			//add this to the layer, as it will need a reference to a layer whilst
 			//setting vertices
 			this.add(tempEl);
@@ -381,7 +381,7 @@ Kinetic.WorkFlowLayer.prototype = {
 				for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 				{
 					
-					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowElement)
+					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowComponent)
 					{
 						this.currentElements[iCEls].on('click',function()
 						{
@@ -434,7 +434,7 @@ Kinetic.WorkFlowLayer.prototype = {
 				//all currentEls non clickable
 				for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 				{
-					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowElement)
+					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowComponent)
 					{
 						this.currentElements[iCEls].off('click');
 						this.currentElements[iCEls].setStroke('black');
@@ -785,7 +785,7 @@ Kinetic.WorkFlowLayer.prototype = {
 				rectArray.push(child.children[i].mainElement.rect);
 				
 			}
-			else if(child.children[i] instanceof Kinetic.WorkFlowElement)
+			else if(child.children[i] instanceof Kinetic.WorkFlowComponent)
 			{
 				rectArray.push(child.children[i].rect);
 			}
@@ -829,7 +829,7 @@ Kinetic.WorkFlowLayer.prototype = {
 				}
 				mainWorkFlow.append(workflow);
 			}
-			else if (this.currentElements[iCEls] instanceof Kinetic.WorkFlowElement)
+			else if (this.currentElements[iCEls] instanceof Kinetic.WorkFlowComponent)
 			{
 				mainWorkFlow.append(new UncertWeb.Component(this.currentElements[iCEls].brokerProperties))
 			}
