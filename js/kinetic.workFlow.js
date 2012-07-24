@@ -158,20 +158,11 @@ Kinetic.WorkFlow = function (config)
 		this.on("dragmove", function(ev) 
 		{ 
 			this.updateAllVertices();
-<<<<<<< HEAD
-			config.layer.checkOverBin(this,ev);
-		});
-	}
-	
-=======
 		});
 		this.on("dragend", function(ev) { 
     		config.layer.checkOverBin(this,ev);
     	});
-
 	}
-
->>>>>>> master
 }
 Kinetic.WorkFlow.prototype = {
 

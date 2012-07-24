@@ -370,13 +370,13 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.renderRubbishBin();
 			this.standAloneWF = null;
 			this.standAloneIndex = -1;
-<<<<<<< HEAD
+
 			WorkFlow_UI.toolbox.setActiveControl(["io","reDraw","addWF"]);
 			WorkFlow_UI.toolbox.displayActiveControls('activeControls');
 			WorkFlow_UI.toolbox.changeToolBoxTitle("Toolbox - Main WorkFlow" );
-=======
+
 			this.updateConnectionOrders();
->>>>>>> master
+
 		}
 	},
 	setUpIOMode : function ()

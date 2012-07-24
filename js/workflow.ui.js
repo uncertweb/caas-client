@@ -1,6 +1,6 @@
 var WorkFlow_UI = {};
 var idCount = 100;
-<<<<<<< HEAD
+
 WorkFlow_UI.toolbox =
 {
 	 activeButtons : new Array(),
@@ -96,7 +96,7 @@ WorkFlow_UI.toolbox =
 		})
 		
 	}
-=======
+},
 WorkFlow_UI.orderComponents =
 {
 		currentOrder : [],
@@ -172,7 +172,7 @@ WorkFlow_UI.orderComponents =
 			var currentPos = $("#sortable").sortable("toArray");
 			layer.updateComponentOrder(currentPos);
 		}
->>>>>>> master
+
 };
 WorkFlow_UI.search =
 {
