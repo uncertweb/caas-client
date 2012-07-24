@@ -138,6 +138,8 @@ Kinetic.WorkFlowElement = function (config)
     var self = this;
     this.on("dragmove", function(ev) { 
     	this.updateAllVertices();
+    });
+    this.on("dragend", function(ev) { 
     	config.layer.checkOverBin(this,ev);
     });
 		    
@@ -342,7 +344,7 @@ Kinetic.WorkFlowStart = function (config)
     });
 	this.add(this.circle);
 	this.textElement = new Kinetic.Text({
-          x: config.x - radius,
+          x: config.x - (radius-2),
           y: config.y+radius+10,
           text: "Start",
           fontSize: 10,
@@ -415,11 +417,11 @@ Kinetic.WorkFlowEnd = function (config)
           radius: radius,
           fill: "red",
           stroke: "black",
-          strokeWidth: 5
+          strokeWidth: 2
     });
 	this.add(this.circle);
     this.textElement = new Kinetic.Text({
-          x: config.x,
+          x: config.x - (radius-2),
           y: config.y+radius+10,
           text: "End",
           fontSize: 10,
@@ -721,7 +723,7 @@ Kinetic.Connection.prototype = {
 		if(box2 instanceof Kinetic.Circle)
 		{
 			if( pos2.x + box2.getRadius().x <= pos1.x ) {  return 2; }
-			if( pos1.x + box1.getAttrs() <= pos2.x ) {  return 1; }
+			if( pos1.x + box1.getAttrs().width <= pos2.x ) {  return 1; }
 			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 4; }
 			return 3;
 		}

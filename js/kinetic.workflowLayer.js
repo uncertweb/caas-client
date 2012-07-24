@@ -180,11 +180,7 @@ Kinetic.WorkFlowLayer.prototype = {
 	{
 		if(this.standAloneWF == null)
 		{
-			//get rid of all the current vertices
-			_.each(this.currentElements,function(el)
-			{
-				el.disconnectAllVertices();
-			});
+			this.disconnectAllVertices();
 			//now we need to setup the all the vertices
 			this.setOrderedVertices();
 			//then we need connect all the input/outputs
@@ -210,6 +206,13 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	disconnectAllVertices : function()
+	{
+		_.each(this.currentElements,function(el)
+		{
+			el.disconnectAllVertices();
+		});
+	},
 	setOrderedVertices : function ()
 	{
 		if(this.standAloneWF == null)
@@ -217,10 +220,15 @@ Kinetic.WorkFlowLayer.prototype = {
 			//loop all elements
 			for(var elI = 0; elI < this.currentElements.length; elI++)
 			{
+				this.draw();
 				//if not the last element, then join to the next elements
 				if(elI != this.currentElements.length -1)
 				{
 					this.currentElements[elI].connectToEl(this.currentElements[elI+1]);
+				}
+				if(this.currentElements[elI] instanceof Kinetic.WorkFlow)
+				{
+					this.currentElements[elI].setOrderedVertices();
 				}
 			}
 		}
@@ -235,6 +243,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		workFlow = _.isNumber(workFlow) ? this.currentElements[workFlow] : workFlow;
 		//need to save the index of the render workflow, as thsi will need to overwritten
 		this.standAloneIndex = this.getIndexOfElement(workFlow);
+		this.disconnectAllVertices();
 		//clear the stage so it is blank
 		this.clear();
 		this.removeChildren();
@@ -353,10 +362,12 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.draw();
 			this.reDrawLayer();
 			this.updateAllVertices();
+			
 			//render rubbish bin for the top layer
 			this.renderRubbishBin();
 			this.standAloneWF = null;
 			this.standAloneIndex = -1;
+			this.updateConnectionOrders();
 		}
 	},
 	setUpIOMode : function ()
@@ -472,7 +483,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		//row to be rendered, when it is correct width
 		var rowArray = [];
 		//Y position of the last row, rows start at 50
-		var lastYRow = 50;
+		var lastYRow = 30;
 		nextRowY = 0;
 		//number of rows rendered
 		var noRows = 0;
@@ -490,8 +501,7 @@ Kinetic.WorkFlowLayer.prototype = {
 				//render the row
 				nextRowY = this.renderRow(noRows,rowArray,lastYRow,rowWidth);
 				//incease position of last row
-				lastYRow = nextRowY+40;
-				
+				lastYRow = nextRowY+20;
 				//clear the row array
 				rowArray = [];
 				rowWidth = 0;
