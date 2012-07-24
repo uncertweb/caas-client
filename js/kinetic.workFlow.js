@@ -8,7 +8,9 @@ Kinetic.WorkFlow = function (config)
 	this.classType = "WorkFlow";
 	this.components = new Array();
 	this.title = config.text;
-	this.config = config.config;
+	this.brokerProperties = {};
+	this.brokerProperties["name"] = this.title;
+	this.endElement = {};
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.standAlone = config.standalone;
 	this.setStroke = function (colour)
@@ -107,6 +109,16 @@ Kinetic.WorkFlow = function (config)
 			return this.components.length - 1;
 		}
 	}
+	this.getIndexOfElement = function (workflow)
+	{
+		for(iCEls=0;iCEls<this.components.length;iCEls++)
+		{
+			if (_.isEqual(workflow,this.components[iCEls]))
+			{
+				return iCEls;
+			}
+		}
+	};
 	if(this.standAlone == true)
 	{
 		//create the start element for the workflow
@@ -120,12 +132,12 @@ Kinetic.WorkFlow = function (config)
 		this.mainElement = new Kinetic.WorkFlowElement(config);
 		this.add(this.mainElement);
 		//create the start element for the workflow and add it to the layer
-		configStart = {
+		this.configStart = {
 			x:this.mainElement.rect.getPosition().x + 20,
 			y:this.mainElement.rect.getPosition().y+60,
 			text:"Start"
 		}
-		this.startElement = new Kinetic.WorkFlowStart(configStart);
+		this.startElement = new Kinetic.WorkFlowStart(this.configStart);
 		this.add(this.startElement);
 		//move the mainElement to the bottom, so Workflows can be seen
 		this.mainElement.moveToBottom();
@@ -146,10 +158,20 @@ Kinetic.WorkFlow = function (config)
 		this.on("dragmove", function(ev) 
 		{ 
 			this.updateAllVertices();
+<<<<<<< HEAD
 			config.layer.checkOverBin(this,ev);
 		});
 	}
 	
+=======
+		});
+		this.on("dragend", function(ev) { 
+    		config.layer.checkOverBin(this,ev);
+    	});
+
+	}
+
+>>>>>>> master
 }
 Kinetic.WorkFlow.prototype = {
 
@@ -183,9 +205,15 @@ Kinetic.WorkFlow.prototype = {
 	    {
 	    	//this.components[this.components.length -1].connectTo(comGroup);
 	    }
-	    
 	    this.components.push(comGroup);
 	    this.add(comGroup);
+	    //create the end element if this is the first element added
+	    if(this.components.length == 1)
+	    {
+		    this.endElement = this.createEndElement()
+		    this.add(this.endElement);
+	    }
+	   
 	    
 	    
 	    //need to expand the main to ensure that it covers all elements
@@ -194,23 +222,52 @@ Kinetic.WorkFlow.prototype = {
 	    this.moveComponentsToTop();
 	    
 	},
+	createEndElement : function()
+	{
+		//need to create the element after the last element
+		var position = this.findWhereToPutNewElement(15);
+		if(position.lastShape == undefined)
+		{
+			return new Kinetic.WorkFlowEnd({x:position.x+7.5, y:position.y,text:"End",draggable:true});
+		}
+		else
+		{
+			return new Kinetic.WorkFlowEnd({x:position.x+7.5, y:position.y + position.lastShape.getAttrs().height/2,text:"End",draggable:true});
+		}
+	},
 	addElements : function(els)
 	{
-		var t = this;
+		var self = this;
 		_.each(els,function(el)
 		{
 			//update the position of the el
 			//need to reset the group position
 			el.setPosition({x:0,y:0});
-			ctx = t.getLayer().getContext();
-			position = t.findWhereToPutNewElement(el.rect.getAttrs().width);
-			t.add(el);
-			t.components.push(el);
+			ctx = self.getLayer().getContext();
+			position = self.findWhereToPutNewElement(el.rect.getAttrs().width);
+			self.add(el);
+			self.components.push(el);
 			el.setAllPositions(position);
+			el.setAttrs({draggable:self.standAlone});
 			
-			el.setAttrs({draggable:t.standAlone});
+			
 		});
-		
+		//renew the endElement
+		//if its already created, then do not remove it
+		if(this.endElement != null)
+		{
+			//this.getLayer().remove(this.endElement);
+			this.remove(this.endElement)
+			this.endElement = null;
+		}
+ 		
+	    this.endElement = this.createEndElement()
+	    this.add(this.endElement);
+	    //set up the vertices
+	    this.disconnectAllVertices();
+	    this.setOrderedVertices();
+	    this.connectAllIOs();
+	    
 		this.updateSizeAndPosOfMainEl();	
 		
 	},
@@ -224,20 +281,33 @@ Kinetic.WorkFlow.prototype = {
 		for(Ci=0;Ci<this.components.length;Ci++) { this.components[Ci].updateAllVertices(); }
 		this.startElement.updateAllVertices();
 	},
-	/*connectTo : function (el)
+	setStartEl : function (flow)
+	{
+		this.startConfig = flow.startConfig;
+		this.startElement.vertices = flow.startElement.vertices;
+		var self = this;
+		_.each(this.startElement.vertices,function(vert){
+			if(_.isEqual(vert.start,flow.startElement))
+			{
+				vert.start = self.startElement;
+			}
+			if(_.isEqual(vert.end,flow.startElement))
+			{
+				vert.end = self.startElement;
+			} 
+		});	
+	},
+	connectToEl : function (el)
 	{
 		//need to connect this to the main element as thats the outer layer
 		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
 		this.getLayer().add(connection);
-
-	
-	},*/
+	},
 	connectTo : function (connectConfig)
 	{
 		//this is always the output as its being connected to an input
 		//need to check whether this map already exists
 		//as this is a workflow, we need to check the element
-		
 		//output component
 		var outputCom = this.getComponentOfIO(connectConfig.output.outputIO.id);
 		//change the output from workflow to component
@@ -279,7 +349,7 @@ Kinetic.WorkFlow.prototype = {
 			if(foundCon == undefined)
 			{
 				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black"}); 
+				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [30,10]}); 
 				this.getLayer().add(connection);
 				this.getLayer().draw();
 			}
@@ -336,6 +406,15 @@ Kinetic.WorkFlow.prototype = {
 		}
 		
 	},
+	deleteElement : function(el)
+	{
+		//if the argument is a number then it is the index of a component which should be rendered
+		el = _.isNumber(el) ? this.components[el] : el;
+		el.deleteAllIOs();
+		//remove the element from the currentElements
+		this.components.splice(this.getIndexOfElement(el), 1);
+		this.remove(el);
+	},
 	deleteAllIOs : function ()
 	{
 		//call deleteAllIOs for all components
@@ -343,7 +422,26 @@ Kinetic.WorkFlow.prototype = {
 		{
 			com.deleteAllIOs();
 		});
-
+		//delete all vertices that are for ordering
+		this.disconnectAllVertices();
+	},
+	connectAllIOs : function()
+	{
+		//connect the IOs of all the 
+	},
+	disconnectAllVertices : function ()
+	{
+		var deleteVerts = this.vertices.slice();
+		//remove all the vertices for this workflow
+		_.each(deleteVerts,function(vert)
+		{
+			vert.remove();
+		});
+		//disconnect the vertices of all components
+		_.each(this.components,function(el)
+		{
+			el.disconnectAllVertices();
+		});
 	},
 	addConnectionsToLayer : function ()
 	{
@@ -373,6 +471,23 @@ Kinetic.WorkFlow.prototype = {
 			} 
 		}
 		this.vertices = verticesArray;
+	},
+	setOrderedVertices : function ()
+	{
+		//loop all elements
+		for(var elI = 0; elI < this.components.length; elI++)
+		{
+			//if not the last element, then join to the next elements
+			if(elI != this.components.length -1)
+			{
+				this.components[elI].connectToEl(this.components[elI+1]);
+			}
+		}
+		if(this.components.length != 0)
+		{
+			this.startElement.connectToEl(this.components[0]);
+			this.components[this.components.length - 1].connectToEl(this.endElement);
+		}
 	},
 	updateSizeAndPosOfMainEl : function()
 	{
@@ -413,7 +528,7 @@ Kinetic.WorkFlow.prototype = {
 				//as there are other elements we need t, put it next ot that
 				lastShape = this.components[this.components.length-1].rect;				
 				xPos = ((lastShape.getPosition().x + (lastShape.getWidth()/2)) - width/2)
-				position = {x:xPos,y:(lastShape.getPosition().y + lastShape.getAttrs().height+40)}
+				position = {x:xPos,y:(lastShape.getPosition().y + lastShape.getAttrs().height+40),lastShape:lastShape}
 				
 			}
 		}
@@ -422,7 +537,7 @@ Kinetic.WorkFlow.prototype = {
 			if(this.components.length == 0)
 			{
 				//if there is only a start then just place it under that
-				position = {x:(this.startElement.circle.getPosition().x+this.startElement.circle.getAttrs().radius.x+20),y:(this.startElement.circle.getPosition().y-30)};
+				position = {x:(this.startElement.circle.getPosition().x+this.startElement.circle.getAttrs().radius.x+30),y:(this.startElement.circle.getPosition().y-30)};
 			
 			
 			}
@@ -430,7 +545,7 @@ Kinetic.WorkFlow.prototype = {
 			{
 				//as there are other elements we need t, put it next ot that
 				lastShape = this.components[this.components.length-1].rect;
-				position = {x:(lastShape.getPosition().x+lastShape.getAttrs().width +20),y:(lastShape.getPosition().y)}
+				position = {x:(lastShape.getPosition().x+lastShape.getAttrs().width +30),y:(lastShape.getPosition().y),lastShape:lastShape}
 				
 			}
 		}
@@ -508,13 +623,33 @@ Kinetic.WorkFlow.prototype = {
 		{
 			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
 		}
-		if(biggestX<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x))
+		if(biggestX<(this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x))
 		{
 			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
 		}
 		if(biggestY<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x))
 		{
 			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
+		}
+		//check the endElement to see if that contains the smallest or biggest of x and y
+		if(!(_.isEmpty(this.endElement)))
+		{
+			if(smallestX>(this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x))
+			{
+				smallestX = (this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x)
+			}
+			if(smallestY>(this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x))
+			{
+				smallestY = (this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x)
+			}
+			if(biggestX<(this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x))
+			{
+				biggestX = (this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x)
+			}
+			if(biggestY<(this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x))
+			{
+				biggestY = (this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x)
+			}
 		}
 		if((this.mainElement.textLength)+20>(biggestX-smallestX))
 		{
@@ -542,6 +677,9 @@ Kinetic.WorkFlow.prototype = {
 		offset.y = this.startElement.circle.getPosition().y - mainPos.y;
 		offset.x = this.startElement.circle.getPosition().x - mainPos.x;
 		this.startElement.setAllPositions({x:config.x+offset.x,y:config.y+offset.y});
+		offset.y = this.endElement.circle.getPosition().y - mainPos.y;
+		offset.x = this.endElement.circle.getPosition().x - mainPos.x;
+		this.endElement.setAllPositions({x:config.x+offset.x,y:config.y+offset.y});
 		this.mainElement.setAllPositions({x:config.x,y:config.y});
 	},	
 	getHeight : function ()

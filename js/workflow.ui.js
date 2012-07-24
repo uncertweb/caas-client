@@ -1,5 +1,6 @@
 var WorkFlow_UI = {};
 var idCount = 100;
+<<<<<<< HEAD
 WorkFlow_UI.toolbox =
 {
 	 activeButtons : new Array(),
@@ -95,6 +96,83 @@ WorkFlow_UI.toolbox =
 		})
 		
 	}
+=======
+WorkFlow_UI.orderComponents =
+{
+		currentOrder : [],
+		open : function ()
+		{
+			//get the current elements from layer
+			currentOrder = layer.getComponents(false);
+			$('#sortable').empty();
+			//display the draggable components
+			this.displayDraggableItems()
+			
+			
+			$(function() {
+				$( "#sortable" ).sortable({
+					placeholder: "ui-state-highlight",
+					start: function()
+					{
+						//remove droppable event when dragging the toolbox
+						var con = $('#container');
+			          	con.droppable({
+					              drop: function(el,ui) {
+			                        	
+			                    }
+						});
+					},
+					drag : function()
+					{
+						$('#toolbox').css(
+						{
+							opacity:0.6
+						});
+					},
+					stop: function()
+					{
+						var con = $('#container');
+						con.droppable({
+				              drop: function(el,ui) {
+		                        	WorkFlow_UI.search.doDrop(el,ui,layer)
+		                    }
+		               	});
+		               	WorkFlow_UI.orderComponents.updateOrder();
+		               	//set up connections
+		               	layer.updateConnectionOrders();
+					}
+				});
+				$( "#sortable" ).disableSelection();
+			});
+			
+			$('#orderComponents').modal
+			({
+	    		backdrop: true,
+	   			keyboard: true
+			}).css
+			({
+				'overflow-y':'auto',
+				'max-height':'90%',
+	    		width: 'auto',
+	    		'margin-left': function () {
+	        		return -($(this).width() / 2);
+	   		 	}
+			});
+			$('#orderComponents').modal('show');
+		},
+		displayDraggableItems : function()
+		{
+			_.each(currentOrder, function(item)
+			{
+				$("#sortable").append('<li class="ui-state-default" id="' + item._id + '">' + item.brokerProperties.name + '</li>');
+			});	
+		},
+		updateOrder : function ()
+		{
+			var currentPos = $("#sortable").sortable("toArray");
+			layer.updateComponentOrder(currentPos);
+		}
+>>>>>>> master
 };
 WorkFlow_UI.search =
 {

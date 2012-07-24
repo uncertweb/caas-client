@@ -3,7 +3,63 @@
   <head>
    <link href="css/bootstrap-responsive.css" rel="stylesheet">
     <link href="css/bootstrap.css" rel="stylesheet">
+<<<<<<< HEAD
     <link href="css/override_stylesheet.css" rel="stylesheet">
+=======
+    <link href="css/jquery-ui-1.8.21.custom.css" rel="stylesheet">
+    <style>
+	    #sortable { list-style-type: none; margin: 0; padding: 0;; }
+		#sortable li { margin: 0 5px 5px 5px; padding: 5px; font-size: 1.2em; height: 1.5em; }
+		html>body #sortable li { height: 1.5em; line-height: 1.2em; }
+		.ui-state-highlight { height: 1.5em; line-height: 1.2em; }
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+      canvas {
+        border: 0px solid #9C9898;
+        margin:5px;
+      }
+      #container {
+        display: inline-block;
+        overflow: scroll;
+      }
+      .alert {
+		  margin-bottom: 5px;
+		  }
+	  .navbar{
+		  margin-bottom: 5px;
+	  }
+	  /*
+		Navbar forms
+		Adding a Drop Down Login Form to Bootstrap’s Navbar
+		http://mifsud.me/adding-dropdown-login-form-bootstraps-navbar/
+		*/
+		
+		div.dropdown-menu {
+		    padding: 15px;
+		    padding-bottom: 0px;
+		}
+		
+		div.dropdown-menu input.text {
+		    margin-bottom: 15px;
+		}
+		
+		div.dropdown-menu input.remember {
+		    float: left;
+		    margin-right: 10px;
+		}
+		
+		div.dropdown-menu input.btn {
+		    clear: left;
+		    width: 100%;
+		    height: 32px;
+		    font-size: 13px;
+		}
+	​	
+    </style>
+  
+>>>>>>> master
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
@@ -58,13 +114,42 @@
 	        ctx = stage.children[0].getContext();
 	        ctx.font = fontSize + "Calibri";
 	       
-	        
+	        start = new Kinetic.WorkFlowStart({x:20,y:20,text:"Start",draggable:true});
+	        layer.addElement(start);
 	        	        
 	        stage.draw();
-	        layer.reDrawLayer();
+	        //layer.reDrawLayer();
 	        layer.updateAllVertices();
 	        //layer.convertToBPMN();
 	        
+<<<<<<< HEAD
+=======
+	        document.getElementById('moveup').addEventListener('click', function() {
+          		layer.moveUp();
+        	}, false);
+        	document.getElementById('addWF').addEventListener('click', function() {
+          		WorkFlow_UI.addWF.open();
+        	}, false);
+        	document.getElementById('io').addEventListener('click', function() {
+          		
+          		if(layer.toggleIOMode())
+          		{
+          			$("#io").html('Toggle Input/Output Mode - On');
+          		}
+          		else
+          		{
+          			$("#io").html('Toggle Input/Output Mode - Off');
+          		}
+          	}, false);
+          	document.getElementById('redraw').addEventListener('click', function() {
+          		layer.reDrawLayer();
+	        },false);
+	        document.getElementById('setOrder').addEventListener('click', function() {
+          		WorkFlow_UI.orderComponents.open();
+	        },false);
+	        
+	        
+>>>>>>> master
 
           	var con = $('#container');
           	con.droppable({
@@ -83,7 +168,49 @@
     </script>
    </head>
   <body>
+<<<<<<< HEAD
       <div id="container" class="droppable"></div>
+=======
+  <div class="navbar">
+    <div class="navbar-inner">
+      <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </a>
+        <ul class="nav">
+        <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    
+                    <b class="caret"></b>
+                </a>
+                <div class="dropdown-menu">
+                    
+                        <input class="text" type="text" id="search" name="search"
+                            size="50" onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords" />
+                    
+                    <div class="well" id="searchResults">
+                    </div>
+                </div>
+            </li>
+        </ul>
+        <a class="brand" href="">Uncert Web</a>
+        <div class="nav-collapse">
+          <ul class="nav">
+           
+           <li><a id="addWF">Add WorkFlow</a></li>
+          	<li><a id="moveup">Move Up</a></li>
+            <li><a id="io">Toggle Input/Output Mode - Off</a></li>
+            <li><a id="redraw">Auto Layout</a></li>
+            <li><a id="setOrder">Set Ordeccr</a></li>
+          </ul>
+        </div><!-- /.nav-collapse -->
+      </div>
+    </div><!-- /navbar-inner -->
+  </div>
+    <div id="container" class="droppable"></div>
+>>>>>>> master
         
     
     <div id="ioModal" class="modal hide fade" style="display: none; ">
@@ -170,6 +297,7 @@
               <!--<button href="#" class="btn btn-primary" onclick="WorkFlow_UI.io.test()">Save changes</button>-->
             </div>
      </div>
+<<<<<<< HEAD
      <div id="toolbox" class="modal hide draggable" style="display: none; ">
             <div class="modal-header">
               <a class="accordion-toggle" id="toolboxTitle" data-toggle="collapse" data-parent="#toolboxBody" href="#toolboxBody">Toolbox - Main Workflow</a>
@@ -204,5 +332,24 @@
             </div>
      </div>
 
+=======
+     <div id="orderComponents" class="modal hide" style="display: none; ">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">×</button>
+              <h3>Order Components</h3>
+            </div>
+            <div class="modal-body" id="orderComponents">
+	            <ul id="sortable">
+					
+				</ul>
+            </div>
+            <div class="modal-footer">
+              <a class="btn" data-dismiss="modal">Done</a>
+              <!--<button href="#" class="btn btn-primary" onclick="WorkFlow_UI.io.test()">Save changes</button>-->
+            </div>
+     </div>
+
+     
+>>>>>>> master
   </body>
 </html>

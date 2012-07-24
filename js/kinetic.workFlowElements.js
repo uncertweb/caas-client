@@ -138,6 +138,8 @@ Kinetic.WorkFlowElement = function (config)
     var self = this;
     this.on("dragmove", function(ev) { 
     	this.updateAllVertices();
+    });
+    this.on("dragend", function(ev) { 
     	config.layer.checkOverBin(this,ev);
     });
 		    
@@ -156,6 +158,19 @@ Kinetic.WorkFlowElement.prototype = {
 		if (foundCon != undefined)
 		{
 			//this connection has already been defined
+			var that = this;
+			foundCon = _.find(this.vertices, function(vert)
+						{
+							return vert.start == that && vert.end == connectConfig.input.obj;
+						});
+			if(foundCon == undefined)
+			{
+				//no connection, so create one
+				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [30,10]}); 
+				this.getLayer().add(connection);
+				
+				this.getLayer().draw();
+			}
 			return false;
 		}
 		else
@@ -183,7 +198,7 @@ Kinetic.WorkFlowElement.prototype = {
 			if(foundCon == undefined)
 			{
 				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: []}); 
+				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [30,10]}); 
 				this.getLayer().add(connection);
 				
 				this.getLayer().draw();
@@ -191,10 +206,10 @@ Kinetic.WorkFlowElement.prototype = {
 			return true;
 		}
 	},
-	connectITo : function(config)
+	connectToEl : function(el)
 	{
 		//need to connect this to the main element as thats the outer layer
-		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
+		var connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
 		this.getLayer().add(connection);
 	},
 	disconnect :function(connectConfig)
@@ -243,11 +258,38 @@ Kinetic.WorkFlowElement.prototype = {
 		{
 			io.output.obj.disconnect(io);
 		});
+		//delete vertices that are for ordering
+		this.disconnectAllVertices();
 
+	},
+	connectAllIOs : function()
+	{
+		_.each(this.ioConnections,function(io)
+		{
+			io.output.obj.connectTo(io);
+		});
+	},
+	disconnectAllVertices : function ()
+	{
+		//remove the vertices
+		var deleteVerts = this.vertices.slice();
+		//remove all the vertices for this workflow
+		_.each(deleteVerts,function(vert)
+		{
+			vert.remove();
+		});
 	},
 	addConnectionsToLayer : function ()
 	{
-		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
+		//add connections to th elayer, but only when this element is the start node
+		//this avoids duplicates
+		for(Vi=0;Vi<this.vertices.length;Vi++) 
+		{ 
+			if(this.vertices[Vi].start == this)
+			{
+				this.getLayer().add(this.vertices[Vi]);
+			}
+		}
 
 	},
 	moveToTop : function ()
@@ -266,8 +308,6 @@ Kinetic.WorkFlowElement.prototype = {
     		xText = (config.x + this.rect.getAttrs().width/2) - (this.textLength/2);
 	    	this.text.setPosition(xText,config.y+5);
     	}
-    	
-		
 	},
 	updateAllVertices : function ()
 	{
@@ -304,7 +344,7 @@ Kinetic.WorkFlowStart = function (config)
     });
 	this.add(this.circle);
 	this.textElement = new Kinetic.Text({
-          x: config.x - radius,
+          x: config.x - (radius-2),
           y: config.y+radius+10,
           text: "Start",
           fontSize: 10,
@@ -323,6 +363,12 @@ Kinetic.WorkFlowStart.prototype = {
 		this.getLayer().add(connection);
 	
 	},
+	connectToEl : function(el)
+	{
+		//need to connect this to the main element as thats the outer layer
+		var connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
+		this.getLayer().add(connection);
+	},
 	addConnectionsToLayer : function ()
 	{
 		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
@@ -336,7 +382,13 @@ Kinetic.WorkFlowStart.prototype = {
  	updateAllVertices : function ()
 	{
 		for(i=0;i<this.vertices.length;i++) { this.vertices[i]._dragUpdate(); }
-		
+	},
+	disconnectAllVertices : function ()
+	{
+		_.each(this.vertices,function(vert)
+		{
+			vert.remove();
+		});
 	},
 	getHeight : function ()
 	{
@@ -365,11 +417,11 @@ Kinetic.WorkFlowEnd = function (config)
           radius: radius,
           fill: "red",
           stroke: "black",
-          strokeWidth: 5
+          strokeWidth: 2
     });
 	this.add(this.circle);
     this.textElement = new Kinetic.Text({
-          x: config.x,
+          x: config.x - (radius-2),
           y: config.y+radius+10,
           text: "End",
           fontSize: 10,
@@ -389,6 +441,12 @@ Kinetic.WorkFlowEnd.prototype = {
 		this.getLayer().add(connection);
 	
 	},
+	connectToEl : function(el)
+	{
+		//need to connect this to the main element as thats the outer layer
+		var connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
+		this.getLayer().add(connection);
+	},
 	setAllPositions : function(config)
 	{
 	    this.textElement.setPosition(config.x,config.y+radius+10);
@@ -398,6 +456,13 @@ Kinetic.WorkFlowEnd.prototype = {
 	{
 		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
 
+	},
+	disconnectAllVertices : function ()
+	{
+		_.each(this.vertices,function(vert)
+		{
+			vert.remove();
+		});
 	},
  	updateAllVertices : function ()
 	{
@@ -444,6 +509,7 @@ Kinetic.Connection = function (config) {
 	Kinetic.Group.apply(this, [config]);
 	this.classType = "Connection";
 	this.add(this.line);
+	this.dashArray = config.dashArray;
 	this.start.vertices.push(this);
 	if( typeof config.end !== "undefined" ) this.end.vertices.push(this);
 	
@@ -657,7 +723,7 @@ Kinetic.Connection.prototype = {
 		if(box2 instanceof Kinetic.Circle)
 		{
 			if( pos2.x + box2.getRadius().x <= pos1.x ) {  return 2; }
-			if( pos1.x + box1.getAttrs() <= pos2.x ) {  return 1; }
+			if( pos1.x + box1.getAttrs().width <= pos2.x ) {  return 1; }
 			if( box1.getAbsolutePosition().y >= box2.getAbsolutePosition().y ) { return 4; }
 			return 3;
 		}
