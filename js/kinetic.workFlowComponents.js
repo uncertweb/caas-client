@@ -1,7 +1,6 @@
 Kinetic.WorkFlowComponent = function (config)
 {
 	this.classType = "WorkFlowComponent";
-	this.textElements = new Array();
 	this.text = config.text;
 	//we need to put a line break if too long, currently crude needs to be update
 	this.setStroke = function (colour)
@@ -150,6 +149,7 @@ Kinetic.WorkFlowStart = function (config)
 	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
 	var textLength = config.text.length;
 	radius = 15;
+	
 	this.circle = new Kinetic.Circle({
           x: config.x,
           y: config.y,
@@ -169,6 +169,10 @@ Kinetic.WorkFlowStart = function (config)
           align: "center",
           verticalAlign: "middle"
     });
+    this.setStroke = function (colour)
+	{
+		this.circle.setStroke(colour);
+	};
     this.add(this.textElement);
     this.on("dragmove", function() { this.updateAllVertices(); });		    
 }
@@ -246,6 +250,10 @@ Kinetic.WorkFlowEnd = function (config)
           align: "center",
           verticalAlign: "middle"
     });
+    this.setStroke = function (colour)
+	{
+		this.circle.setStroke(colour);
+	};
     this.add(this.textElement);
 
     this.on("dragmove", function() { this.updateAllVertices(); });		    
@@ -330,7 +338,8 @@ Kinetic.Connection = function (config) {
 	if( typeof config.end !== "undefined" ) this.end.vertices.push(this);
 	
 	this.on("mouseover",function() { document.body.style.cursor="pointer"; });
-	this.on("mouseout",function()  { document.body.style.cursor="default"; });};
+	this.on("mouseout",function()  { document.body.style.cursor="default"; });
+};
 
 Kinetic.Connection.prototype = {
 	_dragUpdate : function() { 

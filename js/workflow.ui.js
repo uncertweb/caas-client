@@ -236,7 +236,7 @@ WorkFlow_UI.io =
 		noRows: 1,
 		components : {},
 		currentIOs : {},
-		open : function(IO)
+		openComponents : function(IO)
 		{
 			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
 			components = IO;
@@ -519,3 +519,273 @@ WorkFlow_UI.io =
 		}
 
 };
+WorkFlow_UI.ioWorkFlow =
+{
+	
+		IOs: {},
+		noRows: 1,
+		components : {},
+		currentIOs : {},
+		workFlow : {};
+		open : function(IO)
+		{
+			
+			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
+			components = IO;
+			currentIOs = this.getAllCurrentIOs();
+			noRows = 1;
+			this.outputCurrentIOs();
+			//open modal and populate with IO
+			$('#ioWorkFlowModal').modal('show');
+			$('#ioWorkFlowModal').modal
+			({
+        		backdrop: true,
+       			 keyboard: true
+    		}).css
+    		({
+    			'overflow-y':'auto',
+    			'max-height':'90%',
+    			'max-width' : '65%',
+        		width: 'auto',
+        		'margin-left': function () {
+            		return -($(this).width() / 2);
+       		 	}
+   			 });
+   			 //display new section to be set
+   			 this.displayIO();
+			
+			
+		},
+		getAllCurrentIOs : function ()
+		{
+			var currentIn = [];
+			var currentOut = [];
+			
+			//need to get the IOs already set for the workflow for this component
+			if(components.input instanceof Kinetic.WorkFlowStart || components.output instanceof Kinetic.WorkFlowStart)
+			{
+				components.input.getInputs(comp)
+			}
+			else if (components.output instanceof Kinetic.WorkFlowEnd || components.input instanceof Kinetic.WorkFlowEnd)
+			{
+				this.workFlow = IO.output.parent;
+				var WFName = this.workFlow.brokerProperties.name;
+				$('#ioWorkFlowHeader').html('Set outputs for Workflow - ' + WFName);
+			}
+			//get inputs connections based on the output
+			currentIn = components.input.getInputConnections(components.output);
+			
+			currentOut = components.output.getOutputConnections(components.input);
+			
+			//sanity check, in and out should be the same
+			if(!(_.isEqual(currentIn,currentOut)))
+			{
+				console.error('CurrentIns and outs not the same');
+			}
+			return currentOut;
+		},
+		outputCurrentIOs : function()
+		{
+			//loop through currentIOs
+			//each time call displayIO, then modify the row so
+			//the correct option is selected and alert-success and delete button is set
+			var that = this;
+			_.each(currentIOs,
+				function(currentIO)
+				{
+					that.displayIO();
+					$("#inputs_" + (noRows-1) + " option[value=" + currentIO.input.inputIO.id + "]").attr('selected', 'selected');
+					$("#outputs_" + (noRows-1) + " option[value=" + currentIO.output.outputIO.id + "]").attr('selected', 'selected');
+					//$('#inputs_' + noRows-1).val(currentIO.input.inputIO.id).attrs('selected',true);
+					//$('#outputs_' + noRows-1).val(currentIO.output.outputIO.id).attrs('selected',true);
+					that.disableRow(noRows-1);
+					//change the button to delete, to give the ability to delete the connection
+					var button = $('#button_' + (noRows-1))
+					button.html('Delete');
+					button.attr('onclick', 'WorkFlow_UI.io.deleteIO(' + (noRows-1) + ')');
+					$('#row_' + (noRows-1)).attr('class','row alert alert-success');
+					$('#rowAlertHeading_' + (noRows-1)).empty();
+
+				});	
+		},
+		getStartEndComponent : function()
+		{
+			if(components.input instanceof Kinetic.WorkFlowStart) 
+			{
+				return {obj:components.input, type:"start"};
+			}
+			else if (components.output instanceof Kinetic.WorkFlowStart)
+			{
+				return {obj:components.output, type:"start"};
+			}
+			else if (IO.output instanceof Kinetic.WorkFlowEnd || 
+			{
+				return {obj:components.output, type:"end"};
+			}
+			else if(IO.input instanceof Kinetic.WorkFlowEnd)
+			{
+				return {obj:components.input, type:"end"};
+			}
+			
+		},
+		displayIO : function()
+		{
+			//display outputs
+			var form = $('<form class="form-vertical"></form>');
+			var row = $(' <div class="row alert fade in" id="row_' + noRows +'"></div>')
+			row.append('<h4 class="alert-heading" id=rowAlertHeading_' + noRows + '></h4>');
+			var spanOutputs = $('<div class="span4"></div>');
+			var group = $('<div class="control-group"></div>');
+			var controls = $('<div class="controls"></div>');
+			var select = $(' <select id="outputs_' + noRows + '" onchange="WorkFlow_UI.io.displayOutputDetails(' + noRows + ',this);"></select>');
+			_.each(IOs.outputs,function(oIO)
+			{
+				//data attribute will store the actual ioObject from the broker
+				//the value in the select will be the title of the ioObject
+				select.append('<option value=' + oIO.id + ' data-ioObjectid=' + oIO.id + '>' + oIO.name + '</option>');
+				
+			});     
+			
+			controls.append(select);
+			group.append(controls);
+			//group.append('<button class="btn btn-primary" onclick="WorkFlow_UI.io.setIO(' + noRows + ')" href="#">Set</button>')
+			spanOutputs.append(group);
+			spanOutputs.append('<div id="outputDetails_' + noRows + '"></div>');
+			row.append(spanOutputs);
+			  
+			
+			
+			  
+			
+			
+			//output inputs
+			
+			var spanInputs = $('<div class="span4"></div>');
+			var group = $('<div class="control-group"></div>');
+			var controls = $('<div class="controls"></div>');
+			var select = $(' <select id="inputs_' + noRows + '" onchange="WorkFlow_UI.io.displayInputDetails(' + noRows + ',this);"></select>');
+			
+			_.each(IOs.inputs,function(iIO)
+			{
+				//data attribute will store the actual ioObject from the broker
+				//the value in the select will be the title of the ioObject
+				select.append('<option value=' + iIO.id + ' data-ioObjectid=' + iIO.id + '>' + iIO.name + '</option>');
+				
+			});
+			
+			controls.append(select);
+			group.append(controls);
+			spanInputs.append(group);
+			spanInputs.append('<div id="inputDetails_' + noRows + '"></div>');
+			row.append(spanInputs);
+			row.append('<div class="span1"><button id="button_' + noRows + '" class="btn btn-primary" onclick="WorkFlow_UI.io.setIO(' + noRows + ')" href="#">Set</button></div>');	
+			$('#dropdowns').append(row);
+			$(".alert").alert()
+			
+			noRows++;      
+			             
+			        
+		
+			
+		},
+		displayInputDetails : function(rowDetail,el)
+		{
+			$('#inputCollapse').collapse('hide');
+   			$('#outputCollapse').collapse('hide');
+			var select = $('#inputs_' + rowDetail).find(":selected");
+			var id =  select.data('ioobjectid');
+			//have the id, now need to find the object using the input object
+			ioObject = components.input.getIOObject(id);
+			$('#inputDetails_' + rowDetail).html(ioObject.description);
+			
+		},
+		displayOutputDetails : function(rowDetail,el)
+		{
+			var select = $('#outputs_' + rowDetail).find(":selected");
+			var id =  select.data('ioobjectid');
+			//have the id, now need to find the object using the input object
+			ioObject = components.output.getIOObject(id);
+			$('#outputDetails_' + rowDetail).html(ioObject.description);
+			
+		},
+		clearDetails : function ()
+		{
+			for(var r = 0; r<noRows;r++)
+			{
+				$('#outputDetails_' + r).empty();
+				$('#inputDetails_' + r).empty();
+			}
+			
+		},
+		disableRow : function (row)
+		{
+			$('#inputs_' + row).attr("disabled", "disabled");
+			$('#outputs_' + row).attr("disabled", "disabled");
+		},
+		setIO : function(row)
+		{
+			//get the input from the select
+			var select = $('#inputs_' + row).find(":selected");
+			var inputObId =  select.data('ioobjectid');
+			//get the output from the select
+			var select = $('#outputs_' + row).find(":selected");
+			var outputObId =  select.data('ioobjectid');
+
+			//call connectTo on the output
+			//this will include object of: input object, input IOObject and output IOObject
+			var resultCon = components.output.connectTo(
+			{
+				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
+				output:{obj:components.output,outputIO:components.output.getIOObject(outputObId)}
+			});
+			
+			
+			if(resultCon)
+			{
+				$('#row_' + row).attr('class','row alert alert-success');
+				$('#rowAlertHeading_' + row).empty();
+				$(".alert").alert()
+				//display new IO, to map new IO
+				this.displayIO();
+				this.clearDetails();
+				//the row, that has been set
+				this.disableRow(row);
+				//change the button to delete, to give the ability to delete the connection
+				var button = $('#button_' + row)
+				button.html('Delete');
+				button.attr('onclick', 'WorkFlow_UI.io.deleteIO(' + row + ')');
+
+			}
+			else
+			{
+				//this has already been mapped, display message
+				$('#row_' + row).attr('class','row alert alert-error');
+				$(".alert").alert()
+				$('#rowAlertHeading_' + row).html('<h4>Connection already Defined</h4><br>');
+			}
+			
+		},
+		deleteIO : function(row)
+		{
+			//get the input from the select
+			var select = $('#inputs_' + row).find(":selected");
+			var inputObId =  select.data('ioobjectid');
+			//get the output from the select
+			var select = $('#outputs_' + row).find(":selected");
+			var outputObId =  select.data('ioobjectid');
+			
+			//delete the connection from the intput and output
+			var resultCon = components.output.disconnect(
+			{
+				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
+				output:{obj:components.output,outputIO:components.output.getIOObject(outputObId)}
+			});
+			
+			//update the currentIOs
+			//remove the row, do we need to change all the IDS?
+			$('#row_' + row).alert('close')
+			//$('#row_' + row).remove();
+		}
+
+};
+

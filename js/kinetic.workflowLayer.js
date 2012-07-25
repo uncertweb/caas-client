@@ -380,25 +380,20 @@ Kinetic.WorkFlowLayer.prototype = {
 				//all currentEls need to be clickable
 				for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 				{
-					
-					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowComponent)
+					this.currentElements[iCEls].on('click',function()
 					{
-						this.currentElements[iCEls].on('click',function()
+						if(this.getLayer().setIoObjects(this))
 						{
-							if(this.getLayer().setIoObjects(this))
-							{
-								this.setStroke('red');
-								this.getLayer().draw();
-							}
-							else
-							{
-								this.setStroke('black');
-								this.getLayer().draw();
-							}
-							
-						});
-					}
-					
+							this.setStroke('red');
+							this.getLayer().draw();
+						}
+						else
+						{
+							this.setStroke('black');
+							this.getLayer().draw();
+						}
+						
+					});
 				}
 			}
 			else

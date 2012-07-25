@@ -6,7 +6,7 @@ Kinetic.WorkFlow = function (config)
 	this.title = config.text;
 	Kinetic.WorkFlowElement.apply(this, [{draggable:config.draggable,brokerProperties:config.brokerProperties}]);
 	this.classType = "WorkFlow";
-	this.components = new Array();
+	this.components = [];
 	this.endElement = {};
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.standAlone = config.standalone;
@@ -170,9 +170,7 @@ Kinetic.WorkFlow.prototype = {
 	    this.disconnectAllVertices();
 	    this.setOrderedVertices();
 	    this.connectAllIOs();
-	    
-		this.updateSizeAndPosOfMainEl();	
-		
+		this.updateSizeAndPosOfMainEl();
 	},
 	updateAllVertices : function ()
 	{
@@ -299,9 +297,7 @@ Kinetic.WorkFlow.prototype = {
 						});
 			foundCon.remove();
 			this.getLayer().draw();
-			
 		}
-		
 	},
 	deleteElement : function(el)
 	{
@@ -392,18 +388,14 @@ Kinetic.WorkFlow.prototype = {
 	},
 	findWhereToPutNewElement : function(width)
 	{
-	
 		//first we need to find the size of the new element
-		
 		if(this.standAlone)
 		{
 			//we want to align elements under each other
-			
 			if(this.components.length == 0)
 			{
 				//if there is only a start then just place it under that
 				position = {x:(this.startElement.circle.getPosition().x-(width/2)),y:(this.startElement.circle.getPosition().y+(this.startElement.circle.getAttrs().radius.x + 30))};
-			
 			}
 			else
 			{
@@ -411,7 +403,6 @@ Kinetic.WorkFlow.prototype = {
 				lastShape = this.components[this.components.length-1].rect;				
 				xPos = ((lastShape.getPosition().x + (lastShape.getWidth()/2)) - width/2)
 				position = {x:xPos,y:(lastShape.getPosition().y + lastShape.getAttrs().height+40),lastShape:lastShape}
-				
 			}
 		}
 		else
@@ -420,8 +411,6 @@ Kinetic.WorkFlow.prototype = {
 			{
 				//if there is only a start then just place it under that
 				position = {x:(this.startElement.circle.getPosition().x+this.startElement.circle.getAttrs().radius.x+30),y:(this.startElement.circle.getPosition().y-30)};
-			
-			
 			}
 			else
 			{
@@ -431,11 +420,7 @@ Kinetic.WorkFlow.prototype = {
 				
 			}
 		}
-		
-		
 		return position;
-				
-		
 	},
 	updateSizeOfMainElement : function()
 	{
@@ -463,11 +448,9 @@ Kinetic.WorkFlow.prototype = {
 			{
 				return {w:(biggestX-smallestX)+40,h:(biggestY-smallestY)+50,x:smallestX-20,y:smallestY-30};
 			}
-				
 		}
 		else
 		{
-		
 			for(i=0;i<this.components.length;i++) 
 			{ 
 				if(smallestX == -1)
