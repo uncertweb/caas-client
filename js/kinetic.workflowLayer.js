@@ -73,7 +73,16 @@ Kinetic.WorkFlowLayer = function (config)
 			//if both objects now set, then open up the modal
 			if(this.ioObjects.input != null && this.ioObjects.output != null)
 			{
-				WorkFlow_UI.io.open(this.ioObjects);		
+				if(this.ioObjects.input instanceof Kinetic.WorkFlowTerminalNodes || this.ioObjects.output instanceof Kinetic.WorkFlowTerminalNodes)
+				{
+					WorkFlow_UI.ioWorkFlow.open(this.ioObjects);	
+				}
+				else
+				{
+					WorkFlow_UI.io.open(this.ioObjects);
+				}
+					
+					
 			}
 			return true;
 		}	
@@ -81,9 +90,13 @@ Kinetic.WorkFlowLayer = function (config)
 		{
 			this.ioObjects.input = el;
 			//if both objects now set, then open up the modal
-			if(this.ioObjects.input != null && this.ioObjects.output != null)
+			if(this.ioObjects.input instanceof Kinetic.WorkFlowTerminalNodes || this.ioObjects.output instanceof Kinetic.WorkFlowTerminalNodes)
 			{
-				WorkFlow_UI.io.open(this.ioObjects);		
+				WorkFlow_UI.ioWorkFlow.open(this.ioObjects);	
+			}
+			else
+			{
+				WorkFlow_UI.io.open(this.ioObjects);
 			}
 			return true;
 		}
@@ -414,9 +427,21 @@ Kinetic.WorkFlowLayer.prototype = {
 						}
 						
 					});
-					
-					
 				}
+				this.standAloneWF.startElement.on('click',function()
+					{
+						if(this.getLayer().setIoObjects(this))
+						{
+							this.setStroke('red');
+							this.getLayer().draw();
+						}
+						else
+						{
+							this.setStroke('black');
+							this.getLayer().draw();
+						}
+						
+					});
 			}
 
 		}

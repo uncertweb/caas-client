@@ -141,11 +141,11 @@ Kinetic.WorkFlowComponent.prototype = {
 
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowComponent, Kinetic.WorkFlowElement);
 
-Kinetic.WorkFlowStart = function (config)
+Kinetic.WorkFlowTerminalNodes= function (config)
 {
-	this.vertices 	= new Array();
-	this.classType = "WorkFlowStart";
-	this.components = new Array();
+	this.vertices 	= [];
+	this.classType = "WorkFlowTerminalNodes";
+	var color = config.type == "Start" ? "#51A351" : "red";
 	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
 	var textLength = config.text.length;
 	radius = 15;
@@ -162,21 +162,23 @@ Kinetic.WorkFlowStart = function (config)
 	this.textElement = new Kinetic.Text({
           x: config.x - (radius-2),
           y: config.y+radius+10,
-          text: "Start",
+          text: config.type,
           fontSize: 10,
           fontFamily: "Calibri",
           textFill: "black",
           align: "center",
           verticalAlign: "middle"
     });
-    this.setStroke = function (colour)
+     this.add(this.textElement);
+	
+	this.setStroke = function (colour)
 	{
 		this.circle.setStroke(colour);
 	};
-    this.add(this.textElement);
-    this.on("dragmove", function() { this.updateAllVertices(); });		    
+	this.on("dragmove", function() { this.updateAllVertices(); });	
+	
 }
-Kinetic.WorkFlowStart.prototype = {
+Kinetic.WorkFlowTerminalNodes.prototype = {
 	connectTo : function (el)
 	{
 		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
@@ -221,89 +223,31 @@ Kinetic.WorkFlowStart.prototype = {
 
 
 };
-Kinetic.GlobalObject.extend(Kinetic.WorkFlowStart, Kinetic.Group);
+Kinetic.GlobalObject.extend(Kinetic.WorkFlowTerminalNodes, Kinetic.Group);
+Kinetic.WorkFlowStart = function (config)
+{
+	this.classType = "WorkFlowStart";
+	config["type"] = "Start";
+	Kinetic.WorkFlowTerminalNodes.apply(this, [config]);
+
+    	    
+}
+Kinetic.WorkFlowStart.prototype = {
+
+};
+Kinetic.GlobalObject.extend(Kinetic.WorkFlowStart, Kinetic.WorkFlowTerminalNodes);
 
 Kinetic.WorkFlowEnd = function (config)
 {
-	this.vertices 	= new Array();
 	this.classType = "WorkFlowEnd";
-	this.components = new Array();
-	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
-	var textLength = config.text.length;
-	radius = 15;
-	this.circle = new Kinetic.Circle({
-          x: config.x,
-          y: config.y,
-          radius: radius,
-          fill: "red",
-          stroke: "black",
-          strokeWidth: 2
-    });
-	this.add(this.circle);
-    this.textElement = new Kinetic.Text({
-          x: config.x - (radius-2),
-          y: config.y+radius+10,
-          text: "End",
-          fontSize: 10,
-          fontFamily: "Calibri",
-          textFill: "black",
-          align: "center",
-          verticalAlign: "middle"
-    });
-    this.setStroke = function (colour)
-	{
-		this.circle.setStroke(colour);
-	};
-    this.add(this.textElement);
-
-    this.on("dragmove", function() { this.updateAllVertices(); });		    
+	config["type"] = "end";
+	Kinetic.WorkFlowTerminalNodes.apply(this, [config]);
+ 	    
 }
 Kinetic.WorkFlowEnd.prototype = {
-	connectTo : function (el)
-	{
-		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
-	
-	},
-	connectToEl : function(el)
-	{
-		//need to connect this to the main element as thats the outer layer
-		var connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
-	},
-	setAllPositions : function(config)
-	{
-	    this.textElement.setPosition(config.x,config.y+radius+10);
-    	this.circle.setPosition(config.x,config.y);
-	},
-	addConnectionsToLayer : function ()
-	{
-		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
-
-	},
-	disconnectAllVertices : function ()
-	{
-		_.each(this.vertices,function(vert)
-		{
-			vert.remove();
-		});
-	},
- 	updateAllVertices : function ()
-	{
-		for(i=0;i<this.vertices.length;i++) { this.vertices[i]._dragUpdate(); }
-		
-	},
-	getHeight : function ()
-	{
-		return this.circle.getRadius().y * 2;
-	},
-	getWidth : function()
-	{
-		return this.circle.getRadius().x * 2;
-	}
 
 };
-Kinetic.GlobalObject.extend(Kinetic.WorkFlowEnd, Kinetic.Group);
+Kinetic.GlobalObject.extend(Kinetic.WorkFlowEnd, Kinetic.WorkFlowTerminalNodes);
 
 
 
