@@ -141,7 +141,7 @@ Kinetic.WorkFlowComponent.prototype = {
 
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowComponent, Kinetic.WorkFlowElement);
 
-Kinetic.WorkFlowTerminalNodes= function (config)
+Kinetic.WorkFlowTerminalNodes = function (config)
 {
 	this.vertices 	= [];
 	this.classType = "WorkFlowTerminalNodes";
@@ -229,6 +229,7 @@ Kinetic.WorkFlowStart = function (config)
 	this.classType = "WorkFlowStart";
 	config["type"] = "Start";
 	Kinetic.WorkFlowTerminalNodes.apply(this, [config]);
+	
 
     	    
 }
@@ -240,7 +241,7 @@ Kinetic.GlobalObject.extend(Kinetic.WorkFlowStart, Kinetic.WorkFlowTerminalNodes
 Kinetic.WorkFlowEnd = function (config)
 {
 	this.classType = "WorkFlowEnd";
-	config["type"] = "end";
+	config["type"] = "End";
 	Kinetic.WorkFlowTerminalNodes.apply(this, [config]);
  	    
 }

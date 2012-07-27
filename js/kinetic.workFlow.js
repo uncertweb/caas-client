@@ -21,15 +21,67 @@ Kinetic.WorkFlow = function (config)
 			return this.components.length - 1;
 		}
 	}
-	this.getIndexOfElement = function (workflow)
+	this.getIndexOfObject = function (array,object)
 	{
-		for(iCEls=0;iCEls<this.components.length;iCEls++)
+		for(iCEls=0;iCEls<this.array.length;iCEls++)
 		{
-			if (_.isEqual(workflow,this.components[iCEls]))
+			if (_.isEqual(object,this.array[iCEls]))
 			{
 				return iCEls;
 			}
 		}
+	};
+	this.addInput = function (newI)
+	{
+		var check = _.find(this.brokerProperties.inputs,function(i){return _.isEqual(i,newI)});
+		if(check == undefined)
+		{
+			this.brokerProperties.inputs.push(newI);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+		
+	};
+	this.addOutput = function (newO)
+	{
+		var check = _.find(this.brokerProperties.outputs,function(o){return _.isEqual(o,newO)});
+		if(check == undefined)
+		{
+			this.brokerProperties.outputs.push(newO);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+		
+	};
+	this.deleteOutput = function (io)
+	{
+		//find all ioconnections that relate to this output	
+		var toDelete = _.filter(this.ioConnections,function(ioCon){
+			return _.isEqual(ioCon.input.inputIO,io) || _.isEqual(ioCon.output.outputIO,io)
+		});
+		_.each(toDelete,function(del)
+		{	
+			del.output.obj.disconnect(del);
+		});
+		this.brokerProperties.outputs.splice(this.getIndexOfObject(this.brokerProperties.outputs,io),1);
+	};
+	this.deleteInput = function (io)
+	{
+		//find all ioconnections that relate to this input	
+		var toDelete = _.filter(this.ioConnections,function(ioCon){
+			return _.isEqual(ioCon.input.inputIO,io) || _.isEqual(ioCon.output.outputIO,io)
+		});
+		_.each(toDelete,function(del)
+		{	
+			del.output.obj.disconnect(del);
+		});
+		this.brokerProperties.inputs.splice(this.getIndexOfObject(this.brokerProperties.inputs,io),1);
 	};
 	if(this.standAlone == true)
 	{
@@ -305,7 +357,7 @@ Kinetic.WorkFlow.prototype = {
 		el = _.isNumber(el) ? this.components[el] : el;
 		el.deleteAllIOs();
 		//remove the element from the currentElements
-		this.components.splice(this.getIndexOfElement(el), 1);
+		this.components.splice(this.getIndexOfObject(this.components,el), 1);
 		this.remove(el);
 	},
 	disconnectAllVertices : function ()

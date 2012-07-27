@@ -90,9 +90,13 @@ Kinetic.WorkFlowLayer = function (config)
 		{
 			this.ioObjects.input = el;
 			//if both objects now set, then open up the modal
-			if(this.ioObjects.input instanceof Kinetic.WorkFlowTerminalNodes || this.ioObjects.output instanceof Kinetic.WorkFlowTerminalNodes)
+			if(this.ioObjects.input instanceof Kinetic.WorkFlowStart || this.ioObjects.output instanceof Kinetic.WorkFlowStart)
 			{
 				WorkFlow_UI.ioWorkFlow.open(this.ioObjects);	
+			}
+			else if(this.ioObjects.input instanceof Kinetic.WorkFlowEnd || this.ioObjects.output instanceof Kinetic.WorkFlowEnd)
+			{
+				WorkFlow_UI.ioWorkFlow.open(this.ioObjects);
 			}
 			else
 			{

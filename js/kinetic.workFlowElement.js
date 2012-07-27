@@ -20,14 +20,41 @@ Kinetic.WorkFlowElement = function (config)
 		return _.filter(this.ioConnections, function(io){ return _.isEqual(io.input.obj,input);});
 	};
 	//inputs could be from the broker or created  when user assigns them for workflow
-	this.getInputs = function ()
-	{
-		return this.brokerProperties.inputs;
+	this.getInputs = function (com)
+	{	
+		if(this.brokerProperties.inputs ==undefined)
+		{
+			this.brokerProperties.inputs = [];
+			return this.brokerProperties.inputs;
+		}
+		else if(com != undefined)
+		{
+			//this means we are finding inputs for a workflow and need to check all inputs for the component
+			_.filter(this.brokerProperties.inputs,function(i){return _.isEqual(i.com,com)})
+		}
+		else
+		{
+			return this.brokerProperties.inputs;
+		}
+		
 	};
 	//outputs could be from the broker or created  when user assigns them for workflow
-	this.getOutputs = function ()
+	this.getOutputs = function (com)
 	{
-		return this.brokerProperties.outputs;
+		if(this.brokerProperties.outputs ==undefined)
+		{	
+			this.brokerProperties.outputs = []
+			return this.brokerProperties.outputs;
+		}
+		else if(com != undefined)
+		{
+			//this means we are finding inputs for a workflow and need to check all inputs for the component
+			_.filter(this.brokerProperties.outputs,function(i){return _.isEqual(i.com,com)})
+		}
+		else
+		{
+			return this.brokerProperties.outputs;
+		}
 	};
 	this.getAllIOs = function ()
 	{
@@ -91,15 +118,9 @@ Kinetic.WorkFlowElement.prototype = {
 			//this is not a current connection
 			//so we need to save it in the list
 			this.ioConnections.push(connectConfig);
-			if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
-			{
-				var inputCom = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
-				inputCom.ioConnections.push(connectConfig);	
-			}
-			else
-			{
-				connectConfig.input.obj.ioConnections.push(connectConfig);
-			}
+			
+			connectConfig.input.obj.ioConnections.push(connectConfig);
+			
 
 			
 			//check whether we should draw a connection, ie whether the connection has not already been drawn
@@ -124,16 +145,9 @@ Kinetic.WorkFlowElement.prototype = {
 		//this is always the output
 		//delete from IO connections
 		this.ioConnections.splice(_.indexOf(this.ioConnections, connectConfig),1);
-		if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
-		{
-			//get the component of the ioObject, then use this to delete its ioConection
-			var comToDelete = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
-			comToDelete.ioConnections.splice(_.indexOf(comToDelete.ioConnections, connectConfig),1);
-		}
-		else
-		{
-			connectConfig.input.obj.ioConnections.splice(_.indexOf(connectConfig.input.obj.ioConnections, connectConfig),1);
-		}
+		
+		connectConfig.input.obj.ioConnections.splice(_.indexOf(connectConfig.input.obj.ioConnections, connectConfig),1);
+		
 		//delete from vertices, if this is the last ioconnection for this and input
 		var foundCon  = _.find(this.ioConnections,function(ioCon)
 						{

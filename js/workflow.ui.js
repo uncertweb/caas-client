@@ -522,28 +522,30 @@ WorkFlow_UI.io =
 WorkFlow_UI.ioWorkFlow =
 {
 	
-		IOs: {},
+		IOs: [],
 		noRows: 1,
 		components : {},
 		currentIOs : {},
 		workFlow : {},
 		open : function(IO)
 		{
-			
-			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
 			components = IO;
+			
 			this.workFlow = this.getStartEndComponent().obj.parent;
 			var WFName = this.workFlow.brokerProperties.name;
 			if(this.getStartEndComponent().type == "start")
 			{
 				$('#ioWorkFlowHeader').html('Set inputs for Workflow - ' + WFName);
+				IOs = this.getStartEndComponent().com.getInputs();
 			}
 			else
 			{
 				$('#ioWorkFlowHeader').html('Set outputs for Workflow - ' + WFName);
+				IOs = this.getStartEndComponent().com.getOutputs();
 			}
 			currentIOs = this.getAllCurrentIOs();
 			noRows = 1;
+			$('#ioDropdownWF').empty();
 			this.outputCurrentIOs();
 			//open modal and populate with IO
 			$('#ioWorkFlowModal').modal('show');
@@ -574,12 +576,12 @@ WorkFlow_UI.ioWorkFlow =
 			if(this.getStartEndComponent().type == "start")
 			{
 				//get inputs for the workflow, that are assigned from the component
-				current = this.getStartEndComponent().obj.getInputs(this.getStartEndComponent().com);
+				current = this.getStartEndComponent().obj.parent.getInputs(this.getStartEndComponent().com);
 			}
 			else
 			{
 				//get outputs for the workflow, that are assigned from the component
-				current = this.getStartEndComponent().obj.getOutputs(this.getStartEndComponent().com);
+				current = this.getStartEndComponent().obj.parent.getOutputs(this.getStartEndComponent().com);
 			}
 			
 			return current;
@@ -599,7 +601,7 @@ WorkFlow_UI.ioWorkFlow =
 					//change the button to delete, to give the ability to delete the connection
 					var button = $('#button_' + (noRows-1))
 					button.html('Delete');
-					button.attr('onclick', 'WorkFlow_UI.io.deleteIO(' + (noRows-1) + ')');
+					button.attr('onclick', 'WorkFlow_UI.ioWorkFlow.deleteIO(' + (noRows-1) + ')');
 					$('#row_' + (noRows-1)).attr('class','row alert alert-success');
 					$('#rowAlertHeading_' + (noRows-1)).empty();
 
@@ -634,8 +636,9 @@ WorkFlow_UI.ioWorkFlow =
 			var spanOutputs = $('<div class="span4"></div>');
 			var group = $('<div class="control-group"></div>');
 			var controls = $('<div class="controls"></div>');
-			var select = $(' <select id="ios_' + noRows + '></select>');
-			_.each(this.getStartEndComponent().com,function(oIO)
+			var select = $(' <select id="ios_' + noRows + '"></select>');
+			
+			_.each(IOs,function(oIO)
 			{
 				//data attribute will store the actual ioObject from the broker
 				//the value in the select will be the title of the ioObject
@@ -649,7 +652,7 @@ WorkFlow_UI.ioWorkFlow =
 			spanOutputs.append(group);
 			spanOutputs.append('<div id="outputDetails_' + noRows + '"></div>');
 			row.append(spanOutputs);
-			row.append('<div class="span1"><button id="button_' + noRows + '" class="btn btn-primary" onclick="WorkFlow_UI.io.setIO(' + noRows + ')" href="#">Set</button></div>');	
+			row.append('<div class="span1"><button id="button_' + noRows + '" class="btn btn-primary" onclick="WorkFlow_UI.ioWorkFlow.setIO(' + noRows + ')" href="#">Set</button></div>');	
 			$('#ioDropdownWF').append(row);
 			$(".alert").alert()
 			
@@ -670,7 +673,7 @@ WorkFlow_UI.ioWorkFlow =
 			var inputObId =  select.data('ioobjectid');
 			//create the new IO object for workflow
 			var com = this.getStartEndComponent().com;
-			var comIO = this.getStartEndComponent().com.getIOObject(inputObId);
+			var comIO = com.getIOObject(inputObId);
 			var newIO = {com:com,id:comIO.id,name:comIO.name};
 			//we now need to add the new IO to the workflow
 			if(this.getStartEndComponent().type == "start")
@@ -694,7 +697,7 @@ WorkFlow_UI.ioWorkFlow =
 				//change the button to delete, to give the ability to delete the connection
 				var button = $('#button_' + row)
 				button.html('Delete');
-				button.attr('onclick', 'WorkFlow_UI.io.deleteIO(' + row + ')');
+				button.attr('onclick', 'WorkFlow_UI.ioWorkFlow.deleteIO(' + row + ')');
 
 			}
 			else
@@ -709,18 +712,21 @@ WorkFlow_UI.ioWorkFlow =
 		deleteIO : function(row)
 		{
 			//get the input from the select
-			var select = $('#inputs_' + row).find(":selected");
+			var select = $('#ios_' + row).find(":selected");
 			var inputObId =  select.data('ioobjectid');
-			//get the output from the select
-			var select = $('#outputs_' + row).find(":selected");
-			var outputObId =  select.data('ioobjectid');
 			
+			var com = this.getStartEndComponent().com;
+			var comIO = com.getIOObject(inputObId);
+			var newIO = {com:com,id:comIO.id,name:comIO.name};
 			//delete the connection from the intput and output
-			var resultCon = components.output.disconnect(
+			if(this.getStartEndComponent().type == "start")
 			{
-				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
-				output:{obj:components.output,outputIO:components.output.getIOObject(outputObId)}
-			});
+				var resultCon = this.getStartEndComponent().obj.parent.addInput(newIO);
+			}
+			else
+			{
+				var resultCon = this.getStartEndComponent().obj.parent.addOutput(newIO);
+			}
 			
 			//update the currentIOs
 			//remove the row, do we need to change all the IDS?
