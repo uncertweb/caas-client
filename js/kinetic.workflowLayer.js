@@ -213,6 +213,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			{
 				el.disconnectAllVertices();
 			});
+			this.draw();
 			//now we need to setup the all the vertices
 			this.setOrderedVertices();
 			//then we need connect all the input/outputs
@@ -415,37 +416,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			}
 			else
 			{
-				for(iCEls=0;iCEls<this.standAloneWF.components.length;iCEls++)
-				{
-					this.standAloneWF.components[iCEls].on('click',function()
-					{
-						if(this.getLayer().setIoObjects(this))
-						{
-							this.setStroke('red');
-							this.getLayer().draw();
-						}
-						else
-						{
-							this.setStroke('black');
-							this.getLayer().draw();
-						}
-						
-					});
-				}
-				this.standAloneWF.startElement.on('click',function()
-					{
-						if(this.getLayer().setIoObjects(this))
-						{
-							this.setStroke('red');
-							this.getLayer().draw();
-						}
-						else
-						{
-							this.setStroke('black');
-							this.getLayer().draw();
-						}
-						
-					});
+				this.standAloneWF.setIOMode();
 			}
 
 		}

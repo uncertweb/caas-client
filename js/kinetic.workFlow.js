@@ -23,9 +23,9 @@ Kinetic.WorkFlow = function (config)
 	}
 	this.getIndexOfObject = function (array,object)
 	{
-		for(iCEls=0;iCEls<this.array.length;iCEls++)
+		for(iCEls=0;iCEls<array.length;iCEls++)
 		{
-			if (_.isEqual(object,this.array[iCEls]))
+			if (_.isEqual(object,array[iCEls]))
 			{
 				return iCEls;
 			}
@@ -204,6 +204,7 @@ Kinetic.WorkFlow.prototype = {
 			self.components.push(el);
 			el.setAllPositions(position);
 			el.setAttrs({draggable:self.standAlone});
+			el.disconnectAllVertices();
 			
 			
 		});
@@ -418,6 +419,55 @@ Kinetic.WorkFlow.prototype = {
 			this.startElement.connectToEl(this.components[0]);
 			this.components[this.components.length - 1].connectToEl(this.endElement);
 		}
+	},
+	setIOMode : function()
+	{
+		for(iCEls=0;iCEls<this.components.length;iCEls++)
+		{
+			this.components[iCEls].on('click',function()
+			{
+				if(this.getLayer().setIoObjects(this))
+				{
+					this.setStroke('red');
+					this.getLayer().draw();
+				}
+				else
+				{
+					this.setStroke('black');
+					this.getLayer().draw();
+				}
+				
+			});
+		}
+		this.startElement.on('click',function()
+		{
+			if(this.getLayer().setIoObjects(this))
+			{
+				this.setStroke('red');
+				this.getLayer().draw();
+			}
+			else
+			{
+				this.setStroke('black');
+				this.getLayer().draw();
+			}
+			
+		});
+		this.endElement.on('click',function()
+		{
+			if(this.getLayer().setIoObjects(this))
+			{
+				this.setStroke('red');
+				this.getLayer().draw();
+			}
+			else
+			{
+				this.setStroke('black');
+				this.getLayer().draw();
+			}
+			
+		});
+
 	},
 	updateSizeAndPosOfMainEl : function()
 	{

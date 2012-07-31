@@ -597,7 +597,7 @@ WorkFlow_UI.ioWorkFlow =
 				{
 					self.displayIO();
 					$("#ios_" + (noRows-1) + " option[value=" + currentIO.id + "]").attr('selected', 'selected');
-					that.disableRow(noRows-1);
+					self.disableRow(noRows-1);
 					//change the button to delete, to give the ability to delete the connection
 					var button = $('#button_' + (noRows-1))
 					button.html('Delete');
@@ -617,11 +617,11 @@ WorkFlow_UI.ioWorkFlow =
 			{
 				return {obj:components.output, type:"start",com:components.input};
 			}
-			else if (IO.output instanceof Kinetic.WorkFlowEnd)
+			else if (components.output instanceof Kinetic.WorkFlowEnd)
 			{
 				return {obj:components.output, type:"end",com:components.input};
 			}
-			else if(IO.input instanceof Kinetic.WorkFlowEnd)
+			else if(components.input instanceof Kinetic.WorkFlowEnd)
 			{
 				return {obj:components.input, type:"end", com:components.output};
 			}
@@ -721,11 +721,11 @@ WorkFlow_UI.ioWorkFlow =
 			//delete the connection from the intput and output
 			if(this.getStartEndComponent().type == "start")
 			{
-				var resultCon = this.getStartEndComponent().obj.parent.addInput(newIO);
+				var resultCon = this.getStartEndComponent().obj.parent.deleteInput(newIO);
 			}
 			else
 			{
-				var resultCon = this.getStartEndComponent().obj.parent.addOutput(newIO);
+				var resultCon = this.getStartEndComponent().obj.parent.deleteOutput(newIO);
 			}
 			
 			//update the currentIOs

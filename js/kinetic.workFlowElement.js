@@ -30,7 +30,7 @@ Kinetic.WorkFlowElement = function (config)
 		else if(com != undefined)
 		{
 			//this means we are finding inputs for a workflow and need to check all inputs for the component
-			_.filter(this.brokerProperties.inputs,function(i){return _.isEqual(i.com,com)})
+			return _.filter(this.brokerProperties.inputs,function(i){return _.isEqual(i.com,com)})
 		}
 		else
 		{
@@ -49,7 +49,7 @@ Kinetic.WorkFlowElement = function (config)
 		else if(com != undefined)
 		{
 			//this means we are finding inputs for a workflow and need to check all inputs for the component
-			_.filter(this.brokerProperties.outputs,function(i){return _.isEqual(i.com,com)})
+			return _.filter(this.brokerProperties.outputs,function(i){return _.isEqual(i.com,com)})
 		}
 		else
 		{
