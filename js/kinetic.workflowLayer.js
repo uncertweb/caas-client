@@ -3,6 +3,7 @@ Kinetic.WorkFlowLayer = function (config)
 	Kinetic.Layer.apply(this, [config]);
 	this.currentElements = new Array();
 	this.classType = "WorkFlowLayer";
+	
 	this.standAloneWF = null;
 	this.ioMode = false;
 	this.ioObjects = {input:null,output:null};
@@ -155,6 +156,7 @@ Kinetic.WorkFlowLayer = function (config)
 			}
 		};
 	this.standAloneIndex = -1;
+	this.mainWorkFlow = new Kinetic.workFlow({text:"Main WorkFlow",brokerProperties:{},x:0,y:0,draggable:false,layer:this,type:Kinectic.WorkFlowType.main});
 	this.renderRubbishBin();
 	
 		
@@ -267,13 +269,16 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.removeChildren();
 		
 		//create
-		this.standAloneWF = new Kinetic.WorkFlow({text:workFlow.title,brokerProperties:workFlow.brokerProperties,x:100,y:10,draggable:false,layer:this,standalone:true});
-		this.standAloneWF.setVertices(workFlow.vertices,workFlow);
-		this.standAloneWF.setStartEl(workFlow);
+		//this.standAloneWF = new Kinetic.WorkFlow({text:workFlow.title,brokerProperties:workFlow.brokerProperties,x:100,y:10,draggable:false,layer:this,standalone:true});
+		this.standAloneWF = workFlow;
 		this.add(this.standAloneWF);
-		this.standAloneWF.configStart = workFlow.configStart;
-		this.standAloneWF.addElements(workFlow.components);
-		this.standAloneWF.addConnectionsToLayer();
+		this.standAloneWF.setStandAlone(true);
+		
+		//this.standAloneWF.setVertices(workFlow.vertices,workFlow);
+		//this.standAloneWF.setStartEl(workFlow);
+		
+		//this.standAloneWF.configStart = workFlow.configStart;
+		//this.standAloneWF.addElements(workFlow.components);
 		
 		//turn off io Mode and remove onClicks
 		this.setIOMode(false);

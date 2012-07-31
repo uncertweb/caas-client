@@ -10,6 +10,24 @@ Kinetic.WorkFlow = function (config)
 	this.endElement = {};
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.standAlone = config.standalone;
+	this.setStandAlone = function(val)
+	{
+		this.standAlone = val;	
+		if(val == true)
+		{
+			//set the elements up to be dragged etc
+			if(this.mainElement != undefined)
+			{
+				this.getLayer().remove(this.mainElement);
+				this.remove(this.mainElement);
+				this.mainElement = {};
+			}
+			this.setDraggable(false);
+			this.off("dragend dragmove dblclick");
+			this.startElement.setDraggable(true);
+		}
+		this.reDraw();
+	};
 	this.setStroke = function (colour)
 	{
 		this.mainElement.setStroke(colour);
@@ -129,7 +147,36 @@ Kinetic.WorkFlow = function (config)
 
 }
 Kinetic.WorkFlow.prototype = {
-
+	reDraw : function()
+	{
+		if(this.standAlone)
+		{
+			this.setPosition({x:0,y:0});
+			this.startElement.setAllPositions({x:this.getLayer().getStage().getWidth()/2, y:30});
+			var self = this;
+			//reDraw components in vertical order
+			var comArray = [];
+			_.each(this.components,function(com)
+			{
+				com.setAllPositions(self.findWhereToPutNewElement(com.getWidth(),comArray));
+				comArray.push(com);
+				com.setDraggable(true);
+			})
+			if(this.endElement != null)
+			{
+				//this.getLayer().remove(this.endElement);
+				this.remove(this.endElement)
+				this.endElement = null;
+			}
+	 		
+		    this.endElement = this.createEndElement()
+		    this.add(this.endElement);
+		    this.disconnectAllVertices();
+		    this.setOrderedVertices();
+		    this.connectAllIOs();
+			
+		}	
+	},
  	addElement : function(config)  
 	{  
 		
@@ -139,14 +186,14 @@ Kinetic.WorkFlow.prototype = {
 		{
 			ctx = config.layer.getContext();
 			TL = ctx.measureText(config.text.substring(0, 40)).width * 1.5;
-			position = this.findWhereToPutNewElement(TL);
+			position = this.findWhereToPutNewElement(TL,this.components);
 			comGroup = new Kinetic.WorkFlowComponent({draggable:true,text:config.text,x:position.x,y:position.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
 		}
 		else
 		{
 			ctx = config.layer.getContext();
 			TL = ctx.measureText(config.text.substring(0, 40)).width * 1.5;
-			position = this.findWhereToPutNewElement(TL);
+			position = this.findWhereToPutNewElement(TL,this.components);
 			comGroup = new Kinetic.WorkFlowComponent({draggable:false,text:config.text,x:position.x,y:position.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
 		}
 		
@@ -180,7 +227,7 @@ Kinetic.WorkFlow.prototype = {
 	createEndElement : function()
 	{
 		//need to create the element after the last element
-		var position = this.findWhereToPutNewElement(15);
+		var position = this.findWhereToPutNewElement(15,this.components);
 		if(position.lastShape == undefined)
 		{
 			return new Kinetic.WorkFlowEnd({x:position.x+7.5, y:position.y,text:"End",draggable:true});
@@ -199,7 +246,7 @@ Kinetic.WorkFlow.prototype = {
 			//need to reset the group position
 			el.setPosition({x:0,y:0});
 			ctx = self.getLayer().getContext();
-			position = self.findWhereToPutNewElement(el.rect.getAttrs().width);
+			position = self.findWhereToPutNewElement(el.rect.getAttrs().width,self.components);
 			self.add(el);
 			self.components.push(el);
 			el.setAllPositions(position);
@@ -251,7 +298,7 @@ Kinetic.WorkFlow.prototype = {
 			} 
 		});	
 	},
-	connectTo : function (connectConfig)
+	/*connectTo : function (connectConfig)
 	{
 		//this is always the output as its being connected to an input
 		//need to check whether this map already exists
@@ -351,7 +398,7 @@ Kinetic.WorkFlow.prototype = {
 			foundCon.remove();
 			this.getLayer().draw();
 		}
-	},
+	},*/
 	deleteElement : function(el)
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
@@ -488,13 +535,13 @@ Kinetic.WorkFlow.prototype = {
 			this.components[i].moveToTop(); 
 		}
 	},
-	findWhereToPutNewElement : function(width)
+	findWhereToPutNewElement : function(width,comArray)
 	{
 		//first we need to find the size of the new element
 		if(this.standAlone)
 		{
 			//we want to align elements under each other
-			if(this.components.length == 0)
+			if(comArray.length == 0)
 			{
 				//if there is only a start then just place it under that
 				position = {x:(this.startElement.circle.getPosition().x-(width/2)),y:(this.startElement.circle.getPosition().y+(this.startElement.circle.getAttrs().radius.x + 30))};
@@ -502,14 +549,14 @@ Kinetic.WorkFlow.prototype = {
 			else
 			{
 				//as there are other elements we need t, put it next ot that
-				lastShape = this.components[this.components.length-1].rect;				
+				lastShape = comArray[comArray.length-1].rect;				
 				xPos = ((lastShape.getPosition().x + (lastShape.getWidth()/2)) - width/2)
 				position = {x:xPos,y:(lastShape.getPosition().y + lastShape.getAttrs().height+40),lastShape:lastShape}
 			}
 		}
 		else
 		{
-			if(this.components.length == 0)
+			if(comArray.length == 0)
 			{
 				//if there is only a start then just place it under that
 				position = {x:(this.startElement.circle.getPosition().x+this.startElement.circle.getAttrs().radius.x+30),y:(this.startElement.circle.getPosition().y-30)};
@@ -517,7 +564,7 @@ Kinetic.WorkFlow.prototype = {
 			else
 			{
 				//as there are other elements we need t, put it next ot that
-				lastShape = this.components[this.components.length-1].rect;
+				lastShape = comArray[comArray.length-1].rect;
 				position = {x:(lastShape.getPosition().x+lastShape.getAttrs().width +30),y:(lastShape.getPosition().y),lastShape:lastShape}
 				
 			}

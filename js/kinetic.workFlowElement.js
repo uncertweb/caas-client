@@ -205,3 +205,4 @@ Kinetic.WorkFlowElement.prototype = {
 }
 
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowElement, Kinetic.Group);
+var Kinectic.WorkFlowType = {"main" : 0, "standAlone" : 1, "nested" : 2}; 
