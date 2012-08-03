@@ -167,7 +167,8 @@ WorkFlow_UI.search =
              offset = layer.getStage()._getContentPosition();
                 //get search meta data using this id
                 
-                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                //var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ev.screenX,y:ev.screenY,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
 		    
@@ -212,10 +213,11 @@ WorkFlow_UI.addWF =
 		}
 		config = {
 			name:$('#titleWF').val(),
-			description:$('#abstractGroup').val()
+			description:$('#abstractGroup').val(),
+			annotation:''
 		}
 		//create workflow from
-		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer});
+		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});
 		var index = layer.addElement(newWFlow);
 		//move down a layer to start editing this workflow
 		layer.renderWorkFlow(index);

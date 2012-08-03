@@ -117,6 +117,7 @@ Kinetic.WorkFlowComponent.prototype = {
 	},
 	setAllPositions : function(config)
 	{
+		this.setPosition({x:0,y:0});
     	this.rect.setPosition(config.x,config.y);
     	if(this.config.type == "mainRect")
     	{
@@ -154,7 +155,7 @@ Kinetic.WorkFlowTerminalNodes = function (config)
           x: config.x,
           y: config.y,
           radius: radius,
-          fill: "#51A351",
+          fill: color,
           stroke: "black",
           strokeWidth: 2
     });
@@ -198,6 +199,7 @@ Kinetic.WorkFlowTerminalNodes.prototype = {
 	},
 	setAllPositions : function(config)
 	{
+		this.setPosition({x:0,y:0});
 	    this.textElement.setPosition(config.x-radius,config.y+radius+5);
     	this.circle.setPosition(config.x,config.y);
 	},
@@ -214,13 +216,20 @@ Kinetic.WorkFlowTerminalNodes.prototype = {
 	},
 	getHeight : function ()
 	{
-		return this.circle.getRadius().y;
+		return (this.circle.getRadius().y / 2) -7.5;
 	},
 	getWidth : function()
 	{
-		return this.circle.getRadius().x;
+		return this.circle.getRadius().x *2;
+	},
+	setAllAttrs : function(attrs)
+	{
+		this.setAttrs(attrs);
+		_.each(this.children,function(child)
+		{
+			child.setAttrs(attrs);
+		})	
 	}
-
 
 };
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowTerminalNodes, Kinetic.Group);

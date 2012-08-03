@@ -140,6 +140,23 @@ Kinetic.WorkFlowElement.prototype = {
 			return true;
 		}
 	},
+	setAllAttrs : function(attrs)
+	{
+		var self = this;
+		_.each(this.children,function(child)
+		{
+			if(self instanceof Kinetic.WorkFlow)
+			{
+				child.setAllAttrs(attrs);
+			}
+			else
+			{
+				self.setAttrs(attrs);
+				child.setAttrs(attrs);
+			}
+			
+		})	
+	},
 	disconnect :function(connectConfig)
 	{
 		//this is always the output
@@ -201,8 +218,22 @@ Kinetic.WorkFlowElement.prototype = {
 				this.getLayer().add(this.vertices[Vi]);
 			}
 		}
+	},
+	getPositionOfElement : function()
+	{
+		if(this instanceof Kinetic.WorkFlow)
+		{
+			if(this.type == Kinetic.WorkFlowType.nested)
+			{
+				return this.mainElement.getPosition();
+			}
+		}
+		else
+		{
+			return this.rect.getPosition();
+		}
 	}
 }
 
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowElement, Kinetic.Group);
-var Kinectic.WorkFlowType = {"main" : 0, "standAlone" : 1, "nested" : 2}; 
+Kinetic.WorkFlowType = {"main" : 0, "standAlone" : 1, "nested" : 2}; 
