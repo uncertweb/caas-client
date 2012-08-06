@@ -121,16 +121,6 @@ Kinetic.WorkFlowLayer = function (config)
 		}
 		
 	};
-	this.getIndexOfElement = function (workflow)
-		{
-			for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
-			{
-				if (_.isEqual(workflow,this.currentElements[iCEls]))
-				{
-					return iCEls;
-				}
-			}
-		};
 	this.standAloneIndex = -1;
 	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
 	this.add(this.mainWorkFlow);
@@ -184,20 +174,12 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
-	disconnectAllVertices : function()
-	{
-		_.each(this.currentElements,function(el)
-		{
-			el.disconnectAllVertices();
-		});
-	},
 	renderWorkFlow : function(workFlow)
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
 		workFlow = _.isNumber(workFlow) ? this.mainWorkFlow.components[workFlow] : workFlow;
 		//need to save the index of the render workflow, as thsi will need to overwritten
 		this.standAloneIndex = this.mainWorkFlow.getIndexOfObject(this.mainWorkFlow.components,workFlow);
-		this.disconnectAllVertices();
 		//clear the stage so it is blank
 		this.clear();
 		this.removeChildren();
@@ -229,6 +211,13 @@ Kinetic.WorkFlowLayer.prototype = {
 			returnIndex = this.standAloneWF.getLastComponentIndex();
 			
 		}
+		//setup IO Mode so this new element will be clickable
+		if(this.ioMode == true)
+		{
+			this.setIOMode(false);
+			this.setIOMode(true);
+		}
+		
 		//redraw the layer
 		this.draw();
 		return returnIndex;
@@ -238,13 +227,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		if(this.standAloneWF == null)
 		{
 			//if the argument is a number then it is the index of a component which should be rendered
-			el = _.isNumber(el) ? this.currentElements[el] : el;
-			
-			el.deleteAllIOs();
-			//remove the element from the currentElements
-			this.currentElements.splice(this.getIndexOfElement(el), 1);
-			this.remove(el);
-		
+			this.mainWorkFlow.deleteElement(el);
 		}
 		else
 		{
@@ -268,14 +251,13 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.clear();
 			this.removeChildren();
 			this.standAloneWF.reDraw();
+			this.setIOMode(false);
 			this.standAloneWF = null;
 			this.standAloneIndex = -1;
 			this.add(this.mainWorkFlow);
-			/*
 			this.setIOMode(false);
-			this.draw();*/
+			
 			this.reDrawLayer();
-			this.updateAllVertices();
 			
 			//render rubbish bin for the top layer
 			this.renderRubbishBin();
@@ -284,64 +266,21 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	setUpIOMode : function ()
 	{
-		if(this.ioMode)
+		this.ioObjects = this.ioMode == false ? {input:null,output:null} : this.ioObjects;
+		var html = this.ioMode == false ? 'Toggle Input/Output Mode - Off' : 'Toggle Input/Output Mode - On';
+		$("#io").html(html);
+			
+		if(this.standAloneWF == null)
 		{
-			$("#io").html('Toggle Input/Output Mode - On');
-			if(this.standAloneWF == null)
-			{
-				//all currentEls need to be clickable
-				for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
-				{
-					this.currentElements[iCEls].on('click',function()
-					{
-						if(this.getLayer().setIoObjects(this))
-						{
-							this.setStroke('red');
-							this.getLayer().draw();
-						}
-						else
-						{
-							this.setStroke('black');
-							this.getLayer().draw();
-						}
-						
-					});
-				}
-			}
-			else
-			{
-				this.standAloneWF.setIOMode();
-			}
-
+			//all currentEls need to be clickable
+			this.mainWorkFlow.setIOMode(this.ioMode);
+			
 		}
 		else
 		{
-			$("#io").html('Toggle Input/Output Mode - Off');
-			this.ioObjects = {input:null,output:null};
-			if(this.standAloneWF == null)
-			{
-				//all currentEls non clickable
-				for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
-				{
-					if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow || this.currentElements[iCEls] instanceof Kinetic.WorkFlowComponent)
-					{
-						this.currentElements[iCEls].off('click');
-						this.currentElements[iCEls].setStroke('black');
-					}
-					
-				}
-				this.getLayer().draw();
-			}
-			else
-			{
-				for(iCEls=0;iCEls<this.standAloneWF.components.length;iCEls++)
-				{
-					this.standAloneWF.components[iCEls].off('click');
-					this.standAloneWF.components[iCEls].setStroke('black');
-				}
-				this.getLayer().draw();
-			}
+			this.standAloneWF.setIOMode(this.ioMode);
 		}
+		this.draw();
 	},
 	clearIOMode : function()
 	{
@@ -358,7 +297,6 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	clearLayer : function ()
 	{
-		this.currentElements = [];
 		this.clear();
 		this.removeChildren();
 		this.renderRubbishBin();
@@ -374,13 +312,6 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.standAloneWF.reDraw();
 		}
 		this.draw();
-	},
-	updateAllVertices : function ()
-	{
-		for(wFs=0;wFs<this.currentElements.length;wFs++)
-        {
-        	this.currentElements[wFs].updateAllVertices();
-        }
 	},
 	createWorkFlow : function()
 	{

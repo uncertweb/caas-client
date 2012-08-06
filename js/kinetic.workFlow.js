@@ -287,10 +287,38 @@ Kinetic.WorkFlow.prototype = {
 			this.draw();
 		}	
 		this.updateSizeAndPosOfMainEl();
-		this.disconnectAllVertices();
-	    this.setOrderedVertices();
-	    this.connectAllIOs();
+		this.updateVerticesOrders()
 
+	},
+	deleteAllIOs : function ()
+	{
+		//loop through all the ioConnections
+		//call disconnect on the ouput	
+		_.each(this.ioConnections,function(io)
+		{
+			io.output.obj.disconnect(io);
+		});
+		_.each(this.components,function(com)
+		{
+			com.deleteAllIOs();
+		});
+		//delete vertices that are for ordering
+		this.disconnectAllVertices();
+
+	},
+	connectAllIOs : function()
+	{
+		if(this.type != Kinetic.WorkFlowType.standAlone)
+		{
+			_.each(this.ioConnections,function(io)
+			{
+				io.output.obj.connectTo(io);
+			});
+		}
+		_.each(this.components,function(com)
+		{
+			com.connectAllIOs();
+		});	
 	},
 	renderRow : function(noRows,rowArray,lastYRow,rowWidth,maxWidth)
 	{
@@ -537,54 +565,37 @@ Kinetic.WorkFlow.prototype = {
 			this.components[this.components.length - 1].connectToEl(this.endElement);
 		}
 	},
-	setIOMode : function()
-	{
-		for(iCEls=0;iCEls<this.components.length;iCEls++)
+	setIOMode : function(ioMode)
+	{	
+		if(ioMode)
 		{
-			this.components[iCEls].on('click',function()
+			for(iCEls=0;iCEls<this.children.length;iCEls++)
 			{
-				if(this.getLayer().setIoObjects(this))
+				this.children[iCEls].on('click',function()
 				{
-					this.setStroke('red');
-					this.getLayer().draw();
-				}
-				else
-				{
-					this.setStroke('black');
-					this.getLayer().draw();
-				}
-				
-			});
+					if(this.getLayer().setIoObjects(this))
+					{
+						this.setStroke('red');
+						this.getLayer().draw();
+					}
+					else
+					{
+						this.setStroke('black');
+						this.getLayer().draw();
+					}
+					
+				});
+			}
 		}
-		this.startElement.on('click',function()
+		else
 		{
-			if(this.getLayer().setIoObjects(this))
+			for(iCEls=0;iCEls<this.children.length;iCEls++)
 			{
-				this.setStroke('red');
-				this.getLayer().draw();
+				this.children[iCEls].off('click');
+				this.children[iCEls].setStroke('black');
 			}
-			else
-			{
-				this.setStroke('black');
-				this.getLayer().draw();
-			}
-			
-		});
-		this.endElement.on('click',function()
-		{
-			if(this.getLayer().setIoObjects(this))
-			{
-				this.setStroke('red');
-				this.getLayer().draw();
-			}
-			else
-			{
-				this.setStroke('black');
-				this.getLayer().draw();
-			}
-			
-		});
-
+		}
+		
 	},
 	updateSizeAndPosOfMainEl : function()
 	{

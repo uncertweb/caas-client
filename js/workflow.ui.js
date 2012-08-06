@@ -166,9 +166,10 @@ WorkFlow_UI.search =
              
              offset = layer.getStage()._getContentPosition();
                 //get search meta data using this id
-                
+                var s = layer.getStage();
+             var mousePos = s.getMousePosition();
                 //var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
-                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ev.screenX,y:ev.screenY,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ev.screenX,y:(ui.position.top+ui.offset.top),draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
 		    
@@ -241,6 +242,7 @@ WorkFlow_UI.io =
 		open : function(IO)
 		{
 			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
+			if(this.checkForIO() == false){return false;}
 			components = IO;
 			currentIOs = this.getAllCurrentIOs();
 			//clear modal contents, from previous opening
@@ -320,6 +322,22 @@ WorkFlow_UI.io =
    			 this.displayIO();
 			
 			
+		},
+		checkForIO : function()
+		{
+			if(IOs.outputs.length == 0)
+			{
+				alert('ERROR! - You need to set Outputs for this WorkFlow.\n Double Click to Edit');
+				$('#ioModal').modal('hide');
+				return false;
+			}
+			else if(IOs.inputs.length == 0)
+			{
+				alert('ERROR! - You need to set Inputs for this WorkFlow.\n Double Click to Edit');
+				$('#ioModal').modal('hide');
+				return false;
+			}
+			return true;
 		},
 		getAllCurrentIOs : function ()
 		{
@@ -545,6 +563,7 @@ WorkFlow_UI.ioWorkFlow =
 				$('#ioWorkFlowHeader').html('Set outputs for Workflow - ' + WFName);
 				IOs = this.getStartEndComponent().com.getOutputs();
 			}
+			if(this.checkForIO() == false){return false;}
 			currentIOs = this.getAllCurrentIOs();
 			noRows = 1;
 			$('#ioDropdownWF').empty();
@@ -569,6 +588,16 @@ WorkFlow_UI.ioWorkFlow =
    			 this.displayIO();
 			
 			
+		},
+		checkForIO : function()
+		{
+			if(IOs.length == 0)
+			{
+				alert('ERROR! - You need to set Outputs for this WorkFlow.\nDouble Click to Edit');
+				$('#ioModal').modal('hide');
+				return false;
+			}
+			return true;
 		},
 		getAllCurrentIOs : function ()
 		{
@@ -601,11 +630,11 @@ WorkFlow_UI.ioWorkFlow =
 					$("#ios_" + (noRows-1) + " option[value=" + currentIO.id + "]").attr('selected', 'selected');
 					self.disableRow(noRows-1);
 					//change the button to delete, to give the ability to delete the connection
-					var button = $('#button_' + (noRows-1))
+					var button = $('#buttonio_' + (noRows-1))
 					button.html('Delete');
 					button.attr('onclick', 'WorkFlow_UI.ioWorkFlow.deleteIO(' + (noRows-1) + ')');
-					$('#row_' + (noRows-1)).attr('class','row alert alert-success');
-					$('#rowAlertHeading_' + (noRows-1)).empty();
+					$('#rowio_' + (noRows-1)).attr('class','row alert alert-success');
+					$('#rowAlertHeadingio_' + (noRows-1)).empty();
 
 				});	
 		},
@@ -633,8 +662,8 @@ WorkFlow_UI.ioWorkFlow =
 		{
 			//display outputs
 			var form = $('<form class="form-vertical"></form>');
-			var row = $(' <div class="row alert fade in" id="row_' + noRows +'"></div>')
-			row.append('<h4 class="alert-heading" id=rowAlertHeading_' + noRows + '></h4>');
+			var row = $(' <div class="row alert fade in" id="rowio_' + noRows +'"></div>')
+			row.append('<h4 class="alert-heading" id=rowAlertHeadingio_' + noRows + '></h4>');
 			var spanOutputs = $('<div class="span4"></div>');
 			var group = $('<div class="control-group"></div>');
 			var controls = $('<div class="controls"></div>');
@@ -654,7 +683,7 @@ WorkFlow_UI.ioWorkFlow =
 			spanOutputs.append(group);
 			spanOutputs.append('<div id="outputDetails_' + noRows + '"></div>');
 			row.append(spanOutputs);
-			row.append('<div class="span1"><button id="button_' + noRows + '" class="btn btn-primary" onclick="WorkFlow_UI.ioWorkFlow.setIO(' + noRows + ')" href="#">Set</button></div>');	
+			row.append('<div class="span1"><button id="buttonio_' + noRows + '" class="btn btn-primary" onclick="WorkFlow_UI.ioWorkFlow.setIO(' + noRows + ')" href="#">Set</button></div>');	
 			$('#ioDropdownWF').append(row);
 			$(".alert").alert()
 			
@@ -689,15 +718,15 @@ WorkFlow_UI.ioWorkFlow =
 			
 			if(resultCon)
 			{
-				$('#row_' + row).attr('class','row alert alert-success');
-				$('#rowAlertHeading_' + row).empty();
+				$('#rowio_' + row).attr('class','row alert alert-success');
+				$('#rowAlertHeadingio_' + row).empty();
 				$(".alert").alert()
 				//display new IO, to map new IO
 				this.displayIO();
 				//the row, that has been set
 				this.disableRow(row);
 				//change the button to delete, to give the ability to delete the connection
-				var button = $('#button_' + row)
+				var button = $('#buttonio_' + row)
 				button.html('Delete');
 				button.attr('onclick', 'WorkFlow_UI.ioWorkFlow.deleteIO(' + row + ')');
 
@@ -705,9 +734,9 @@ WorkFlow_UI.ioWorkFlow =
 			else
 			{
 				//this has already been mapped, display message
-				$('#row_' + row).attr('class','row alert alert-error');
+				$('#rowio_' + row).attr('class','row alert alert-error');
 				$(".alert").alert()
-				$('#rowAlertHeading_' + row).html('<h4>Connection already Defined</h4><br>');
+				$('#rowAlertHeadingio_' + row).html('<h4>Connection already Defined</h4><br>');
 			}
 			
 		},
