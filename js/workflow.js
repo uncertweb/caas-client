@@ -155,7 +155,7 @@
       $.ajax({
         url: base_url,
         data: config,
-        async: false
+        async: true
         // When the AJAX query responds
       }).done(function (data) {
         $data = $(data);

@@ -398,52 +398,6 @@ Kinetic.WorkFlow.prototype = {
 		});
 		return ys;
 	},
- 	addElement : function(config)  
-	{  
-		
-		config.text = '[' + config.brokerProperties.annotation + '] ' + config.brokerProperties.name;
-		//create new group for rectangle and text
-		if(this.type == Kinetic.WorkFlowType.standAlone)
-		{
-			ctx = config.layer.getContext();
-			TL = ctx.measureText(config.text.substring(0, 40)).width * 1.5;
-			position = this.findWhereToPutNewElement(TL,this.components);
-			comGroup = new Kinetic.WorkFlowComponent({draggable:true,text:config.text,x:position.x,y:position.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
-		}
-		else if(this.type == Kinetic.WorkFlowType.nested)
-		{
-			comGroup = new Kinetic.WorkFlowComponent({draggable:false,text:config.text,x:config.x,y:config.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
-		}
-		else
-		{
-			comGroup = new Kinetic.WorkFlowComponent({draggable:true,text:config.text,x:config.x,y:config.y,type:"addElement",layer:config.layer,brokerProperties:config.brokerProperties});
-		}
-		
-	    this.components.push(comGroup);
-	    this.add(comGroup);
-	    //create the end element if this is the first element added
-	    if(this.components.length == 1)
-	    {
-		    this.endElement = this.createEndElement()
-		    this.add(this.endElement);
-	    }
-	   
-	    if(this.type == Kinetic.WorkFlowType.nested)
-	    {
-	    	//update the element positions
-	    	this.reDraw();
-	    }
-	    
-	    //need to expand the main to ensure that it covers all elements
-	    this.updateSizeAndPosOfMainEl();
-	    if(this.type==Kinetic.WorkFlowType.standAlone){this.mainElement.moveToBottom();}
-	    this.moveComponentsToTop();
-	    this.disconnectAllVertices();
-	    this.setOrderedVertices();
-	    this.connectAllIOs();
-	    return this.components.length -1;
-	    
-	},
 	createEndElement : function()
 	{
 		//need to create the element after the last element

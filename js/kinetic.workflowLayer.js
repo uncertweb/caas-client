@@ -3,7 +3,6 @@ Kinetic.WorkFlowLayer = function (config)
 	Kinetic.Layer.apply(this, [config]);
 	this.currentElements = new Array();
 	this.classType = "WorkFlowLayer";
-	
 	this.standAloneWF = null;
 	this.ioMode = false;
 	this.ioObjects = {input:null,output:null};

@@ -168,8 +168,9 @@ WorkFlow_UI.search =
                 //get search meta data using this id
                 var s = layer.getStage();
              var mousePos = s.getMousePosition();
-                //var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
-                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:ev.screenX,y:(ui.position.top+ui.offset.top),draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var mouseX = (ev.clientX + offset.left + window.pageXOffset);
+                var mouseY = (ev.clientY + offset.top + window.pageYOffset);
+                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:mouseX,y:mouseY,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
 		    
