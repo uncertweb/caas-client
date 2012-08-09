@@ -1,53 +1,13 @@
-Kinetic.WorkFlowElement = function (config)
+Kinetic.WorkFlowComponent = function (config)
 {
-	this.classType = "WorkFlowElement";
-	this.vertices 	= new Array();
-	/*ioConnections layout = {
-				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
-				output:{obj:components.ouput,outputIO:components.output.getIOObject(outputObId)}
-			}*/
-	this.ioConnections = new Array();
-	this.textElements = new Array();
+	this.classType = "WorkFlowComponent";
 	this.text = config.text;
 	//we need to put a line break if too long, currently crude needs to be update
-	this.brokerProperties = config.brokerProperties;
-
-	
-	this.getInputConnections = function(output)
-	{
-		//find all connections that have the output as the output
-		return _.filter(this.ioConnections, function(io){ return _.isEqual(io.output.obj,output);});
-	};
-	this.getOutputConnections = function(input)
-	{
-		//find all connections that have the output as the output
-		return _.filter(this.ioConnections, function(io){ return _.isEqual(io.input.obj,input);});
-	};
-	this.getInputs = function ()
-	{
-		return this.brokerProperties.inputs;
-	};
-	this.getOutputs = function ()
-	{
-		return this.brokerProperties.outputs;
-	};
-	this.getAllIOs = function ()
-	{
-		return this.brokerProperties.inputs.concat(this.brokerProperties.outputs);
-	}
 	this.setStroke = function (colour)
 	{
 		this.rect.setStroke(colour);
 	};
-	this.getIOObject = function(id)
-	{
-		//loop through all IOs and return id match
-		return _.find(this.getAllIOs(), function(IO){ return IO["id"] == id; })
-		//return null;
-	};
-	
-	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
-	
+	Kinetic.WorkFlowElement.apply(this, [{draggable:config.draggable,brokerProperties:config.brokerProperties}]);
 	config = {
 		  x:config.x,
 		  y:config.y,
@@ -145,153 +105,8 @@ Kinetic.WorkFlowElement = function (config)
 		    
 }
 
-Kinetic.WorkFlowElement.prototype = {
+Kinetic.WorkFlowComponent.prototype = {
 
- 	connectTo : function (connectConfig)
-	{
-		//this is always the output as its being connected to an input
-		//need to check whether this map already exists
-		var foundCon  = _.find(this.ioConnections,function(ioCon)
-						{
-							return _.isEqual(ioCon,connectConfig);
-						});
-		if (foundCon != undefined)
-		{
-			//this connection has already been defined
-			var that = this;
-			foundCon = _.find(this.vertices, function(vert)
-						{
-							return vert.start == that && vert.end == connectConfig.input.obj;
-						});
-			if(foundCon == undefined)
-			{
-				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [30,10]}); 
-				this.getLayer().add(connection);
-				
-				this.getLayer().draw();
-			}
-			return false;
-		}
-		else
-		{
-			//this is not a current connection
-			//so we need to save it in the list
-			this.ioConnections.push(connectConfig);
-			if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
-			{
-				var inputCom = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
-				inputCom.ioConnections.push(connectConfig);	
-			}
-			else
-			{
-				connectConfig.input.obj.ioConnections.push(connectConfig);
-			}
-
-			
-			//check whether we should draw a connection, ie whether the connection has not already been drawn
-			var that = this;
-			foundCon = _.find(this.vertices, function(vert)
-						{
-							return vert.start == that && vert.end == connectConfig.input.obj;
-						});
-			if(foundCon == undefined)
-			{
-				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [30,10]}); 
-				this.getLayer().add(connection);
-				
-				this.getLayer().draw();
-			}
-			return true;
-		}
-	},
-	connectToEl : function(el)
-	{
-		//need to connect this to the main element as thats the outer layer
-		var connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
-	},
-	disconnect :function(connectConfig)
-	{
-		//this is always the output
-		//delete from IO connections
-		this.ioConnections.splice(_.indexOf(this.ioConnections, connectConfig),1);
-		if(connectConfig.input.obj instanceof Kinetic.WorkFlow)
-		{
-			//get the component of the ioObject, then use this to delete its ioConection
-			var comToDelete = connectConfig.input.obj.getComponentOfIO(connectConfig.input.inputIO.id);
-			comToDelete.ioConnections.splice(_.indexOf(comToDelete.ioConnections, connectConfig),1);
-		}
-		else
-		{
-			connectConfig.input.obj.ioConnections.splice(_.indexOf(connectConfig.input.obj.ioConnections, connectConfig),1);
-		}
-		//delete from vertices, if this is the last ioconnection for this and input
-		var foundCon  = _.find(this.ioConnections,function(ioCon)
-						{
-							return _.isEqual(ioCon.input.obj,connectConfig.input.obj) && _.isEqual(ioCon.output.obj,connectConfig.output.obj);
-						});
-		//if its undefined that means there should not be a connection
-		if (foundCon == undefined)
-		{
-			//need to delete
-			//find the connection in vertices
-			var that = this;
-			foundCon = _.find(this.vertices, function(vert)
-						{
-							return vert.start == that && vert.end == connectConfig.input.obj;
-						});
-			foundCon.remove();
-			this.getLayer().draw();
-			
-		}
-		
-	},
-	//this is used to delete all the IOs for this element
-	//it is used when element is deleted
-	deleteAllIOs : function ()
-	{
-		//loop through all the ioConnections
-		//call disconnect on the ouput	
-		_.each(this.ioConnections,function(io)
-		{
-			io.output.obj.disconnect(io);
-		});
-		//delete vertices that are for ordering
-		this.disconnectAllVertices();
-
-	},
-	connectAllIOs : function()
-	{
-		_.each(this.ioConnections,function(io)
-		{
-			io.output.obj.connectTo(io);
-		});
-	},
-	disconnectAllVertices : function ()
-	{
-		//remove the vertices
-		var deleteVerts = this.vertices.slice();
-		//remove all the vertices for this workflow
-		_.each(deleteVerts,function(vert)
-		{
-			vert.remove();
-		});
-	},
-	addConnectionsToLayer : function ()
-	{
-		//add connections to th elayer, but only when this element is the start node
-		//this avoids duplicates
-		for(Vi=0;Vi<this.vertices.length;Vi++) 
-		{ 
-			if(this.vertices[Vi].start == this)
-			{
-				this.getLayer().add(this.vertices[Vi]);
-			}
-		}
-
-	},
 	moveToTop : function ()
 	{
 		this.rect.moveToTop();
@@ -302,6 +117,7 @@ Kinetic.WorkFlowElement.prototype = {
 	},
 	setAllPositions : function(config)
 	{
+		this.setPosition({x:0,y:0});
     	this.rect.setPosition(config.x,config.y);
     	if(this.config.type == "mainRect")
     	{
@@ -324,21 +140,22 @@ Kinetic.WorkFlowElement.prototype = {
 	}
 };
 
-Kinetic.GlobalObject.extend(Kinetic.WorkFlowElement, Kinetic.Group);
+Kinetic.GlobalObject.extend(Kinetic.WorkFlowComponent, Kinetic.WorkFlowElement);
 
-Kinetic.WorkFlowStart = function (config)
+Kinetic.WorkFlowTerminalNodes = function (config)
 {
-	this.vertices 	= new Array();
-	this.classType = "WorkFlowStart";
-	this.components = new Array();
+	this.vertices 	= [];
+	this.classType = "WorkFlowTerminalNodes";
+	var color = config.type == "Start" ? "#51A351" : "red";
 	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
 	var textLength = config.text.length;
 	radius = 15;
+	
 	this.circle = new Kinetic.Circle({
           x: config.x,
           y: config.y,
           radius: radius,
-          fill: "#51A351",
+          fill: color,
           stroke: "black",
           strokeWidth: 2
     });
@@ -346,17 +163,23 @@ Kinetic.WorkFlowStart = function (config)
 	this.textElement = new Kinetic.Text({
           x: config.x - (radius-2),
           y: config.y+radius+10,
-          text: "Start",
+          text: config.type,
           fontSize: 10,
           fontFamily: "Calibri",
           textFill: "black",
           align: "center",
           verticalAlign: "middle"
     });
-    this.add(this.textElement);
-    this.on("dragmove", function() { this.updateAllVertices(); });		    
+     this.add(this.textElement);
+	
+	this.setStroke = function (colour)
+	{
+		this.circle.setStroke(colour);
+	};
+	this.on("dragmove", function() { this.updateAllVertices(); });	
+	
 }
-Kinetic.WorkFlowStart.prototype = {
+Kinetic.WorkFlowTerminalNodes.prototype = {
 	connectTo : function (el)
 	{
 		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
@@ -376,6 +199,7 @@ Kinetic.WorkFlowStart.prototype = {
 	},
 	setAllPositions : function(config)
 	{
+		this.setPosition({x:0,y:0});
 	    this.textElement.setPosition(config.x-radius,config.y+radius+5);
     	this.circle.setPosition(config.x,config.y);
 	},
@@ -392,94 +216,48 @@ Kinetic.WorkFlowStart.prototype = {
 	},
 	getHeight : function ()
 	{
-		return this.circle.getRadius().y;
+		return (this.circle.getRadius().y / 2) -7.5;
 	},
 	getWidth : function()
 	{
-		return this.circle.getRadius().x;
+		return this.circle.getRadius().x *2;
+	},
+	setAllAttrs : function(attrs)
+	{
+		this.setAttrs(attrs);
+		_.each(this.children,function(child)
+		{
+			child.setAttrs(attrs);
+		})	
 	}
 
+};
+Kinetic.GlobalObject.extend(Kinetic.WorkFlowTerminalNodes, Kinetic.Group);
+Kinetic.WorkFlowStart = function (config)
+{
+	this.classType = "WorkFlowStart";
+	config["type"] = "Start";
+	Kinetic.WorkFlowTerminalNodes.apply(this, [config]);
+	
+
+    	    
+}
+Kinetic.WorkFlowStart.prototype = {
 
 };
-Kinetic.GlobalObject.extend(Kinetic.WorkFlowStart, Kinetic.Group);
+Kinetic.GlobalObject.extend(Kinetic.WorkFlowStart, Kinetic.WorkFlowTerminalNodes);
 
 Kinetic.WorkFlowEnd = function (config)
 {
-	this.vertices 	= new Array();
 	this.classType = "WorkFlowEnd";
-	this.components = new Array();
-	Kinetic.Group.apply(this, [{draggable:config.draggable}]);
-	var textLength = config.text.length;
-	radius = 15;
-	this.circle = new Kinetic.Circle({
-          x: config.x,
-          y: config.y,
-          radius: radius,
-          fill: "red",
-          stroke: "black",
-          strokeWidth: 2
-    });
-	this.add(this.circle);
-    this.textElement = new Kinetic.Text({
-          x: config.x - (radius-2),
-          y: config.y+radius+10,
-          text: "End",
-          fontSize: 10,
-          fontFamily: "Calibri",
-          textFill: "black",
-          align: "center",
-          verticalAlign: "middle"
-    });
-    this.add(this.textElement);
-
-    this.on("dragmove", function() { this.updateAllVertices(); });		    
+	config["type"] = "End";
+	Kinetic.WorkFlowTerminalNodes.apply(this, [config]);
+ 	    
 }
 Kinetic.WorkFlowEnd.prototype = {
-	connectTo : function (el)
-	{
-		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
-	
-	},
-	connectToEl : function(el)
-	{
-		//need to connect this to the main element as thats the outer layer
-		var connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
-	},
-	setAllPositions : function(config)
-	{
-	    this.textElement.setPosition(config.x,config.y+radius+10);
-    	this.circle.setPosition(config.x,config.y);
-	},
-	addConnectionsToLayer : function ()
-	{
-		for(Vi=0;Vi<this.vertices.length;Vi++) { this.getLayer().add(this.vertices[Vi]); }
-
-	},
-	disconnectAllVertices : function ()
-	{
-		_.each(this.vertices,function(vert)
-		{
-			vert.remove();
-		});
-	},
- 	updateAllVertices : function ()
-	{
-		for(i=0;i<this.vertices.length;i++) { this.vertices[i]._dragUpdate(); }
-		
-	},
-	getHeight : function ()
-	{
-		return this.circle.getRadius().y * 2;
-	},
-	getWidth : function()
-	{
-		return this.circle.getRadius().x * 2;
-	}
 
 };
-Kinetic.GlobalObject.extend(Kinetic.WorkFlowEnd, Kinetic.Group);
+Kinetic.GlobalObject.extend(Kinetic.WorkFlowEnd, Kinetic.WorkFlowTerminalNodes);
 
 
 
@@ -514,7 +292,8 @@ Kinetic.Connection = function (config) {
 	if( typeof config.end !== "undefined" ) this.end.vertices.push(this);
 	
 	this.on("mouseover",function() { document.body.style.cursor="pointer"; });
-	this.on("mouseout",function()  { document.body.style.cursor="default"; });};
+	this.on("mouseout",function()  { document.body.style.cursor="default"; });
+};
 
 Kinetic.Connection.prototype = {
 	_dragUpdate : function() { 

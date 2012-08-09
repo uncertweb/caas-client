@@ -65,7 +65,8 @@
     <script src="js/lib/kinetic.line.js"></script>
 	<script src="js/lib/kinetic.bezier.js"></script>
 	<script type="text/javascript" src="js/kinetic.workflowLayer.js"></script>
-    <script type="text/javascript" src="js/kinetic.workFlowElements.js"></script>
+    <script type="text/javascript" src="js/kinetic.workFlowElement.js"></script>
+    <script type="text/javascript" src="js/kinetic.workFlowComponents.js"></script>
     <script type="text/javascript" src="js/kinetic.workFlow.js"></script>
     <script type="text/javascript" src="js/workflow.ui.js"></script>
     <script type="text/javascript" src="js/workflow.js"></script>
@@ -112,15 +113,8 @@
 	        ctx = stage.children[0].getContext();
 	        ctx.font = fontSize + "Calibri";
 	       
-	        start = new Kinetic.WorkFlowStart({x:20,y:20,text:"Start",draggable:true});
-	        layer.addElement(start);
-	        	        
 	        stage.draw();
-	        //layer.reDrawLayer();
-	        layer.updateAllVertices();
-	        //layer.convertToBPMN();
-	   
-
+	       
           	var con = $('#container');
           	con.droppable({
 		              drop: function(el,ui) {
@@ -131,8 +125,14 @@
 		    $('#ioModal').on('hidden', function () {
 			    layer.clearIOMode();
 			})
+
           	WorkFlow_UI.toolbox.open();
-       
+
+          	
+			$('#ioWorkFlowModal').on('hidden', function () {
+			    layer.clearIOMode();
+			})
+
 	
         };
     </script>
@@ -191,7 +191,21 @@
               <!--<button href="#" class="btn btn-primary" onclick="WorkFlow_UI.io.test()">Save changes</button>-->
             </div>
      </div>
-     
+     <div id="ioWorkFlowModal" class="modal hide fade" style="display: none; ">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal">×</button>
+              <h3 id="ioWorkFlowHeader"></h3>
+            </div>
+            <div class="modal-body">
+				<div class="span6" id="ioDropdownWF">
+					
+				</div>
+            </div>
+            <div class="modal-footer">
+              <a class="btn" data-dismiss="modal">Done</a>
+              <!--<button href="#" class="btn btn-primary" onclick="WorkFlow_UI.io.test()">Save changes</button>-->
+            </div>
+     </div>
      <div id="newWFModal" class="modal hide" style="display: none; ">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal">×</button>
@@ -258,10 +272,11 @@
 		                    </ul>
 		              </div>
 		            </div>
-            </div>
+		            </div>
+            
      </div>
 
-
+     </div>
      <div id="orderComponents" class="modal hide" style="display: none; ">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal">×</button>

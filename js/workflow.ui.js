@@ -7,11 +7,12 @@ WorkFlow_UI.toolbox =
 	 allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn  btn-primary",'data-toggle':"", onclick:"layer.moveUp();"},
 					  {id:"io",text:"Toggle IO Mode", class:"btn btn-primary",'data-toggle':"button", onclick:"WorkFlow_UI.addWF.click();"},
 					  {id:"reDraw", text:"Auto Layout", class:"btn btn-primary",'data-toggle':"", onclick:"layer.reDrawLayer();"},
-					  {id:"addWF",text:"Add Workflow",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.addWF.open();"}
+					  {id:"addWF",text:"Add Workflow",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.addWF.open();"},
+					  {id:"setOrder",text:"Set Order",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.orderComponents.open();"}
 					 ),
 	open: function ()
 	{	
-		this.setActiveControl(["io","reDraw","addWF"]);
+		this.setActiveControl(["io","reDraw","addWF","setOrder"]);
 		
 		$('#toolbox').modal
 		({
@@ -66,7 +67,7 @@ WorkFlow_UI.toolbox =
 				});
 			}
 		})
-		//close the toolbox, for neatness
+		
 		$('#toolbox').modal('show');
 		this.displayActiveControls('activeControls');
 	},
@@ -102,6 +103,10 @@ WorkFlow_UI.orderComponents =
 		currentOrder : [],
 		open : function ()
 		{
+			$('#toolbox').modal('hide')
+			$('#orderComponents').on('hidden', function () {
+				$('#toolbox').modal('show')
+			});
 			//get the current elements from layer
 			currentOrder = layer.getComponents(false);
 			$('#sortable').empty();
@@ -122,13 +127,6 @@ WorkFlow_UI.orderComponents =
 			                    }
 						});
 					},
-					drag : function()
-					{
-						$('#toolbox').css(
-						{
-							opacity:0.6
-						});
-					},
 					stop: function()
 					{
 						var con = $('#container');
@@ -144,7 +142,7 @@ WorkFlow_UI.orderComponents =
 				});
 				$( "#sortable" ).disableSelection();
 			});
-			
+			var o = $('#orderComponents');
 			$('#orderComponents').modal
 			({
 	    		backdrop: true,
@@ -270,8 +268,11 @@ WorkFlow_UI.search =
              
              offset = layer.getStage()._getContentPosition();
                 //get search meta data using this id
-                
-                var wFlowEle = new Kinetic.WorkFlowElement({text:'',x:ui.position.left - offset.left,y:ui.position.top + offset.top,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var s = layer.getStage();
+             var mousePos = s.getMousePosition();
+                var mouseX = (ev.clientX + offset.left + window.pageXOffset);
+                var mouseY = (ev.clientY + offset.top + window.pageYOffset);
+                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:mouseX,y:mouseY,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
 		    
@@ -330,10 +331,11 @@ WorkFlow_UI.addWF =
 		}
 		config = {
 			name:$('#titleWF').val(),
-			description:$('#abstractGroup').val()
+			description:$('#abstractGroup').val(),
+			annotation:''
 		}
 		//create workflow from
-		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),config:config,x:100,y:10,draggable:true,layer:layer});
+		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});
 		var index = layer.addElement(newWFlow);
 		//move down a layer to start editing this workflow
 		layer.renderWorkFlow(index);
@@ -362,6 +364,7 @@ WorkFlow_UI.io =
 				$('#toolbox').modal('show')
 			});
 			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
+			if(this.checkForIO() == false){$('#toolbox').modal('show');return false;}
 			components = IO;
 			currentIOs = this.getAllCurrentIOs();
 			//clear modal contents, from previous opening
@@ -399,7 +402,7 @@ WorkFlow_UI.io =
 	   			 $('#inputDesc').append('<h4>Description</h4>');
 	   			 $('#inputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
    			 }
-   			 else if (IO.input instanceof Kinetic.WorkFlowElement)
+   			 else if (IO.input instanceof Kinetic.WorkFlowComponent)
    			 {
 	   			 //set the type
 	   			 $('#inputHeading').html('To: ' + IO.input.title);
@@ -420,7 +423,7 @@ WorkFlow_UI.io =
 	   			 $('#outputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
 	   			 
    			 }
-   			 else if (IO.output instanceof Kinetic.WorkFlowElement)
+   			 else if (IO.output instanceof Kinetic.WorkFlowComponent)
    			 {
 	   			 //set the type
 	   			 $('#outputHeading').html('From: ' + IO.output.title);
@@ -441,6 +444,22 @@ WorkFlow_UI.io =
    			 this.displayIO();
 			
 			
+		},
+		checkForIO : function()
+		{
+			if(IOs.outputs.length == 0)
+			{
+				alert('ERROR! - You need to set Outputs for this WorkFlow.\n Double Click to Edit');
+				$('#ioModal').modal('hide');
+				return false;
+			}
+			else if(IOs.inputs.length == 0)
+			{
+				alert('ERROR! - You need to set Inputs for this WorkFlow.\n Double Click to Edit');
+				$('#ioModal').modal('hide');
+				return false;
+			}
+			return true;
 		},
 		getAllCurrentIOs : function ()
 		{
@@ -642,3 +661,231 @@ WorkFlow_UI.io =
 		}
 
 };
+WorkFlow_UI.ioWorkFlow =
+{
+	
+		IOs: [],
+		noRows: 1,
+		components : {},
+		currentIOs : {},
+		workFlow : {},
+		open : function(IO)
+		{
+			components = IO;
+			
+			this.workFlow = this.getStartEndComponent().obj.parent;
+			var WFName = this.workFlow.brokerProperties.name;
+			if(this.getStartEndComponent().type == "start")
+			{
+				$('#ioWorkFlowHeader').html('Set inputs for Workflow - ' + WFName);
+				IOs = this.getStartEndComponent().com.getInputs();
+			}
+			else
+			{
+				$('#ioWorkFlowHeader').html('Set outputs for Workflow - ' + WFName);
+				IOs = this.getStartEndComponent().com.getOutputs();
+			}
+			if(this.checkForIO() == false){$('#toolbox').modal('show');return false;}
+			currentIOs = this.getAllCurrentIOs();
+			noRows = 1;
+			$('#ioDropdownWF').empty();
+			this.outputCurrentIOs();
+			//open modal and populate with IO
+			$('#ioWorkFlowModal').modal('show');
+			$('#ioWorkFlowModal').modal
+			({
+        		backdrop: true,
+       			 keyboard: true
+    		}).css
+    		({
+    			'overflow-y':'auto',
+    			'max-height':'90%',
+    			'max-width' : '65%',
+        		width: 'auto',
+        		'margin-left': function () {
+            		return -($(this).width() / 2);
+       		 	}
+   			 });
+   			 //display new section to be set
+   			 this.displayIO();
+			
+			
+		},
+		checkForIO : function()
+		{
+			if(IOs.length == 0)
+			{
+				alert('ERROR! - You need to set Outputs for this WorkFlow.\nDouble Click to Edit');
+				$('#ioModal').modal('hide');
+				return false;
+			}
+			return true;
+		},
+		getAllCurrentIOs : function ()
+		{
+			var current = [];
+			
+			//need to get the IOs already set for the workflow for this component
+			if(this.getStartEndComponent().type == "start")
+			{
+				//get inputs for the workflow, that are assigned from the component
+				current = this.getStartEndComponent().obj.parent.getInputs(this.getStartEndComponent().com);
+			}
+			else
+			{
+				//get outputs for the workflow, that are assigned from the component
+				current = this.getStartEndComponent().obj.parent.getOutputs(this.getStartEndComponent().com);
+			}
+			
+			return current;
+		},
+		outputCurrentIOs : function()
+		{
+			//loop through currentIOs
+			//each time call displayIO, then modify the row so
+			//the correct option is selected and alert-success and delete button is set
+			var self = this;
+			_.each(currentIOs,
+				function(currentIO)
+				{
+					self.displayIO();
+					$("#ios_" + (noRows-1) + " option[value=" + currentIO.id + "]").attr('selected', 'selected');
+					self.disableRow(noRows-1);
+					//change the button to delete, to give the ability to delete the connection
+					var button = $('#buttonio_' + (noRows-1))
+					button.html('Delete');
+					button.attr('onclick', 'WorkFlow_UI.ioWorkFlow.deleteIO(' + (noRows-1) + ')');
+					$('#rowio_' + (noRows-1)).attr('class','row alert alert-success');
+					$('#rowAlertHeadingio_' + (noRows-1)).empty();
+
+				});	
+		},
+		getStartEndComponent : function()
+		{
+			if(components.input instanceof Kinetic.WorkFlowStart) 
+			{
+				return {obj:components.input, type:"start",com:components.output};
+			}
+			else if (components.output instanceof Kinetic.WorkFlowStart)
+			{
+				return {obj:components.output, type:"start",com:components.input};
+			}
+			else if (components.output instanceof Kinetic.WorkFlowEnd)
+			{
+				return {obj:components.output, type:"end",com:components.input};
+			}
+			else if(components.input instanceof Kinetic.WorkFlowEnd)
+			{
+				return {obj:components.input, type:"end", com:components.output};
+			}
+			
+		},
+		displayIO : function()
+		{
+			//display outputs
+			var form = $('<form class="form-vertical"></form>');
+			var row = $(' <div class="row alert fade in" id="rowio_' + noRows +'"></div>')
+			row.append('<h4 class="alert-heading" id=rowAlertHeadingio_' + noRows + '></h4>');
+			var spanOutputs = $('<div class="span4"></div>');
+			var group = $('<div class="control-group"></div>');
+			var controls = $('<div class="controls"></div>');
+			var select = $(' <select id="ios_' + noRows + '"></select>');
+			
+			_.each(IOs,function(oIO)
+			{
+				//data attribute will store the actual ioObject from the broker
+				//the value in the select will be the title of the ioObject
+				select.append('<option value=' + oIO.id + ' data-ioObjectid=' + oIO.id + '>' + oIO.name + '</option>');
+				
+			});     
+			
+			controls.append(select);
+			group.append(controls);
+			//group.append('<button class="btn btn-primary" onclick="WorkFlow_UI.io.setIO(' + noRows + ')" href="#">Set</button>')
+			spanOutputs.append(group);
+			spanOutputs.append('<div id="outputDetails_' + noRows + '"></div>');
+			row.append(spanOutputs);
+			row.append('<div class="span1"><button id="buttonio_' + noRows + '" class="btn btn-primary" onclick="WorkFlow_UI.ioWorkFlow.setIO(' + noRows + ')" href="#">Set</button></div>');	
+			$('#ioDropdownWF').append(row);
+			$(".alert").alert()
+			
+			noRows++;      
+			             
+			        
+		
+			
+		},
+		disableRow : function (row)
+		{
+			$('#ios_' + row).attr("disabled", "disabled");
+		},
+		setIO : function(row)
+		{
+			//get the input from the select
+			var select = $('#ios_' + row).find(":selected");
+			var inputObId =  select.data('ioobjectid');
+			//create the new IO object for workflow
+			var com = this.getStartEndComponent().com;
+			var comIO = com.getIOObject(inputObId);
+			var newIO = {com:com,id:comIO.id,name:comIO.name};
+			//we now need to add the new IO to the workflow
+			if(this.getStartEndComponent().type == "start")
+			{
+				var resultCon = this.getStartEndComponent().obj.parent.addInput(newIO);
+			}
+			else
+			{
+				var resultCon = this.getStartEndComponent().obj.parent.addOutput(newIO);
+			}
+			
+			if(resultCon)
+			{
+				$('#rowio_' + row).attr('class','row alert alert-success');
+				$('#rowAlertHeadingio_' + row).empty();
+				$(".alert").alert()
+				//display new IO, to map new IO
+				this.displayIO();
+				//the row, that has been set
+				this.disableRow(row);
+				//change the button to delete, to give the ability to delete the connection
+				var button = $('#buttonio_' + row)
+				button.html('Delete');
+				button.attr('onclick', 'WorkFlow_UI.ioWorkFlow.deleteIO(' + row + ')');
+
+			}
+			else
+			{
+				//this has already been mapped, display message
+				$('#rowio_' + row).attr('class','row alert alert-error');
+				$(".alert").alert()
+				$('#rowAlertHeadingio_' + row).html('<h4>Connection already Defined</h4><br>');
+			}
+			
+		},
+		deleteIO : function(row)
+		{
+			//get the input from the select
+			var select = $('#ios_' + row).find(":selected");
+			var inputObId =  select.data('ioobjectid');
+			
+			var com = this.getStartEndComponent().com;
+			var comIO = com.getIOObject(inputObId);
+			var newIO = {com:com,id:comIO.id,name:comIO.name};
+			//delete the connection from the intput and output
+			if(this.getStartEndComponent().type == "start")
+			{
+				var resultCon = this.getStartEndComponent().obj.parent.deleteInput(newIO);
+			}
+			else
+			{
+				var resultCon = this.getStartEndComponent().obj.parent.deleteOutput(newIO);
+			}
+			
+			//update the currentIOs
+			//remove the row, do we need to change all the IDS?
+			$('#row_' + row).alert('close')
+			//$('#row_' + row).remove();
+		}
+
+};
+
