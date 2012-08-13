@@ -232,6 +232,28 @@ Kinetic.WorkFlowElement.prototype = {
 		{
 			return this.rect.getPosition();
 		}
+	},
+	publish:function()
+	{
+		var ioCons = this.ioConnections.splice();
+		var com = new UncertWeb.Component(this.brokerProperties);
+		/*ioConnections layout = {
+				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
+				output:{obj:components.ouput,outputIO:components.output.getIOObject(outputObId)}
+			}*/
+		var self = this;
+		_each(ioCons,function(io)
+		{
+			if(_.isEqual(io.input.obj,self))
+			{
+				io.input.obj = com;
+			}
+			else if(_.isEqual(io.output.obj,self))
+			{
+				io.output.obj = com;
+			}
+		});
+		return {com:com,io:ioCons};
 	}
 }
 

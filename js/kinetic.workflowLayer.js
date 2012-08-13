@@ -312,31 +312,6 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
-	createWorkFlow : function()
-	{
-		var mainWorkFlow = new UncertWeb.Workflow();
-		for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
-		{
-			if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow)
-			{
-				//create new workflow
-				var workflow = new UncertWeb.Workflow();
-				for(iWFEls=0;iWFEls<this.currentElements[iCEls].components.length;iWFEls++)
-				{
-					//add the components to that workflow
-					workflow.append(new UncertWeb.Component(this.currentElements[iCEls].components[iWFEls].brokerProperties));
-				}
-				mainWorkFlow.append(workflow);
-			}
-			else if (this.currentElements[iCEls] instanceof Kinetic.WorkFlowComponent)
-			{
-				mainWorkFlow.append(new UncertWeb.Component(this.currentElements[iCEls].brokerProperties))
-			}
-		}
-		return mainWorkFlow;
-		
-		
-	},
 	publishWorkFlow : function()
 	{
 		
