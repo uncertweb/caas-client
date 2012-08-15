@@ -454,7 +454,7 @@ Kinetic.WorkFlow.prototype = {
 	updateVerticesOrders : function()
 	{
 		 this.disconnectAllVertices();
-	    this.setOrderedVertices();
+	    //this.setOrderedVertices();
 	    this.connectAllIOs();
 	},
 	deleteElement : function(el)
@@ -614,8 +614,8 @@ Kinetic.WorkFlow.prototype = {
 		smallestX = -1;
 		if(this.components.length == 0)
 		{
-			x = this.startElement.circle.getAbsolutePosition().x;
-			rad = this.startElement.circle.getAttrs().radius;
+			var x = this.startElement.circle.getAbsolutePosition().x;
+			var rad = this.startElement.circle.getAttrs().radius;
 			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x)
 			
 			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
@@ -623,7 +623,25 @@ Kinetic.WorkFlow.prototype = {
 			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
 		
 			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
-			
+			if(!(_.isEmpty(this.endElement)))
+			{
+				if(smallestX>(this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x))
+				{
+					smallestX = (this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x)
+				}
+				if(smallestY>(this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x))
+				{
+					smallestY = (this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x)
+				}
+				if(biggestX<(this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x))
+				{
+					biggestX = (this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x)
+				}
+				if(biggestY<(this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x))
+				{
+					biggestY = (this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x)
+				}
+			}
 			if((this.mainElement.textLength)+20>(biggestX-smallestX))
 			{
 				return {w:((this.mainElement.textLength)+20),h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};

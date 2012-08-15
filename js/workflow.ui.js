@@ -14,61 +14,11 @@ WorkFlow_UI.toolbox =
 	{	
 		this.setActiveControl(["io","reDraw","addWF","setOrder"]);
 		
-		$('#toolbox').modal
-		({
-    		backdrop: false,
-   			keyboard: false
-		}).css
-		({
-			'overflow-y':'auto',
-			'max-height':'50%',
-    		 width: '250px',
-    		'margin-top':'0px',
-    		'margin-left':'0px',
-    		'top':'0px',
-    		'left':'0px',
-    		 opacity:1
-    		
-		});
+		
 		
 		//set the tool box so it is draggable
-		$('#toolbox').draggable(
-		{
-			cursor: "move",
-			start: function()
-			{
-				//remove droppable event when dragging the toolbox
-				var con = $('#container');
-	          	con.droppable({
-			              drop: function(el,ui) {
-	                        	
-	                    }
-				});
-			},
-			drag : function()
-			{
-				$('#toolbox').css(
-				{
-					opacity:0.6
-				});
-			},
-			stop: function()
-			{
-				var con = $('#container');
-				con.droppable({
-		              drop: function(el,ui) {
-                        	WorkFlow_UI.search.doDrop(el,ui,layer)
-                    }
-		               				               		
-                    });
-                $('#toolbox').css(
-				{
-					opacity:1
-				});
-			}
-		})
-		
-		$('#toolbox').modal('show');
+				
+		//$('#toolbox').modal('show');
 		this.displayActiveControls('activeControls');
 	},
 	changeToolBoxTitle :function (title)
@@ -293,10 +243,7 @@ WorkFlow_UI.addWF =
 	},
 	open : function()
 	{
-		$('#toolbox').modal('hide')
-		$('#newWFModal').on('hidden', function () {
-			$('#toolbox').modal('show')
-		});
+		this.removeAllHelp();
 		$('#newWFModal').modal
 		({
     		backdrop: true,
@@ -314,18 +261,26 @@ WorkFlow_UI.addWF =
 		$('#titleWF').val('');
 		$('#abstractWF').val('');	
 	},
+	removeAllHelp :function()
+	{
+		$('#titleErrors').html('');
+		$('#abstractErrors').html('');
+		$('#titleGroup').attr("class","control-group");
+		$('#abstractGroup').attr("class","control-group");
+	},
 	add : function()
 	{
+		this.removeAllHelp();
 		//check that the required fields have been entered
 		if($('#titleWF').val() == '')
 		{
-			$('#titleGroup').append('<p class="help-block">Enter title of Workflow</p>');
+			$('#titleErrors').append('<p class="help-block">Enter title of Workflow</p>');
 			$('#titleGroup').attr("class","control-group error");
 			return false;
 		}
 		if($('#abstractWF').val() == '')
 		{
-			$('#abstractGroup').append('<p class="help-block">Enter abstract for Workflow</p>');
+			$('#abstractErrors').append('<p class="help-block">Enter abstract for Workflow</p>');
 			$('#abstractGroup').attr("class","control-group error");
 			return false;
 		}
@@ -359,12 +314,8 @@ WorkFlow_UI.io =
 		
 		open : function(IO)
 		{
-			$('#toolbox').modal('hide')
-			$('#ioModal').on('hidden', function () {
-				$('#toolbox').modal('show')
-			});
 			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
-			if(this.checkForIO() == false){$('#toolbox').modal('show');return false;}
+			if(this.checkForIO() == false){return false;}
 			components = IO;
 			currentIOs = this.getAllCurrentIOs();
 			//clear modal contents, from previous opening
@@ -450,12 +401,16 @@ WorkFlow_UI.io =
 			if(IOs.outputs.length == 0)
 			{
 				alert('ERROR! - You need to set Outputs for this WorkFlow.\n Double Click to Edit');
+				layer.setIOMode(false);
+				layer.setIOMode(true);
 				$('#ioModal').modal('hide');
 				return false;
 			}
 			else if(IOs.inputs.length == 0)
 			{
 				alert('ERROR! - You need to set Inputs for this WorkFlow.\n Double Click to Edit');
+				layer.setIOMode(false);
+				layer.setIOMode(true);
 				$('#ioModal').modal('hide');
 				return false;
 			}
@@ -685,7 +640,7 @@ WorkFlow_UI.ioWorkFlow =
 				$('#ioWorkFlowHeader').html('Set outputs for Workflow - ' + WFName);
 				IOs = this.getStartEndComponent().com.getOutputs();
 			}
-			if(this.checkForIO() == false){$('#toolbox').modal('show');return false;}
+			if(this.checkForIO() == false){return false;}
 			currentIOs = this.getAllCurrentIOs();
 			noRows = 1;
 			$('#ioDropdownWF').empty();
@@ -716,6 +671,8 @@ WorkFlow_UI.ioWorkFlow =
 			if(IOs.length == 0)
 			{
 				alert('ERROR! - You need to set Outputs for this WorkFlow.\nDouble Click to Edit');
+				layer.setIOMode(false);
+				layer.setIOMode(true);
 				$('#ioModal').modal('hide');
 				return false;
 			}

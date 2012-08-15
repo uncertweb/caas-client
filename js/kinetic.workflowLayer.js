@@ -76,7 +76,7 @@ Kinetic.WorkFlowLayer = function (config)
 				{
 					WorkFlow_UI.io.open(this.ioObjects);
 				}
-					
+				return false;
 					
 			}
 			return true;
@@ -97,7 +97,7 @@ Kinetic.WorkFlowLayer = function (config)
 			{
 				WorkFlow_UI.io.open(this.ioObjects);
 			}
-			return true;
+			return false;
 		}
 		else
 		{
@@ -182,12 +182,12 @@ Kinetic.WorkFlowLayer.prototype = {
 		//clear the stage so it is blank
 		this.clear();
 		this.removeChildren();
-		
+		this.setIOMode(false);
 		this.standAloneWF = workFlow;
 		this.add(this.standAloneWF);
 		this.standAloneWF.setType(Kinetic.WorkFlowType.standAlone);
 		
-		this.setIOMode(false);
+		
 		
 		//create bin for lower layer
 		this.renderRubbishBin();
