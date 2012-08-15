@@ -25,7 +25,7 @@ Kinetic.WorkFlow = function (config)
 				this.mainElement = null;
 			}
 			this.setDraggable(false);
-			this.off("dragend dragmove dblclick");
+			this.off("dragend dragmove dblclick click");
 			this.startElement.setDraggable(true);
 		}
 		else if (val == Kinetic.WorkFlowType.nested)
@@ -192,6 +192,9 @@ Kinetic.WorkFlow = function (config)
 		});
 		this.on("dragend", function(ev) { 
     		config.layer.checkOverBin(this,ev);
+    	});
+    	this.on("click", function(ev) { 
+    		WorkFlow_UI.toolbox.displayObject(this);
     	});
 	}
 }
@@ -544,6 +547,9 @@ Kinetic.WorkFlow.prototype = {
 			for(iCEls=0;iCEls<this.children.length;iCEls++)
 			{
 				this.children[iCEls].off('click');
+				this.children[iCEls].on("click", function(ev) { 
+					WorkFlow_UI.toolbox.displayObject(this);
+				});
 				this.children[iCEls].setStroke('black');
 			}
 		}

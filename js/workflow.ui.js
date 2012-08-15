@@ -3,7 +3,8 @@ var idCount = 100;
 
 WorkFlow_UI.toolbox =
 {
-	 activeButtons : new Array(),
+	objInspecting : {},
+	 activeButtons : [],
 	 allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn  btn-primary",'data-toggle':"", onclick:"layer.moveUp();"},
 					  {id:"io",text:"Toggle IO Mode", class:"btn btn-primary",'data-toggle':"button", onclick:"WorkFlow_UI.addWF.click();"},
 					  {id:"reDraw", text:"Auto Layout", class:"btn btn-primary",'data-toggle':"", onclick:"layer.reDrawLayer();"},
@@ -45,6 +46,40 @@ WorkFlow_UI.toolbox =
 			html += '>' + ac.text + '</button></div>';
 			$('#' + divId).append(html);
 		})
+		
+	},
+	displayObject :function(obj)
+	{
+		$('#inspector').html('')
+		$('#inspectorActions').html('');
+		objInspecting = obj;
+		var toDisplay = obj.brokerProperties;
+		
+		_.each(toDisplay, function(val, key)
+		{ 
+			var group = $('<div class="control-group" style="margin-bottom: 7px"></div>');
+			group.append('<label class="control-label" style="width: 0; text-transform:capitalize" for="' + key + '">' + key + '</label>');
+			var control = $('<div class="controls" style="margin-left: 80px"></div>');
+			if(key == "description")
+			{
+			    control.append('<textarea type="text" rows="3" style="width:93%" id="' + key  + '">' + val + '</textarea>');
+			}
+			else
+			{   
+			    control.append('<input type="text" style="width:93%" id="' + key + '" value="' + val + '" >');
+			}
+			group.append(control);
+			$('#inspector').append(group);
+		});
+		$('#inspectorActions').append('<button type="submit" id="inspectorSave" onclick="WorkFlow_UI.toolbox.saveObject();return false" class="btn btn-primary">Save changes</button>');
+	},
+	saveObject : function()
+	{
+		_.each(objInspecting.brokerProperties, function(val, key)
+		{ 
+			var newValue = $('#' + key).val();
+			objInspecting.brokerProperties[key] = newValue;
+		});
 		
 	}
 },

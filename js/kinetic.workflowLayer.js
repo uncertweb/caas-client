@@ -135,7 +135,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		var imageObj = new Image();
 		    imageObj.onload = function() {
 		      self.image = new Kinetic.Image({
-		        x: $(document).width()-100,
+		        x: $('#forCanvas').width()-100,
 		        y: 0,
 		        image: imageObj,
 		        width: 100,

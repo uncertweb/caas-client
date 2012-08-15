@@ -102,6 +102,9 @@ Kinetic.WorkFlowComponent = function (config)
     this.on("dragend", function(ev) { 
     	config.layer.checkOverBin(this,ev);
     });
+    this.on("click", function(ev) { 
+		WorkFlow_UI.toolbox.displayObject(this);
+	});
 		    
 }
 

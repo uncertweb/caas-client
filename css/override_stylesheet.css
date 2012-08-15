@@ -3,8 +3,9 @@
 *
 */
 #toolbox{
-	background-color:#E6E6E6
-	font-family: Arial,Helvetica,sans-serif
+	/*background-color:#E6E6E6;*/
+	font-family: Arial,Helvetica,sans-serif;
+	border: #999 solid 1px;
 }
 #toolbox .modal-body{
 	padding: 0px;
@@ -26,7 +27,12 @@
 	border-radius: 0px 0px 0px 0px;
 	line-height: 12px;
 	padding: 5px 10px;
-	border: #999 solid 1px
+	border: #999 solid 1px;
+	margin-bottom: 10px
+	
+}
+#toolboxBody{
+	border: #999 solid 1px;
 }
 .toolboxaccordion-heading a {
 	color: black;
@@ -42,7 +48,7 @@
 }
 #search
 {
-	width:auto
+	width:95%;
 }
 #searchResults
 {
@@ -53,6 +59,8 @@
 {
 	margin: 5px
 }
+
+
 body {
 margin: 0px;
 padding: 0px;

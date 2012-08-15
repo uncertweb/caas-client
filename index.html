@@ -4,7 +4,7 @@
    <link href="css/bootstrap-responsive.css" rel="stylesheet">
     <link href="css/bootstrap.css" rel="stylesheet">
     <link href="css/override_stylesheet.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="css/editablegrid.css" type="text/css" media="screen">
     <link href="css/jquery-ui-1.8.21.custom.css" rel="stylesheet">
     <style>
 	    #sortable { list-style-type: none; margin: 0; padding: 0;; }
@@ -52,7 +52,11 @@
 		    height: 32px;
 		    font-size: 13px;
 		}
-	​	
+		table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 95%; }
+		table.testgrid td, table.testgrid th { padding: 5px; border: 1px solid #E0E0E0; }
+		table.testgrid th { background: #E5E5E5; text-align: left; }
+		input.invalid { background: red; color: #FDFDFD; }
+		
     </style>
   
     
@@ -84,46 +88,45 @@
   <div class="row-fluid">
     <div class="span2" style="width: 20%;">
        <div id="toolbox">
-            <div class="modal-header">
-              <a class="accordion-toggle" id="toolboxTitle" data-toggle="collapse" data-parent="#toolboxBody" href="#toolboxBody">Toolbox - Main Workflow</a>
+            <div id="toolboxTitle" class="modal-header">
+            Toolbox - Main Workflow
             </div>
-            <div class="collapse" id="toolboxBody">
-            
-            	<div class="accordion" id="toolBoxAccordion">
-		           <div class="accordion-group">
-		              <div class="toolboxaccordion-heading">
-		                <a class="accordion-toggle" data-toggle="collapse" data-parent="#toolBoxAccordion" href="#activeControls">
-		                  Active Controls
-		                </a>
-		              </div><!-- accordion heading -->
-		              <div id="activeControls" class="toolboxaccordion-body in collapse ">
-		                
-		              </div>
-		            </div>
+            <div id="toolboxBody">
 		            <div class="accordion-group">
-		              <div class="toolboxaccordion-heading">
-		                <a class="accordion-toggle" data-toggle="collapse" data-parent="#toolBoxAccordion" href="#collapseSearch">
-		                  Search for Components
-		                </a>
-		              </div>
-		              <div id="collapseSearch" class="toolboxaccordion-body in collapse">
-		                <input class="text" type="text" id="search" name="search"
-                            width="198px" onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords"></input>
-                    
-		                    <ul class="well draggable unstyled" id="searchResults">
-		                    </ul>
-		              </div>
-		            </div>
-		            </div>
-            
-     </div>
-    </div>
-    </div>
-    <div class="span10" style="width: 77%; margin-left: 0px">
+			              <div class="toolboxaccordion-heading">
+			                  Search for Components
+			              </div>
+			              <div id="collapseSearch">
+			                <input class="text span2" type="text" id="search" name="search"
+	                             onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords"></input>
+	                    
+			                    <ul class="well draggable unstyled" id="searchResults">
+			                    </ul>
+			              </div>
+			       </div><!--accordion group-->
+			        <div class="accordion-group">
+			              <div class="toolboxaccordion-heading">
+			                  Component Inspector
+			              </div>
+			              <form class="form-horizontal">
+					        <fieldset>
+					          <div id="inspector">
+			                
+					          </div>
+					          <div class="form-actions"  id="inspectorActions" style="padding-left:100px;">
+					            
+					          </div>
+					        </fieldset>
+					      </form>
+			       </div><!--accordion group-->
+			</div>
+		</div>
+	</div><!--span2 end -->
+    <div class="span10" id="forCanvas" style="width: 80%; margin-left: 0px">
       <div id="container" class="droppable"></div>
-    </div>
-  </div>
-</div>
+    </div><!--span10 end-->
+  </div><!--row-fluid end-->
+</div><!--container-fluid end-->
  
       
         
@@ -267,8 +270,7 @@
 	<script src="js/lib/underscore.js"></script>
 	<script src="js/lib/bootstrap.js"></script>
 	<script src="js/lib/spin.min.js"></script>
-    
-    
+   
     <script type="text/javascript">
 
     	var layer;
@@ -294,7 +296,7 @@
 			
 	    	var stage = new Kinetic.Stage({
 	          container: "container",
-	          width: $(document).width() -200,
+	          width: $('#forCanvas').width(),
 	          height:$(document).height()
 	        });
 	        
