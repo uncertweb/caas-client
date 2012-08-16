@@ -120,6 +120,18 @@ Kinetic.WorkFlowLayer = function (config)
 		}
 		
 	};
+	this.on("click", function(ev) { 
+		/*if(this.standAloneWF == null)
+		{
+			WorkFlow_UI.toolbox.displayObject(this.mainWorkFlow);
+		}
+		else
+		{
+			WorkFlow_UI.toolbox.displayObject(this.standAloneWF);
+		}*/
+		
+	});
+
 	this.standAloneIndex = -1;
 	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
 	this.add(this.mainWorkFlow);

@@ -57,28 +57,66 @@ WorkFlow_UI.toolbox =
 		
 		_.each(toDisplay, function(val, key)
 		{ 
+			
 			var group = $('<div class="control-group" style="margin-bottom: 7px"></div>');
-			group.append('<label class="control-label" style="width: 0; text-transform:capitalize" for="' + key + '">' + key + '</label>');
-			var control = $('<div class="controls" style="margin-left: 80px"></div>');
+			if(key == "inputs" || key ==  "outputs")
+			{
+				group.append('<label class="togvis control-label" style="width: 0; text-transform:capitalize" for="' + key + '"><i class="icon-chevron-right"></i>' + key + '</label>');
+				var control = $('<div class="controls" style="display:none; margin-left: 80px"></div>');
+			}
+			else
+			{
+				group.append('<label class="control-label" style="width: 0; text-transform:capitalize" for="' + key + '">' + key + '</label>');
+				var control = $('<div class="controls" style="margin-left: 80px"></div>');
+
+			}
+			
 			if(key == "description")
 			{
 			    control.append('<textarea type="text" rows="3" style="width:93%" id="' + key  + '">' + val + '</textarea>');
 			}
 			else
 			{   
-			    control.append('<input type="text" style="width:93%" id="' + key + '" value="' + val + '" >');
+				if(key == "inputs" || key ==  "outputs")
+				{
+					_.each(val, function(val1,key1)
+					{
+						control.append('<input type="text" style="width:93%" disabled="disabled" value="' + val1.name + '" >');
+					});
+					
+				}
+				else
+				{
+					control.append('<input type="text" style="width:93%" id="' + key + '" value="' + val + '" >');
+				}
+			    
 			}
+			
 			group.append(control);
 			$('#inspector').append(group);
+			
 		});
 		$('#inspectorActions').append('<button type="submit" id="inspectorSave" onclick="WorkFlow_UI.toolbox.saveObject();return false" class="btn btn-primary">Save changes</button>');
+		$('label.togvis').click(function() {
+			    var controls = $(this).closest('div').find('.controls')
+			    controls.toggle();
+			    return false;
+		});
 	},
 	saveObject : function()
 	{
 		_.each(objInspecting.brokerProperties, function(val, key)
 		{ 
-			var newValue = $('#' + key).val();
-			objInspecting.brokerProperties[key] = newValue;
+			if($('#' + key) == undefined)
+			{
+				
+			}
+			else
+			{
+				var newValue = $('#' + key).val();
+				objInspecting.brokerProperties[key] = newValue;
+			}
+			
 		});
 		
 	}
@@ -88,10 +126,6 @@ WorkFlow_UI.orderComponents =
 		currentOrder : [],
 		open : function ()
 		{
-			$('#toolbox').modal('hide')
-			$('#orderComponents').on('hidden', function () {
-				$('#toolbox').modal('show')
-			});
 			//get the current elements from layer
 			currentOrder = layer.getComponents(false);
 			$('#sortable').empty();

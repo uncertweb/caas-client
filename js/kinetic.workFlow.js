@@ -197,6 +197,7 @@ Kinetic.WorkFlow = function (config)
     		WorkFlow_UI.toolbox.displayObject(this);
     	});
 	}
+	this.brokerProperties["iterations"] = 1;
 }
 Kinetic.WorkFlow.prototype = {
 	reDraw : function()

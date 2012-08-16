@@ -58,7 +58,7 @@ Kinetic.WorkFlowElement = function (config)
 	};
 	this.getAllIOs = function ()
 	{
-		return this.brokerProperties.inputs.concat(this.brokerProperties.outputs);
+		return this.getInputs().concat(this.getOutputs());
 	}
 	this.getIOObject = function(id)
 	{
