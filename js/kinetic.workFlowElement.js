@@ -73,9 +73,22 @@ Kinetic.WorkFlowElement = function (config)
 Kinetic.WorkFlowElement.prototype = {
 	connectToEl : function (el)
 	{
-		//need to connect this to the main element as thats the outer layer
-		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
+		//only want to add one connection between this and el
+		//this should always bee the output i.e. arrow point towards el
+		var that = this;
+		foundCon = _.find(this.vertices, function(vert)
+					{
+						return vert.start == that && vert.end == el;
+					});
+		if(foundCon == undefined)
+		{
+			//no connection, so create one
+			connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black", dashArray: [30,10]}); 
+			this.getLayer().add(connection);
+			
+			this.getLayer().draw();
+		}
+
 	},
 	disconnectAllVertices : function ()
 	{
@@ -89,6 +102,7 @@ Kinetic.WorkFlowElement.prototype = {
 	},
 	connectTo : function (connectConfig)
 	{
+		this.getLayer().draw();
 		//this is always the output as its being connected to an input
 		//need to check whether this map already exists
 		var foundCon  = _.find(this.ioConnections,function(ioCon)
@@ -196,6 +210,8 @@ Kinetic.WorkFlowElement.prototype = {
 		{
 			io.output.obj.disconnect(io);
 		});
+		//check for IO set for parent
+		
 		//delete vertices that are for ordering
 		this.disconnectAllVertices();
 

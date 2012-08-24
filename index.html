@@ -92,7 +92,7 @@
             Toolbox - Main Workflow
             </div>
             <div id="toolboxBody">
-		            <div class="accordion-group">
+		            <div id="searchBody" class="accordion-group">
 			              <div class="toolboxaccordion-heading">
 			                  Search for Components
 			              </div>
@@ -102,6 +102,13 @@
 	                    
 			                    <ul class="well draggable unstyled" id="searchResults">
 			                    </ul>
+			              </div>
+			       </div><!--accordion group-->
+			       <div class="accordion-group">
+			              <div class="toolboxaccordion-heading">
+			                 Tips - What to do next?
+			              </div>
+			              <div id="whatNext">
 			              </div>
 			       </div><!--accordion group-->
 			        <div class="accordion-group">
@@ -325,10 +332,11 @@
 	          width: $('#forCanvas').width(),
 	          height:$(document).height()
 	        });
-	        
-	        
+	        	        
 	        
 	    	layer = new Kinetic.WorkFlowLayer();
+	    	
+
 	        stage.add(layer);
 	        ctx = stage.children[0].getContext();
 	        ctx.font = fontSize + "Calibri";
@@ -347,7 +355,7 @@
 			})
 
           	WorkFlow_UI.toolbox.open();
-
+          	
           	
 			$('#ioWorkFlowModal').on('hidden', function () {
 			    layer.clearIOMode();

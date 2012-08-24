@@ -6,6 +6,7 @@
 	/*background-color:#E6E6E6;*/
 	font-family: Arial,Helvetica,sans-serif;
 	border: #999 solid 1px;
+	max-height: 100%;
 }
 #toolbox .modal-body{
 	padding: 0px;
@@ -59,7 +60,10 @@
 {
 	margin: 5px
 }
-
+#searchBody
+{
+	max-height: 33%;
+}
 
 body {
 margin: 0px;

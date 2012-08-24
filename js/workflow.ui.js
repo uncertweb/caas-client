@@ -4,8 +4,10 @@ var idCount = 100;
 WorkFlow_UI.toolbox =
 {
 	objInspecting : {},
-	 activeButtons : [],
-	 allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn  btn-primary",'data-toggle':"", onclick:"layer.moveUp();"},
+	//for referencing against links to be able to render workflows
+	linkWorkFlows : [],
+	activeButtons : [],
+	allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn  btn-primary",'data-toggle':"", onclick:"layer.moveUp();"},
 					  {id:"io",text:"Toggle IO Mode", class:"btn btn-primary",'data-toggle':"button", onclick:"WorkFlow_UI.addWF.click();"},
 					  {id:"reDraw", text:"Auto Layout", class:"btn btn-primary",'data-toggle':"", onclick:"layer.reDrawLayer();"},
 					  {id:"addWF",text:"Add Workflow",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.addWF.open();"},
@@ -47,6 +49,67 @@ WorkFlow_UI.toolbox =
 			$('#' + divId).append(html);
 		})
 		
+	},
+	checkWhatNext : function()
+	{
+		$('#whatNext').html('');
+		var whatNext = $('<div class="well"></div>');
+		//check for main Workflow title
+		if(layer.getMainWorkFlow().brokerProperties.name == "")
+		{
+			whatNext.append(this.renderWorkFlowForm(layer.getMainWorkFlow()));
+			
+		}
+		workFlows = layer.getWorkFlows(true);
+		//check all workflow have IO, loop layers children
+		if(workFlows.length != 0)
+		{
+			whatNext.append('Some Workflow need IO defined:');
+			whatNext.append(this.renderWorkFlowLinks(workFlows));
+			
+		}
+		//check components in current workflow have connections
+		$('#whatNext').append(whatNext);
+			
+	},
+	renderWorkFlowForm : function()
+	{
+		
+	},
+	renderWorkFlowLinks : function(workflows)
+	{
+		var workFlowLinks = $('<ul id="workflowLinks"></ul>');
+		
+		linkWorkFlows = workflows;
+		//loop through workflows
+		for(var i = 0; i < linkWorkFlows.length; i++)
+		{
+		
+			workFlowLinks.append(this.renderWorkFlowLink(linkWorkFlows[i],linkWorkFlows[i].type,i));
+		};	
+		return workFlowLinks;
+	},
+	renderWorkFlowLink : function(workFlow,type,index)
+	{
+		if(type == Kinetic.WorkFlowType.standAlone)
+		{
+			//no link as currently rendered on the canvas
+			return "Current Workflow"
+		}
+		else if(type == Kinetic.WorkFlowType.main)
+		{
+			//need to call move up
+			return '<li><a onclick="layer.moveUp()">Main WorkFlow</a></li>';
+		}
+		else
+		{	
+			//call render
+			return '<li><a onclick="WorkFlow_UI.toolbox.renderWF(' + index + ')">' + workFlow.brokerProperties.name + '</a></li>';
+		}
+	},
+	renderWF : function(index)
+	{
+		layer.renderWorkFlow(linkWorkFlows[index]);	
 	},
 	displayObject :function(obj)
 	{
@@ -103,15 +166,19 @@ WorkFlow_UI.toolbox =
 			    return false;
 		});
 	},
+	saveMainWorkFlowTitle : function()
+	{
+		//get it from form and save
+		
+		//remove form
+		
+		
+	},
 	saveObject : function()
 	{
 		_.each(objInspecting.brokerProperties, function(val, key)
 		{ 
-			if($('#' + key) == undefined)
-			{
-				
-			}
-			else
+			if($('#' + key) != undefined)
 			{
 				var newValue = $('#' + key).val();
 				objInspecting.brokerProperties[key] = newValue;
@@ -289,8 +356,8 @@ WorkFlow_UI.search =
                 //get search meta data using this id
                 var s = layer.getStage();
              var mousePos = s.getMousePosition();
-                var mouseX = (ev.clientX + offset.left + window.pageXOffset);
-                var mouseY = (ev.clientY + offset.top + window.pageYOffset);
+                var mouseX = (ev.clientX - offset.left + window.pageXOffset);
+                var mouseY = (ev.clientY - offset.top + window.pageYOffset);
                 var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:mouseX,y:mouseY,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
@@ -909,7 +976,7 @@ WorkFlow_UI.ioWorkFlow =
 			
 			//update the currentIOs
 			//remove the row, do we need to change all the IDS?
-			$('#row_' + row).alert('close')
+			$('#rowio_' + row).alert('close')
 			//$('#row_' + row).remove();
 		}
 

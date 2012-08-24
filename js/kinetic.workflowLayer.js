@@ -26,6 +26,14 @@ Kinetic.WorkFlowLayer = function (config)
 		
 		
 	};
+	this.getWorkFlows = function (noIOs)
+	{
+		return this.mainWorkFlow.getWorkFlows(noIOs);
+	};
+	this.getMainWorkFlow = function ()
+	{
+		return 	this.mainWorkFlow;
+	};
 	this.toggleIOMode = function ()
 	{
 		if(this.ioMode)
@@ -133,10 +141,10 @@ Kinetic.WorkFlowLayer = function (config)
 	});
 
 	this.standAloneIndex = -1;
-	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
+	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{name:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
 	this.add(this.mainWorkFlow);
 	this.renderRubbishBin();
-	
+	this.setThrottle(5);
 		
 }
 Kinetic.WorkFlowLayer.prototype = {
@@ -155,6 +163,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		      });
 		      self.add(self.image);
 		      self.draw();
+		      self.afterDraw(WorkFlow_UI.toolbox.checkWhatNext());
 		   };
 		   
 		   imageObj.src = "img/trash.png";
@@ -187,28 +196,36 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	renderWorkFlow : function(workFlow)
 	{
-		//if the argument is a number then it is the index of a component which should be rendered
-		workFlow = _.isNumber(workFlow) ? this.mainWorkFlow.components[workFlow] : workFlow;
-		//need to save the index of the render workflow, as thsi will need to overwritten
-		this.standAloneIndex = this.mainWorkFlow.getIndexOfObject(this.mainWorkFlow.components,workFlow);
-		//clear the stage so it is blank
-		this.clear();
-		this.removeChildren();
-		this.setIOMode(false);
-		this.standAloneWF = workFlow;
-		this.add(this.standAloneWF);
-		this.standAloneWF.setType(Kinetic.WorkFlowType.standAlone);
-		
-		
-		
-		//create bin for lower layer
-		this.renderRubbishBin();
-		WorkFlow_UI.toolbox.setActiveControl(["io","reDraw","moveUp"]);
-		WorkFlow_UI.toolbox.displayActiveControls('activeControls');
-		WorkFlow_UI.toolbox.changeToolBoxTitle("Toolbox - " + workFlow.title );
-		
-		this.draw();
-		this.standAloneWF.updateAllVertices();
+		if(this.standAloneWF == null)
+		{
+			//if the argument is a number then it is the index of a component which should be rendered
+			workFlow = _.isNumber(workFlow) ? this.mainWorkFlow.components[workFlow] : workFlow;
+			//need to save the index of the render workflow, as thsi will need to overwritten
+			this.standAloneIndex = this.mainWorkFlow.getIndexOfObject(this.mainWorkFlow.components,workFlow);
+			//clear the stage so it is blank
+			this.clear();
+			this.removeChildren();
+			this.setIOMode(false);
+			this.standAloneWF = workFlow;
+			this.add(this.standAloneWF);
+			this.standAloneWF.setType(Kinetic.WorkFlowType.standAlone);
+			
+			
+			
+			//create bin for lower layer
+			this.renderRubbishBin();
+			WorkFlow_UI.toolbox.setActiveControl(["io","reDraw","moveUp"]);
+			WorkFlow_UI.toolbox.displayActiveControls('activeControls');
+			WorkFlow_UI.toolbox.changeToolBoxTitle("Toolbox - " + workFlow.title );
+			
+			this.draw();
+			this.standAloneWF.updateAllVertices();
+		}
+		else
+		{
+			this.moveUp();
+			this.renderWorkFlow(workflow);
+		}
 	},
 	addElement : function (el)
 	{

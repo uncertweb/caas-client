@@ -11,6 +11,34 @@ Kinetic.WorkFlow = function (config)
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.type = config.type;
 	this.config = {};
+	this.getWorkFlows = function (noIOs)
+	{
+		var workflows = [];
+		_.each(this.children,function(child)
+		{
+			if(child instanceof Kinetic.WorkFlow)
+			{
+				if(noIOs)
+				{
+					if(_.isEmpty(child.getInputs()) || _.isEmpty(child.getOutputs()))
+					{
+						workflows.push(child);
+					}
+				}
+				else
+				{
+					workflows.push(child);
+				}
+			}
+			
+		});
+		if(_.isEmpty(this.getInputs()) || _.isEmpty(this.getOutputs()))
+		{
+			workflows.push(this);
+		}
+		
+		return workflows;
+	};
 	this.setType = function(val)
 	{
 		this.standAlone = val;	
@@ -105,13 +133,13 @@ Kinetic.WorkFlow = function (config)
 		if(check == undefined)
 		{
 			this.brokerProperties.inputs.push(newI);
+			this.updateVerticesOrders();
 			return true;
 		}
 		else
 		{
 			return false;
 		}
-		
 	};
 	this.addOutput = function (newO)
 	{
@@ -119,6 +147,7 @@ Kinetic.WorkFlow = function (config)
 		if(check == undefined)
 		{
 			this.brokerProperties.outputs.push(newO);
+			this.updateVerticesOrders();
 			return true;
 		}
 		else
@@ -138,6 +167,7 @@ Kinetic.WorkFlow = function (config)
 			del.output.obj.disconnect(del);
 		});
 		this.brokerProperties.outputs.splice(this.getIndexOfObject(this.brokerProperties.outputs,io),1);
+		this.updateVerticesOrders();
 	};
 	this.deleteInput = function (io)
 	{
@@ -150,6 +180,30 @@ Kinetic.WorkFlow = function (config)
 			del.output.obj.disconnect(del);
 		});
 		this.brokerProperties.inputs.splice(this.getIndexOfObject(this.brokerProperties.inputs,io),1);
+		this.updateVerticesOrders();
+	};
+	//for removing IO if element that comes from is deleted
+	this.removeIO = function(el)
+	{
+		var ins = this.getInputs().slice();
+		var outs = this.getOutputs().slice();
+		var self = this;
+		//inputs first
+		_.each(ins, function(i)
+		{
+			if(_.isEqual(el,i.com))
+			{
+				self.deleteInput(i);
+			}
+		});
+		_.each(outs, function(out)
+		{
+			if(_.isEqual(el,out.com))
+			{
+				self.deleteOutput(out);
+			}
+		});
+
 	};
 	if(this.type == Kinetic.WorkFlowType.standAlone || this.type == Kinetic.WorkFlowType.main)
 	{
@@ -317,7 +371,7 @@ Kinetic.WorkFlow.prototype = {
 				io.output.obj.connectTo(io);
 			});
 		}
-		_.each(this.components,function(com)
+		_.each(this.children,function(com)
 		{
 			com.connectAllIOs();
 		});	
@@ -466,6 +520,7 @@ Kinetic.WorkFlow.prototype = {
 		//if the argument is a number then it is the index of a component which should be rendered
 		el = _.isNumber(el) ? this.components[el] : el;
 		el.deleteAllIOs();
+		this.removeIO(el);
 		//remove the element from the currentElements
 		this.components.splice(this.getIndexOfObject(this.components,el), 1);
 		this.remove(el);
@@ -479,7 +534,7 @@ Kinetic.WorkFlow.prototype = {
 			vert.remove();
 		});
 		//disconnect the vertices of all components
-		_.each(this.components,function(el)
+		_.each(this.children,function(el)
 		{
 			el.disconnectAllVertices();
 		});
