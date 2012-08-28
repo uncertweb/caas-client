@@ -53,7 +53,7 @@ WorkFlow_UI.toolbox =
 	checkWhatNext : function()
 	{
 		$('#whatNext').html('');
-		var whatNext = $('<div class="well"></div>');
+		var whatNext = $('<div class="well" style="padding: 10px;"></div>');
 		//check for main Workflow title
 		if(layer.getMainWorkFlow().brokerProperties.name == "")
 		{
@@ -74,7 +74,17 @@ WorkFlow_UI.toolbox =
 	},
 	renderWorkFlowForm : function()
 	{
+		var group = $('<div class="control-group form-horizontal" id="saveWFName" style="margin-bottom: 7px"></div>');
+			
+		group.append('<label class="togvis control-label" style="width: 0; text-transform:capitalize" for="mainWFName">MainWFName:</label>');
+		var control = $('<div class="controls" style="margin-left: 90px"></div>');
+		control.append('<input type="text" style="width:93%" id="mainWFName">');
+		control.append('<br>');
+		control.append('<button type="submit" onclick="WorkFlow_UI.toolbox.saveMainWorkFlowTitle();return false" class="btn btn-primary">Save</button>');
+		group.append(control);
 		
+		return group;
+
 	},
 	renderWorkFlowLinks : function(workflows)
 	{
@@ -169,9 +179,9 @@ WorkFlow_UI.toolbox =
 	saveMainWorkFlowTitle : function()
 	{
 		//get it from form and save
-		
+		layer.getMainWorkFlow().brokerProperties.name = $('#mainWFName').val();
 		//remove form
-		
+		$('#saveWFName').remove();
 		
 	},
 	saveObject : function()

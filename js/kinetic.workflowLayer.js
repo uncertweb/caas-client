@@ -144,7 +144,7 @@ Kinetic.WorkFlowLayer = function (config)
 	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{name:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
 	this.add(this.mainWorkFlow);
 	this.renderRubbishBin();
-	this.setThrottle(5);
+	
 		
 }
 Kinetic.WorkFlowLayer.prototype = {
