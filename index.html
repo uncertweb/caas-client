@@ -97,11 +97,13 @@
 			                  Search for Components
 			              </div>
 			              <div id="collapseSearch">
+			                <button type="button" style="float:right;line-height:23px" onclick="WorkFlow_UI.search.clear()">Clear</button>
 			                <input class="text span2" type="text" id="search" name="search"
 	                             onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords"></input>
-	                    
-			                    <ul class="well draggable unstyled" id="searchResults">
-			                    </ul>
+	                             
+	                             <ul class="well draggable unstyled" id="searchResults">
+	                             </ul>
+	                             
 			              </div>
 			       </div><!--accordion group-->
 			       <div class="accordion-group">
@@ -228,6 +230,14 @@
 				       <div id="abstractErrors">
 				      </div>
 				    </div>
+				    <div class="control-group" id="iterationGroup">
+				      <label class="control-label" for="iterationWF">No. of Iterations</label>
+				      <div class="controls">
+				        <input type="text" class="input-xlarge" id="iterationWF" placeholder="Enter number of iterations for your workflow....">
+				      </div>
+				       <div id="iterationErrors">
+				      </div>
+				    </div>
 				    <div class="form-actions">
 			            <button type="submit" class="btn btn-primary">Create Workflow</button>
 			            <button class="btn" data-dismiss="modal">Cancel</button>
@@ -330,7 +340,7 @@
 	    	var stage = new Kinetic.Stage({
 	          container: "container",
 	          width: $('#forCanvas').width(),
-	          height:$(document).height()
+	          height:$(document).height() -60
 	        });
 	        	        
 	        

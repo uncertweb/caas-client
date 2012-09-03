@@ -248,7 +248,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.setIOMode(false);
 			this.setIOMode(true);
 		}
-		
+		WorkFlow_UI.toolbox.checkWhatNext();
 		//redraw the layer
 		this.draw();
 		return returnIndex;

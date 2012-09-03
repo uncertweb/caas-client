@@ -79,8 +79,7 @@ WorkFlow_UI.toolbox =
 		group.append('<label class="togvis control-label" style="width: 0; text-transform:capitalize" for="mainWFName">MainWFName:</label>');
 		var control = $('<div class="controls" style="margin-left: 90px"></div>');
 		control.append('<input type="text" style="width:93%" id="mainWFName">');
-		control.append('<br>');
-		control.append('<button type="submit" onclick="WorkFlow_UI.toolbox.saveMainWorkFlowTitle();return false" class="btn btn-primary">Save</button>');
+		control.append('<div><button type="submit" onclick="WorkFlow_UI.toolbox.saveMainWorkFlowTitle();return false" class="btn btn-primary">Save</button></div>');
 		group.append(control);
 		
 		return group;
@@ -156,7 +155,6 @@ WorkFlow_UI.toolbox =
 					{
 						control.append('<input type="text" style="width:93%" disabled="disabled" value="' + val1.name + '" >');
 					});
-					
 				}
 				else
 				{
@@ -271,6 +269,10 @@ WorkFlow_UI.orderComponents =
 WorkFlow_UI.search =
 {
 		brokerInfo: new Array(),
+		clear: function()
+		{
+			$("#searchResults").empty();
+		},
         doSearch : function()
         {
         	$("#searchResults").empty();
@@ -430,10 +432,24 @@ WorkFlow_UI.addWF =
 			$('#abstractGroup').attr("class","control-group error");
 			return false;
 		}
+		if($('#iterationWF').val() == '')
+		{
+			$('#iterationErrors').append('<p class="help-block">Enter iteration for Workflow</p>');
+			$('#iterationGroup').attr("class","control-group error");
+			return false;
+		}
+		if(isNaN($('#iterationWF').val()) == false)
+		{
+			$('#iterationErrors').append('<p class="help-block">Enter iteration for Workflow</p>');
+			$('#iterationGroup').attr("class","control-group error");
+			return false;
+
+		}
 		config = {
 			name:$('#titleWF').val(),
 			description:$('#abstractGroup').val(),
-			annotation:''
+			annotation:'',
+			iterations:$('#iterationWF').val()
 		}
 		//create workflow from
 		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});

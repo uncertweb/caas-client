@@ -88,7 +88,7 @@ Kinetic.WorkFlowElement.prototype = {
 			
 			this.getLayer().draw();
 		}
-
+		WorkFlow_UI.toolbox.checkWhatNext();
 	},
 	disconnectAllVertices : function ()
 	{
@@ -153,6 +153,7 @@ Kinetic.WorkFlowElement.prototype = {
 			}
 			return true;
 		}
+		WorkFlow_UI.toolbox.checkWhatNext();
 	},
 	setAllAttrs : function(attrs)
 	{
