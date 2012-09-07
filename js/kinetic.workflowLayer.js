@@ -141,7 +141,7 @@ Kinetic.WorkFlowLayer = function (config)
 	});
 
 	this.standAloneIndex = -1;
-	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{name:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
+	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{title:"",description:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
 	this.add(this.mainWorkFlow);
 	this.renderRubbishBin();
 	
@@ -352,7 +352,7 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	createWorkFlow : function()
 	{
-		var mainWorkFlow = new UncertWeb.Workflow();
+		/*var mainWorkFlow = new UncertWeb.Workflow();
 		for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
 		{
 			if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow)
@@ -370,14 +370,16 @@ Kinetic.WorkFlowLayer.prototype = {
 			{
 				mainWorkFlow.append(new UncertWeb.Component(this.currentElements[iCEls].brokerProperties))
 			}
-		}
-		return mainWorkFlow;
+		}*/
+		
+		return this.mainWorkFlow.publish();
 		
 		
 	},
 	publishWorkFlow : function()
 	{
-		
+		 console.debug(UncertWeb.Encode.asBPMN(this.createWorkFlow()));
+		 UncertWeb.CaaS.publish(this.createWorkFlow(),this.mainWorkFlow.brokerProperties)
 	}
 	
 	

@@ -140,6 +140,12 @@ Kinetic.WorkFlowComponent.prototype = {
 	getWidth : function()
 	{
 		return this.rect.getWidth();
+	},
+	publish : function()
+	{
+		//create workflow for this workflow
+		var currentCom = new UncertWeb.Component(this.brokerProperties)
+		return currentCom;
 	}
 };
 
@@ -164,7 +170,7 @@ Kinetic.WorkFlowTerminalNodes = function (config)
     });
 	this.add(this.circle);
 	this.textElement = new Kinetic.Text({
-          x: config.x - (radius-2),
+          x: config.x - (radius-3),
           y: config.y+radius+10,
           text: config.type,
           fontSize: 10,

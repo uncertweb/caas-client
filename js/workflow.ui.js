@@ -55,7 +55,7 @@ WorkFlow_UI.toolbox =
 		$('#whatNext').html('');
 		var whatNext = $('<div class="well" style="padding: 10px;"></div>');
 		//check for main Workflow title
-		if(layer.getMainWorkFlow().brokerProperties.name == "")
+		if(layer.getMainWorkFlow().brokerProperties.title == "")
 		{
 			whatNext.append(this.renderWorkFlowForm(layer.getMainWorkFlow()));
 			
@@ -64,7 +64,7 @@ WorkFlow_UI.toolbox =
 		//check all workflow have IO, loop layers children
 		if(workFlows.length != 0)
 		{
-			whatNext.append('Some Workflow need IO defined:');
+			whatNext.append('Some Workflows need IO defined:');
 			whatNext.append(this.renderWorkFlowLinks(workFlows));
 			
 		}
@@ -79,7 +79,7 @@ WorkFlow_UI.toolbox =
 		group.append('<label class="togvis control-label" style="width: 0; text-transform:capitalize" for="mainWFName">MainWFName:</label>');
 		var control = $('<div class="controls" style="margin-left: 90px"></div>');
 		control.append('<input type="text" style="width:93%" id="mainWFName">');
-		control.append('<div><button type="submit" onclick="WorkFlow_UI.toolbox.saveMainWorkFlowTitle();return false" class="btn btn-primary">Save</button></div>');
+		control.append('<div style="text-align: right; margin-top: 10px"><button type="submit" onclick="WorkFlow_UI.toolbox.saveMainWorkFlowTitle();return false" class="btn btn-primary">Save</button></div>');
 		group.append(control);
 		
 		return group;
@@ -133,13 +133,14 @@ WorkFlow_UI.toolbox =
 			var group = $('<div class="control-group" style="margin-bottom: 7px"></div>');
 			if(key == "inputs" || key ==  "outputs")
 			{
-				group.append('<label class="togvis control-label" style="width: 0; text-transform:capitalize" for="' + key + '"><i class="icon-chevron-right"></i>' + key + '</label>');
-				var control = $('<div class="controls" style="display:none; margin-left: 80px"></div>');
+				group.append('<i class="icon-chevron-right" id="io_icon" style="margin-top:5px; margin-left:-15px;"></i>');
+				group.append('<label class="togvis control-label" style="width: 0; margin-left:15px; text-transform:capitalize" for="' + key + '">' + key + '</label>');
+				var control = $('<div class="controls" style="display:none; margin-left: 80px; margin-top: -20px"></div>');
 			}
 			else
 			{
 				group.append('<label class="control-label" style="width: 0; text-transform:capitalize" for="' + key + '">' + key + '</label>');
-				var control = $('<div class="controls" style="margin-left: 80px"></div>');
+				var control = $('<div class="controls" style="margin-left: 80px;"></div>');
 
 			}
 			
@@ -153,7 +154,7 @@ WorkFlow_UI.toolbox =
 				{
 					_.each(val, function(val1,key1)
 					{
-						control.append('<input type="text" style="width:93%" disabled="disabled" value="' + val1.name + '" >');
+						control.append('<input type="text" style="width:93%; margin-top:5px" disabled="disabled" value="' + val1.name + '" >');
 					});
 				}
 				else
@@ -169,7 +170,9 @@ WorkFlow_UI.toolbox =
 		});
 		$('#inspectorActions').append('<button type="submit" id="inspectorSave" onclick="WorkFlow_UI.toolbox.saveObject();return false" class="btn btn-primary">Save changes</button>');
 		$('label.togvis').click(function() {
-			    var controls = $(this).closest('div').find('.controls')
+			    var controls = $(this).closest('div').find('.controls');
+			    var icon = $(this).closest('i');
+			    icon.attr('class',"icon-chevron-down");
 			    controls.toggle();
 			    return false;
 		});
@@ -177,7 +180,9 @@ WorkFlow_UI.toolbox =
 	saveMainWorkFlowTitle : function()
 	{
 		//get it from form and save
-		layer.getMainWorkFlow().brokerProperties.name = $('#mainWFName').val();
+		layer.getMainWorkFlow().brokerProperties.title = $('#mainWFName').val();
+		layer.getMainWorkFlow().brokerProperties.description = "Test Description";
+		layer.getMainWorkFlow().brokerProperties["organisation"]="Aston";
 		//remove form
 		$('#saveWFName').remove();
 		
@@ -407,14 +412,17 @@ WorkFlow_UI.addWF =
 		});
 		$('#newWFModal').modal('show');
 		$('#titleWF').val('');
-		$('#abstractWF').val('');	
+		$('#abstractWF').val('');
+		$('#iterationWF').val('');
 	},
 	removeAllHelp :function()
 	{
 		$('#titleErrors').html('');
 		$('#abstractErrors').html('');
+		$('#iterationErrors').html('');
 		$('#titleGroup').attr("class","control-group");
 		$('#abstractGroup').attr("class","control-group");
+		$('#iterationGroup').attr("class","control-group");
 	},
 	add : function()
 	{
@@ -438,16 +446,16 @@ WorkFlow_UI.addWF =
 			$('#iterationGroup').attr("class","control-group error");
 			return false;
 		}
-		if(isNaN($('#iterationWF').val()) == false)
+		if(isNaN($('#iterationWF').val()) != false)
 		{
-			$('#iterationErrors').append('<p class="help-block">Enter iteration for Workflow</p>');
+			$('#iterationErrors').append('<p class="help-block">Iteration has to be number</p>');
 			$('#iterationGroup').attr("class","control-group error");
 			return false;
 
 		}
 		config = {
-			name:$('#titleWF').val(),
-			description:$('#abstractGroup').val(),
+			title:$('#titleWF').val(),
+			description:$('#abstractWF').val(),
 			annotation:'',
 			iterations:$('#iterationWF').val()
 		}
@@ -465,6 +473,7 @@ WorkFlow_UI.addWF =
 		//remove the errors from the form
 		$('#titleGroup').attr("class","control-group");
 		$('#abstractGroup').attr("class","control-group");
+		$('#iterationGroup').attr("class","control-group");
 	}
 };
 WorkFlow_UI.io =
@@ -513,7 +522,7 @@ WorkFlow_UI.io =
 	   			 $('#inputDesc').html('<h4>Title:</h4> ' + IO.input.title);
 	   			 $('#inputDesc').append('<h4>Type:</h4> Nested Workflow');
 	   			 $('#inputDesc').append('<h4>Description</h4>');
-	   			 $('#inputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
+	   			 $('#inputDesc').append('<p>' + IO.input.brokerProperties.description +'</p>');
    			 }
    			 else if (IO.input instanceof Kinetic.WorkFlowComponent)
    			 {
@@ -533,7 +542,7 @@ WorkFlow_UI.io =
 	   			 $('#outputDesc').append('<h4>Title:</h4> ' + IO.output.title);
 	   			 $('#outputDesc').append('<h4>Type:</h4> Nested Workflow');
 	   			 $('#outputDesc').append('<h4>Description</h4>');
-	   			 $('#outputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
+	   			 $('#outputDesc').append('<p>' + IO.output.brokerProperties.description +'</p>');
 	   			 
    			 }
    			 else if (IO.output instanceof Kinetic.WorkFlowComponent)
@@ -791,7 +800,7 @@ WorkFlow_UI.ioWorkFlow =
 			components = IO;
 			
 			this.workFlow = this.getStartEndComponent().obj.parent;
-			var WFName = this.workFlow.brokerProperties.name;
+			var WFName = this.workFlow.brokerProperties.title;
 			if(this.getStartEndComponent().type == "start")
 			{
 				$('#ioWorkFlowHeader').html('Set inputs for Workflow - ' + WFName);

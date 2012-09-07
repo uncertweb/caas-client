@@ -832,6 +832,16 @@ Kinetic.WorkFlow.prototype = {
 			
 		});
 		return width;
+	},
+	publish : function()
+	{
+		//create workflow for this workflow
+		var currentWF = new UncertWeb.Workflow(this.brokerProperties)
+		_.each(this.components,function(com)
+		{
+			currentWF.append(com.publish());
+		});
+		return currentWF;
 	}
 
 };

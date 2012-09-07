@@ -4,7 +4,6 @@
    <link href="css/bootstrap-responsive.css" rel="stylesheet">
     <link href="css/bootstrap.css" rel="stylesheet">
     <link href="css/override_stylesheet.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/editablegrid.css" type="text/css" media="screen">
     <link href="css/jquery-ui-1.8.21.custom.css" rel="stylesheet">
     <style>
 	    #sortable { list-style-type: none; margin: 0; padding: 0;; }
@@ -91,12 +90,15 @@
             <div id="toolboxTitle" class="modal-header">
             Toolbox - Main Workflow
             </div>
-            <div id="toolboxBody">
-		            <div id="searchBody" class="accordion-group">
+            <div id="toolboxBody" >
+		            <div id="searchBody" class="accordion">
 			              <div class="toolboxaccordion-heading">
-			                  Search for Components
+			              			                  <a class="accordion-toggle" data-toggle="collapse" data-parent="#searchBody" href="#collapseSearch">
+                  Search for Components
+                </a>
+
 			              </div>
-			              <div id="collapseSearch">
+			              <div id="collapseSearch" class="accordion-body collapse in">
 			                <button type="button" style="float:right;line-height:23px" onclick="WorkFlow_UI.search.clear()">Clear</button>
 			                <input class="text span2" type="text" id="search" name="search"
 	                             onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords"></input>
@@ -106,27 +108,35 @@
 	                             
 			              </div>
 			       </div><!--accordion group-->
-			       <div class="accordion-group">
+			       <div id="whatNextAccordion" class="accordion">
 			              <div class="toolboxaccordion-heading">
-			                 Tips - What to do next?
+			                 
+			                 <a class="accordion-toggle" data-toggle="collapse" data-parent="#whatNextAccordion" href="#whatNext">
+                  Tips - What to do next?
+                </a>
 			              </div>
-			              <div id="whatNext">
+			              <div id="whatNext" class="accordion-body collapse in">
 			              </div>
 			       </div><!--accordion group-->
-			        <div class="accordion-group">
+			        <div id="inspectorAccordion" class="accordion">
 			              <div class="toolboxaccordion-heading">
-			                  Component Inspector
+			                  <a class="accordion-toggle" data-toggle="collapse" data-parent="#inspectorAccordion" href="#componentInspector">
+                  Component Inspector
+                </a>
+
 			              </div>
-			              <form class="form-horizontal">
-					        <fieldset>
-					          <div id="inspector">
-			                
-					          </div>
-					          <div class="form-actions"  id="inspectorActions" style="padding-left:100px;">
-					            
-					          </div>
-					        </fieldset>
-					      </form>
+			              <div class="accordion-body collapse in" id="componentInspector">
+				              <form class="form-horizontal">
+						        <fieldset>
+						          <div id="inspector">
+				                
+						          </div>
+						          <div class="form-actions"  id="inspectorActions" style="padding-left:100px;">
+						            
+						          </div>
+						        </fieldset>
+						      </form>
+					      </div>
 			       </div><!--accordion group-->
 			</div>
 		</div>
