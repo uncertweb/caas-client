@@ -454,17 +454,26 @@ Kinetic.WorkFlow.prototype = {
 		});
 		return ys;
 	},
-	createEndElement : function()
+	createEndElement : function(currentEl)
 	{
-		//need to create the element after the last element
-		var position = this.findWhereToPutNewElement(15,this.components);
-		if(position.lastShape == undefined)
+		if(_.isEmpty(currentEl))
 		{
-			return new Kinetic.WorkFlowEnd({x:position.x+7.5, y:position.y,text:"End",draggable:true});
+			var position = this.findWhereToPutNewElement(15,this.components);
+			position.x + 7.5;
 		}
 		else
 		{
-			return new Kinetic.WorkFlowEnd({x:position.x+7.5, y:position.y + position.lastShape.getHeight()/2,text:"End",draggable:true});
+			var position = currentEl.circle.getPosition();
+		}
+		//need to create the element after the last element
+		
+		if(position.lastShape == undefined)
+		{
+			return new Kinetic.WorkFlowEnd({x:position.x, y:position.y,text:"End",draggable:true});
+		}
+		else
+		{
+			return new Kinetic.WorkFlowEnd({x:position.x, y:position.y + position.lastShape.getHeight()/2,text:"End",draggable:true});
 		}
 	},
 	addElements : function(els)
@@ -482,15 +491,17 @@ Kinetic.WorkFlow.prototype = {
 		});
 		//renew the endElement
 		//if its already created, then do not remove it
-		if(this.endElement != null)
-		{
-			//this.getLayer().remove(this.endElement);
-			this.remove(this.endElement)
-			this.endElement = null;
-		}
+		
+		//this.getLayer().remove(this.endElement);
+		//
+		//this.endElement = null;
+		if(_.isEmpty(this.endElement)==false){this.remove(this.endElement);}
+		
+		this.endElement = this.createEndElement(this.endElement)
+		this.add(this.endElement);
+		
  		
-	    this.endElement = this.createEndElement()
-	    this.add(this.endElement);
+	    
 	    if(this.type == Kinetic.WorkFlowType.nested)
 	    {
 	    	this.reDraw();
