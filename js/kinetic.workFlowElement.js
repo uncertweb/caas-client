@@ -2,7 +2,7 @@ Kinetic.WorkFlowElement = function (config)
 {
 	this.classType = "WorkFlowElement";
 	this.vertices 	= new Array();
-	/*ioConnections layout = {
+			/*ioConnections layout = {
 				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
 				output:{obj:components.ouput,outputIO:components.output.getIOObject(outputObId)}
 			}*/
@@ -71,6 +71,11 @@ Kinetic.WorkFlowElement = function (config)
 
 }
 Kinetic.WorkFlowElement.prototype = {
+	/*
+		Draws a dashed line from this element to the element passed.
+		
+		Arguments: el = any type of workflow element
+	*/
 	connectToEl : function (el)
 	{
 		//only want to add one connection between this and el
@@ -89,7 +94,11 @@ Kinetic.WorkFlowElement.prototype = {
 			this.getLayer().draw();
 		}
 		WorkFlow_UI.toolbox.checkWhatNext();
+		
 	},
+	/*
+		Disconnect all vertices connected to this element
+	*/
 	disconnectAllVertices : function ()
 	{
 		//remove the vertices
@@ -100,9 +109,16 @@ Kinetic.WorkFlowElement.prototype = {
 			vert.remove();
 		});
 	},
+	/*
+		Connects two objects based on an ioConnection specification (specified below)
+		
+		Argument: connectConfig = {
+				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
+				output:{obj:components.ouput,outputIO:components.output.getIOObject(outputObId)}
+			}
+	*/
 	connectTo : function (connectConfig)
 	{
-		this.getLayer().draw();
 		//this is always the output as its being connected to an input
 		//need to check whether this map already exists
 		var foundCon  = _.find(this.ioConnections,function(ioCon)
@@ -112,19 +128,8 @@ Kinetic.WorkFlowElement.prototype = {
 		if (foundCon != undefined)
 		{
 			//this connection has already been defined
-			var that = this;
-			foundCon = _.find(this.vertices, function(vert)
-						{
-							return vert.start == that && vert.end == connectConfig.input.obj;
-						});
-			if(foundCon == undefined)
-			{
-				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [30,10]}); 
-				this.getLayer().add(connection);
-				
-				this.getLayer().draw();
-			}
+			this.connectToEl(connectConfig.input.obj);
+			
 			return false;
 		}
 		else
@@ -135,26 +140,17 @@ Kinetic.WorkFlowElement.prototype = {
 			
 			connectConfig.input.obj.ioConnections.push(connectConfig);
 			
-
-			
-			//check whether we should draw a connection, ie whether the connection has not already been drawn
-			var that = this;
-			foundCon = _.find(this.vertices, function(vert)
-						{
-							return vert.start == that && vert.end == connectConfig.input.obj;
-						});
-			if(foundCon == undefined)
-			{
-				//no connection, so create one
-				connection = new Kinetic.Connection({start: this, end: connectConfig.input.obj, lineWidth: 1, color: "black", dashArray: [30,10]}); 
-				this.getLayer().add(connection);
-				
-				this.getLayer().draw();
-			}
+			this.connectToEl(connectConfig.input.obj);
 			return true;
 		}
 		WorkFlow_UI.toolbox.checkWhatNext();
 	},
+	/*
+		Sets all attrs for the kinetic object
+		
+		Argument: attrs = object of attrs
+			Example = {draggable:true}
+	*/
 	setAllAttrs : function(attrs)
 	{
 		var self = this;
@@ -172,6 +168,16 @@ Kinetic.WorkFlowElement.prototype = {
 			
 		})	
 	},
+	/*
+		Disconnect an ioConnection, removing it from the ioConnection array and disconnecting 
+		the vertices that corresponds to the ioConnection
+		
+		Argument: connectConfig = {
+				input:{obj:components.input,inputIO:components.input.getIOObject(inputObId)},
+				output:{obj:components.ouput,outputIO:components.output.getIOObject(outputObId)}
+			}
+	*/
+
 	disconnect :function(connectConfig)
 	{
 		//this is always the output
@@ -201,8 +207,10 @@ Kinetic.WorkFlowElement.prototype = {
 		}
 		
 	},
-	//this is used to delete all the IOs for this element
-	//it is used when element is deleted
+	/*
+		Delete all ioConnections, removing all the vertices that correspond to each ioConnection
+		
+	*/	
 	deleteAllIOs : function ()
 	{
 		//loop through all the ioConnections
@@ -217,6 +225,10 @@ Kinetic.WorkFlowElement.prototype = {
 		this.disconnectAllVertices();
 
 	},
+	/*
+		Connect all ioConnections in the array
+		
+	*/
 	connectAllIOs : function()
 	{
 		_.each(this.ioConnections,function(io)
@@ -224,18 +236,9 @@ Kinetic.WorkFlowElement.prototype = {
 			io.output.obj.connectTo(io);
 		});
 	},
-	addConnectionsToLayer : function ()
-	{
-		//add connections to th elayer, but only when this element is the start node
-		//this avoids duplicates
-		for(Vi=0;Vi<this.vertices.length;Vi++) 
-		{ 
-			if(this.vertices[Vi].start == this)
-			{
-				this.getLayer().add(this.vertices[Vi]);
-			}
-		}
-	},
+	/*
+		Returns position of the main element of this element
+	*/
 	getPositionOfElement : function()
 	{
 		if(this instanceof Kinetic.WorkFlow)
@@ -251,6 +254,8 @@ Kinetic.WorkFlowElement.prototype = {
 		}
 	}
 }
-
+/*
+	Enum for the type of the workflow		
+*/
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowElement, Kinetic.Group);
 Kinetic.WorkFlowType = {"main" : 0, "standAlone" : 1, "nested" : 2}; 

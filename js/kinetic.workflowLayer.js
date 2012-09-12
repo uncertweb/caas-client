@@ -6,6 +6,10 @@ Kinetic.WorkFlowLayer = function (config)
 	this.standAloneWF = null;
 	this.ioMode = false;
 	this.ioObjects = {input:null,output:null};
+	
+	/*
+		Getters and Setters
+	*/
 	this.getComponents = function(includeStartEnd)
 	{
 		if(this.standAloneWF == null)
@@ -23,8 +27,6 @@ Kinetic.WorkFlowLayer = function (config)
 		{
 			return this.standAloneWF.components;
 		}
-		
-		
 	};
 	this.getWorkFlows = function (noIOs)
 	{
@@ -55,7 +57,89 @@ Kinetic.WorkFlowLayer = function (config)
 		//setup the IO mode, based on the setting
 		this.setUpIOMode();
 	}
-	this.setIoObjects = function(el)
+	this.updateComponentOrder = function(order)
+	{
+		if(this.standAloneWF == null)
+		{
+			this.mainWorkFlow.updateComponentOrder(order);
+		}
+		else
+		{
+			this.standAloneWF.updateComponentOrder(order);
+		}
+		
+	};
+	this.on("click", function(ev) { 
+		/*if(this.standAloneWF == null)
+		{
+			WorkFlow_UI.toolbox.displayObject(this.mainWorkFlow);
+		}
+		else
+		{
+			WorkFlow_UI.toolbox.displayObject(this.standAloneWF);
+		}*/
+		
+	});
+
+	this.standAloneIndex = -1;
+	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{title:"",description:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
+	
+	this.add(this.mainWorkFlow);
+	this.renderRubbishBin();
+	
+		
+}
+Kinetic.WorkFlowLayer.prototype = {
+	/*
+		Render rubbish to allow users to delete components, by dragging them to onto this bin.
+	*/
+	renderRubbishBin : function()
+	{
+		//add the trash bin to the top right
+		var self = this;
+		var imageObj = new Image();
+		    imageObj.onload = function() {
+		      self.image = new Kinetic.Image({
+		        x: $('#forCanvas').width()-100,
+		        y: 0,
+		        image: imageObj,
+		        width: 100,
+		        height: 100
+		      });
+		      self.add(self.image);
+		      self.draw();
+		      self.afterDraw(WorkFlow_UI.toolbox.checkWhatNext());
+		   };
+		   
+		   imageObj.src = "img/trash.png";
+
+	},
+	/*
+		Method is called when a component is being dragged, it checks whether mouse is over the bin
+		
+		Arguments: el = element is element being dragged
+				   ev = event for element being dragged
+	*/
+	checkOverBin : function(el,ev)
+	{
+		imgAttrs = this.image.getAttrs();
+		if(ev.layerX > imgAttrs.x && ev.layerX < (imgAttrs.x + imgAttrs.width))
+		{
+			//within x boundaries
+			if(ev.layerY > imgAttrs.y && ev.layerY < (imgAttrs.y + imgAttrs.height))
+			{
+				//over bin so delete the element
+				this.deleteElement(el);
+			}
+		}
+	},
+	/*
+		Called when a component is clicked when IO Mode is turned on.
+		The first component click is always the output.
+		objects that are clicked are stored in the this.ioObjects variable
+		If a component is clicked twice it is deleted from the variable.
+	*/
+	setIoObjects : function(el)
 	{
 		//if user has clicked an item again then, this means they do not want to select it
 		if(_.isEqual(el,this.ioObjects.output))
@@ -115,72 +199,6 @@ Kinetic.WorkFlowLayer = function (config)
 		}
 		
 			
-	};
-	this.updateComponentOrder = function(order)
-	{
-		if(this.standAloneWF == null)
-		{
-			this.mainWorkFlow.updateComponentOrder(order);
-		}
-		else
-		{
-			this.standAloneWF.updateComponentOrder(order);
-		}
-		
-	};
-	this.on("click", function(ev) { 
-		/*if(this.standAloneWF == null)
-		{
-			WorkFlow_UI.toolbox.displayObject(this.mainWorkFlow);
-		}
-		else
-		{
-			WorkFlow_UI.toolbox.displayObject(this.standAloneWF);
-		}*/
-		
-	});
-
-	this.standAloneIndex = -1;
-	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{title:"",description:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
-	this.add(this.mainWorkFlow);
-	this.renderRubbishBin();
-	
-		
-}
-Kinetic.WorkFlowLayer.prototype = {
-	renderRubbishBin : function()
-	{
-		//add the trash bin to the top right
-		var self = this;
-		var imageObj = new Image();
-		    imageObj.onload = function() {
-		      self.image = new Kinetic.Image({
-		        x: $('#forCanvas').width()-100,
-		        y: 0,
-		        image: imageObj,
-		        width: 100,
-		        height: 100
-		      });
-		      self.add(self.image);
-		      self.draw();
-		      self.afterDraw(WorkFlow_UI.toolbox.checkWhatNext());
-		   };
-		   
-		   imageObj.src = "img/trash.png";
-
-	},
-	checkOverBin : function(el,ev)
-	{
-		imgAttrs = this.image.getAttrs();
-		if(ev.layerX > imgAttrs.x && ev.layerX < (imgAttrs.x + imgAttrs.width))
-		{
-			//within x boundaries
-			if(ev.layerY > imgAttrs.y && ev.layerY < (imgAttrs.y + imgAttrs.height))
-			{
-				//over bin so delete the element
-				this.deleteElement(el);
-			}
-		}
 	},
 	updateConnectionOrders : function()
 	{
@@ -194,6 +212,11 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	/*
+		Deletes the current view and renders the workflow that is sent through the parameter
+		
+		Argument: workflow = instance of workflow
+	*/
 	renderWorkFlow : function(workFlow)
 	{
 		if(this.standAloneWF == null)
@@ -214,10 +237,6 @@ Kinetic.WorkFlowLayer.prototype = {
 			
 			//create bin for lower layer
 			this.renderRubbishBin();
-			WorkFlow_UI.toolbox.setActiveControl(["io","reDraw","moveUp"]);
-			WorkFlow_UI.toolbox.displayActiveControls('activeControls');
-			WorkFlow_UI.toolbox.changeToolBoxTitle("Toolbox - " + workFlow.title );
-			
 			this.draw();
 			this.standAloneWF.updateAllVertices();
 		}
@@ -227,6 +246,9 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.renderWorkFlow(workflow);
 		}
 	},
+	/*
+		Adds an element to the current workflow, whether it is the main workflow or the current workflow that is rendered
+	*/
 	addElement : function (el)
 	{
 		//need to return the index, its used for adding a new workflow
@@ -253,6 +275,9 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.draw();
 		return returnIndex;
 	},
+	/*
+		Deletes an element to the current workflow, whether it is the main workflow or the current workflow that is rendered
+	*/
 	deleteElement : function (el)
 	{
 		if(this.standAloneWF == null)
@@ -270,6 +295,10 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.updateConnectionOrders();
 		this.draw();
 	},
+	/*
+		Moves up from the current rendered workflow to the main workflow, 
+		if the current workflow is not the main workflow
+	*/
 	moveUp : function ()
 	{
 		if(this.standAloneWF != null)
@@ -293,14 +322,13 @@ Kinetic.WorkFlowLayer.prototype = {
 			//render rubbish bin for the top layer
 			this.renderRubbishBin();
 
-			WorkFlow_UI.toolbox.setActiveControl(["io","reDraw","addWF","setOrder"]);
-			WorkFlow_UI.toolbox.displayActiveControls('activeControls');
-			WorkFlow_UI.toolbox.changeToolBoxTitle("Toolbox - Main WorkFlow" );
-
 			this.updateConnectionOrders();
 
 		}
 	},
+	/*
+		Calls the setIOMode on the current workflow
+	*/
 	setUpIOMode : function ()
 	{
 		this.ioObjects = this.ioMode == false ? {input:null,output:null} : this.ioObjects;
@@ -311,7 +339,6 @@ Kinetic.WorkFlowLayer.prototype = {
 		{
 			//all currentEls need to be clickable
 			this.mainWorkFlow.setIOMode(this.ioMode);
-			
 		}
 		else
 		{
@@ -319,6 +346,9 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	/*
+		Sets ioObjects variable to null and set stroke of previously clicked objects to the default (black)
+	*/
 	clearIOMode : function()
 	{
 		if (this.ioObjects.input != null)
@@ -332,12 +362,18 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.ioObjects = {input:null,output:null};
 		this.draw();
 	},
+	/*
+		Clears layer of all components and renders rubbish bin
+	*/
 	clearLayer : function ()
 	{
 		this.clear();
 		this.removeChildren();
 		this.renderRubbishBin();
 	},
+	/*
+		Redraws the current workflow
+	*/
 	reDrawLayer : function ()
 	{
 		if(this.standAloneWF == null)
@@ -350,6 +386,11 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	/*
+		Creates a workflow using workflow.js
+		
+		Returns that workflow.js workflow
+	*/
 	createWorkFlow : function()
 	{
 		/*var mainWorkFlow = new UncertWeb.Workflow();
@@ -376,6 +417,9 @@ Kinetic.WorkFlowLayer.prototype = {
 		
 		
 	},
+	/*
+		Publishes to the CaaS after a workflow has been created calling createWorkFlow
+	*/
 	publishWorkFlow : function()
 	{
 		 console.debug(UncertWeb.Encode.asBPMN(this.createWorkFlow()));

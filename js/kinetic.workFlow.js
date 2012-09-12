@@ -2,15 +2,20 @@ var fontSize = 10;
 
 Kinetic.WorkFlow = function (config)
 {
-	//call the super, i.e group
-	this.title = config.text;
+	//call the super
 	Kinetic.WorkFlowElement.apply(this, [{draggable:config.draggable,brokerProperties:config.brokerProperties}]);
+	//variables
+	this.title = config.text;
 	this.classType = "WorkFlow";
 	this.components = [];
 	this.endElement = {};
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.type = config.type;
 	this.config = {};
+	this.brokerProperties["iterations"] = 1;
+	/*
+		Getter and Setter Methods
+	*/
 	this.getWorkFlows = function (noIOs)
 	{
 		var workflows = [];
@@ -205,6 +210,10 @@ Kinetic.WorkFlow = function (config)
 		});
 
 	};
+	
+	/*
+		Workflow Init
+	*/
 	if(this.type == Kinetic.WorkFlowType.standAlone || this.type == Kinetic.WorkFlowType.main)
 	{
 		//create the start element for the workflow
@@ -238,6 +247,9 @@ Kinetic.WorkFlow = function (config)
 	this.config = config;
 	//update the size of the element, to ensure it covers all internal elements
 	this.updateSizeAndPosOfMainEl();
+	/* 
+		Set up events for workflow
+	*/
 	if(this.type == Kinetic.WorkFlowType.nested)
 	{
 		this.on("dragmove", function(ev) 
@@ -251,7 +263,7 @@ Kinetic.WorkFlow = function (config)
     		WorkFlow_UI.toolbox.displayObject(this);
     	});
 	}
-	this.brokerProperties["iterations"] = 1;
+	
 }
 Kinetic.WorkFlow.prototype = {
 	reDraw : function()
@@ -346,6 +358,9 @@ Kinetic.WorkFlow.prototype = {
 		this.updateVerticesOrders()
 
 	},
+	/*
+		Delete all IOs and call on all components to deletes there IOs
+	*/
 	deleteAllIOs : function ()
 	{
 		//loop through all the ioConnections
@@ -362,6 +377,9 @@ Kinetic.WorkFlow.prototype = {
 		this.disconnectAllVertices();
 
 	},
+	/*
+		Connects all IOs already set, if workflow is standalone then will not connect workflow IOs
+	*/
 	connectAllIOs : function()
 	{
 		if(this.type != Kinetic.WorkFlowType.standAlone)
@@ -376,6 +394,9 @@ Kinetic.WorkFlow.prototype = {
 			com.connectAllIOs();
 		});	
 	},
+	/*
+		Determines whether to render a backwards or forwards row, based on noRows.
+	*/
 	renderRow : function(noRows,rowArray,lastYRow,rowWidth,maxWidth)
 	{
 		if (noRows%2 == 0)
@@ -387,6 +408,15 @@ Kinetic.WorkFlow.prototype = {
 			return this.setUpForwardsRow(rowArray,lastYRow,rowWidth,maxWidth);
 		}	
 	},
+	/*
+		Sets the x,y positions of the rowArray elements. Goes from left to right
+		
+		Arguments:
+			rowArray = array of workflow elements
+			lastYRow = Y position of last row
+			rowWidth = width of all components in rowArray
+			maxWidth = maximum width that canvas can take
+	*/
 	setUpForwardsRow : function(rowArray,lastYRow,rowWidth,maxWidth)
 	{
 		//the X value to write to next
@@ -412,6 +442,15 @@ Kinetic.WorkFlow.prototype = {
 		})
 		return nextRowY;
 	},
+	/*
+		Sets the x,y positions of the rowArray elements. Goes from right to left
+		
+		Arguments:
+			rowArray = array of workflow elements
+			lastYRow = Y position of last row
+			rowWidth = width of all components in rowArray
+			maxWidth = maximum width that canvas can take
+	*/
 	setUpBackwardsRow : function(rowArray,lastYRow,rowWidth,maxWidth)
 	{
 		//the X value to write to next
@@ -436,6 +475,11 @@ Kinetic.WorkFlow.prototype = {
 		});
 		return nextRowY;
 	},
+	/*
+		Finds the y position for the next row, based on the height of the components past to the function.
+		
+		Argument: rowArray = array of workflow elements
+	*/
 	findYPosForRow : function(rowArray)
 	{
 		var last = null;
@@ -454,6 +498,11 @@ Kinetic.WorkFlow.prototype = {
 		});
 		return ys;
 	},
+	/*
+		Create end element, either create a new one or based on the argument passed
+		
+		Arguments: currentEl = end element
+	*/
 	createEndElement : function(currentEl)
 	{
 		if(_.isEmpty(currentEl))
@@ -476,6 +525,11 @@ Kinetic.WorkFlow.prototype = {
 			return new Kinetic.WorkFlowEnd({x:position.x, y:position.y + position.lastShape.getHeight()/2,text:"End",draggable:true});
 		}
 	},
+	/*
+		Add elements to the workflow.
+		
+		Argument: els is an array or new components
+	*/
 	addElements : function(els)
 	{
 		var draggable =  this.type == Kinetic.nested ? false : true;
@@ -489,19 +543,11 @@ Kinetic.WorkFlow.prototype = {
 			self.components.push(el);
 			el.setAttrs({draggable:draggable});
 		});
-		//renew the endElement
-		//if its already created, then do not remove it
-		
-		//this.getLayer().remove(this.endElement);
-		//
-		//this.endElement = null;
+		//create end element if its not currently created
 		if(_.isEmpty(this.endElement)==false){this.remove(this.endElement);}
-		
 		this.endElement = this.createEndElement(this.endElement)
 		this.add(this.endElement);
 		
- 		
-	    
 	    if(this.type == Kinetic.WorkFlowType.nested)
 	    {
 	    	this.reDraw();
@@ -510,8 +556,12 @@ Kinetic.WorkFlow.prototype = {
 		this.updateSizeAndPosOfMainEl();
 		return this.components.length -1;
 	},
+	/*
+		Update vertices when component is dragged, calls _dragUpdate on each vertice.
+	*/
 	updateAllVertices : function ()
 	{
+		//updates vertices when components are dragged
 		if(this.type == Kinetic.WorkFlowType.nested)
 		{
 			this.mainElement.updateAllVertices();
@@ -520,12 +570,22 @@ Kinetic.WorkFlow.prototype = {
 		for(Ci=0;Ci<this.components.length;Ci++) { this.components[Ci].updateAllVertices(); }
 		this.startElement.updateAllVertices();
 	},
+	/*
+		Updates vertice orders.
+		
+		Does this by doing them and reconnecting all the IOs
+	*/
 	updateVerticesOrders : function()
 	{
-		 this.disconnectAllVertices();
+		this.disconnectAllVertices();
 	    //this.setOrderedVertices();
 	    this.connectAllIOs();
 	},
+	/*
+		Delete component within workflow
+		
+		Argument is either an index for teh components array or a component to delete.
+	*/
 	deleteElement : function(el)
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
@@ -536,6 +596,9 @@ Kinetic.WorkFlow.prototype = {
 		this.components.splice(this.getIndexOfObject(this.components,el), 1);
 		this.remove(el);
 	},
+	/*
+		Remove all vertices for this workflow and internal components
+	*/
 	disconnectAllVertices : function ()
 	{
 		var deleteVerts = this.vertices.slice();
@@ -550,22 +613,9 @@ Kinetic.WorkFlow.prototype = {
 			el.disconnectAllVertices();
 		});
 	},
-	
-	setVertices : function (verticesArray,wFlow)
-	{
-		for(Vi=0;Vi<verticesArray.length;Vi++) 
-		{ 
-			if(_.isEqual(verticesArray[Vi].start,wFlow))
-			{
-				verticesArray[Vi].start = this;
-			}
-			if(_.isEqual(verticesArray[Vi].end,wFlow))
-			{
-				verticesArray[Vi].end = this;
-			} 
-		}
-		this.vertices = verticesArray;
-	},
+	/*
+		Connects all elements based the component order.
+	*/
 	setOrderedVertices : function ()
 	{
 		//loop all elements
@@ -587,8 +637,14 @@ Kinetic.WorkFlow.prototype = {
 			this.components[this.components.length - 1].connectToEl(this.endElement);
 		}
 	},
+	/*
+		Set up or remove click events for IO Mode, so a stroke can be set.
+		
+		Arguments: ioMode boolean. True for setting up, False for turning off
+	*/
 	setIOMode : function(ioMode)
 	{	
+		//set up click events for ioMode
 		if(ioMode)
 		{
 			for(iCEls=0;iCEls<this.children.length;iCEls++)
@@ -622,6 +678,10 @@ Kinetic.WorkFlow.prototype = {
 		}
 		
 	},
+	/*
+		Update size and position based on internal components.
+		Also ensures text for nested workflow is centered.
+	*/
 	updateSizeAndPosOfMainEl : function()
 	{
 		//if standalone, then do not need to update the size
@@ -634,6 +694,9 @@ Kinetic.WorkFlow.prototype = {
 	    //ensure the group as a whole is not overlapping, if it is then it needs to be moved
 	    
 	},
+	/*
+		Move internal components above nested workflow rectangle, so components can be seen.
+	*/
 	moveComponentsToTop : function()
 	{
 		for(i=0;i<this.components.length;i++) 
@@ -641,6 +704,9 @@ Kinetic.WorkFlow.prototype = {
 			this.components[i].moveToTop(); 
 		}
 	},
+	/*
+		Finds where the next element should go, used for autolayout and laying out components within a nested workflow.
+	*/
 	findWhereToPutNewElement : function(width,comArray)
 	{
 		//first we need to find the size of the new element
@@ -679,6 +745,10 @@ Kinetic.WorkFlow.prototype = {
 		}
 		return position;
 	},
+	/*
+		Workout the size of the outside rectangle based on the components.
+		Returns the width and height to change the rectangle too, and x and y coordinates
+	*/
 	updateSizeOfMainElement : function()
 	{
 		smallestX = -1;
@@ -802,6 +872,10 @@ Kinetic.WorkFlow.prototype = {
 
 		
 	},
+	/*
+		Set all positions within the nested workflow, relative to the top left of the 
+		workflow.
+	*/
 	setAllPositions : function (config)
 	{
 		this.setPosition({x:0,y:0});
