@@ -232,13 +232,11 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.standAloneWF = workFlow;
 			this.add(this.standAloneWF);
 			this.standAloneWF.setType(Kinetic.WorkFlowType.standAlone);
-			
-			
-			
 			//create bin for lower layer
 			this.renderRubbishBin();
-			this.draw();
 			this.standAloneWF.updateAllVertices();
+			
+			this.draw();
 		}
 		else
 		{

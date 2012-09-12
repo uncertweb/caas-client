@@ -86,7 +86,7 @@ Kinetic.WorkFlow = function (config)
 		    		config.layer.checkOverBin(this,ev);
 		    	});
 					}
-				}
+		}
 		this.reDraw();
 	};
 	this.setStroke = function (colour)
@@ -508,7 +508,7 @@ Kinetic.WorkFlow.prototype = {
 		if(_.isEmpty(currentEl))
 		{
 			var position = this.findWhereToPutNewElement(15,this.components);
-			position.x + 7.5;
+			position.x = position.x + 7.5;
 		}
 		else
 		{
@@ -754,120 +754,37 @@ Kinetic.WorkFlow.prototype = {
 		smallestX = -1;
 		biggestX = -1;
 		biggestY = -1;
-		smallestX = -1;
-		if(this.components.length == 0)
-		{
-			var x = this.startElement.circle.getAbsolutePosition().x;
-			var rad = this.startElement.circle.getAttrs().radius;
-			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x)
+		smallestY = -1;
+			 
+		_.each(this.children, function(child){
+		
+			var pos = child.getPositionOfElement();
+			if(pos.x < smallestX)
+			{
+				smallestX = pos.x;
+			}
+			if(pos.y < smallestY)
+			{
+				smallestY = pos.y;
+			}
+			if((pos.x + child.getWidth()) > biggestX)
+			{
+				biggestX = (pos.x + child.getWidth());
+			}
+			if((pos.y + child.getHeight()) > biggestY)
+			{
+				biggestY = (pos.y + child.getHeight());
+			}
 			
-			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
+		});
 		
-			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
-		
-			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
-			if(!(_.isEmpty(this.endElement)))
-			{
-				if(smallestX>(this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x))
-				{
-					smallestX = (this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x)
-				}
-				if(smallestY>(this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x))
-				{
-					smallestY = (this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x)
-				}
-				if(biggestX<(this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x))
-				{
-					biggestX = (this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x)
-				}
-				if(biggestY<(this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x))
-				{
-					biggestY = (this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x)
-				}
-			}
-			if((this.mainElement.textLength)+20>(biggestX-smallestX))
-			{
-				return {w:((this.mainElement.textLength)+20),h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
-			}
-			else
-			{
-				return {w:(biggestX-smallestX)+40,h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
-			}
-		}
-		else
-		{
-			for(i=0;i<this.components.length;i++) 
-			{ 
-				if(smallestX == -1)
-				{
-					smallestX = this.components[i].rect.getAbsolutePosition().x;
-					biggestX = this.components[i].rect.getAbsolutePosition().x + this.components[i].rect.getAttrs().width;
-					smallestY = this.components[i].rect.getAbsolutePosition().y
-					biggestY = this.components[i].rect.getAbsolutePosition().y + this.components[i].rect.getAttrs().height;
-				}
-				if(this.components[i].rect.getAbsolutePosition().x < smallestX)
-				{
-					smallestX = this.components[i].rect.getAbsolutePosition().y;
-				}
-				if(this.components[i].rect.getAbsolutePosition().y < smallestY)
-				{
-					smallestY = this.components[i].rect.getAbsolutePosition().y;
-				}
-				
-				if((this.components[i].rect.getAbsolutePosition().x + this.components[i].rect.getAttrs().width) > biggestX)
-				{
-					biggestX = (this.components[i].rect.getAbsolutePosition().x + this.components[i].rect.getAttrs().width);
-				}
-				if((this.components[i].rect.getAbsolutePosition().y + this.components[i].rect.getAttrs().height) > biggestY)
-				{
-					biggestY = (this.components[i].rect.getAbsolutePosition().y + this.components[i].rect.getAttrs().height);
-				}
-			}
-		}
-		//check the startElement to see if that contains the smallest or biggest of x and y
-		if(smallestX>(this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x))
-		{
-			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x)
-		}
-		if(smallestY>(this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x))
-		{
-			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
-		}
-		if(biggestX<(this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x))
-		{
-			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
-		}
-		if(biggestY<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x))
-		{
-			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
-		}
-		//check the endElement to see if that contains the smallest or biggest of x and y
-		if(!(_.isEmpty(this.endElement)))
-		{
-			if(smallestX>(this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x))
-			{
-				smallestX = (this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x)
-			}
-			if(smallestY>(this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x))
-			{
-				smallestY = (this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x)
-			}
-			if(biggestX<(this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x))
-			{
-				biggestX = (this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x)
-			}
-			if(biggestY<(this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x))
-			{
-				biggestY = (this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x)
-			}
-		}
 		if((this.mainElement.textLength)+20>(biggestX-smallestX))
 		{
-			return {w:((this.mainElement.textLength)+40),h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
+			return {w:((this.mainElement.textLength)+10),h:(biggestY-smallestY)+15,x:smallestX,y:smallestY-5};
 		}
 		else
 		{
-			return {w:(biggestX-smallestX)+40,h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
+			return {w:(biggestX-smallestX)+10,h:(biggestY-smallestY)+15,x:smallestX,y:smallestY-5};
 		}
 
 		

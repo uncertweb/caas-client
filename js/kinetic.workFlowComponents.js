@@ -239,7 +239,7 @@ Kinetic.WorkFlowTerminalNodes.prototype = {
 	},
 	getWidth : function()
 	{
-		return this.circle.getRadius().x *2;
+		return this.circle.getRadius().x;
 	},
 	setAllAttrs : function(attrs)
 	{
@@ -248,6 +248,10 @@ Kinetic.WorkFlowTerminalNodes.prototype = {
 		{
 			child.setAttrs(attrs);
 		})	
+	},
+	getPositionOfElement : function()
+	{
+		return this.circle.getPosition();
 	}
 	
 

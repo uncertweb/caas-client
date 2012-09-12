@@ -113,7 +113,7 @@ WorkFlow_UI.toolbox =
 		else
 		{	
 			//call render
-			return '<li><a onclick="WorkFlow_UI.toolbox.renderWF(' + index + ')">' + workFlow.brokerProperties.name + '</a></li>';
+			return '<li><a onclick="WorkFlow_UI.toolbox.renderWF(' + index + ')">' + workFlow.brokerProperties.title + '</a></li>';
 		}
 	},
 	renderWF : function(index)
