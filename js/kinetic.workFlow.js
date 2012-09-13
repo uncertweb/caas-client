@@ -48,46 +48,7 @@ Kinetic.WorkFlow = function (config)
 	{
 		this.standAlone = val;	
 		this.type = val;
-		if(val == Kinetic.WorkFlowType.standAlone)
-		{
-			//set the elements up to be dragged etc
-			if(this.mainElement != undefined)
-			{
-				this.getLayer().remove(this.mainElement);
-				this.remove(this.mainElement);
-				this.mainElement = null;
-			}
-			this.setDraggable(false);
-			this.off("dragend dragmove dblclick click");
-			this.startElement.setDraggable(true);
-		}
-		else if (val == Kinetic.WorkFlowType.nested)
-		{
-			if(this.mainElement == null)
-			{
-				this.config["type"] = "mainRect";
-				this.config["draggable"] = true;
-				this.mainElement = new Kinetic.WorkFlowComponent(this.config);
-				this.setAllAttrs({draggable:false});
-				this.setDraggable(true);
-				this.add(this.mainElement);
-				this.mainElement.moveToBottom();
-				this.on("dblclick",function()
-				{
-					//here we want to clear the screen and just render this workflow
-					this.config.layer.renderWorkFlow(this);
-				
-				});
-				this.on("dragmove", function(ev) 
-				{ 
-					this.updateAllVertices();
-				});
-				this.on("dragend", function(ev) { 
-		    		config.layer.checkOverBin(this,ev);
-		    	});
-					}
-		}
-		this.reDraw();
+		this.updateType();
 	};
 	this.setStroke = function (colour)
 	{
@@ -266,6 +227,49 @@ Kinetic.WorkFlow = function (config)
 	
 }
 Kinetic.WorkFlow.prototype = {
+	updateType : function()
+	{
+		if(this.type == Kinetic.WorkFlowType.standAlone)
+		{
+			//set the elements up to be dragged etc
+			if(this.mainElement != undefined)
+			{
+				this.getLayer().remove(this.mainElement);
+				this.remove(this.mainElement);
+				this.mainElement = null;
+			}
+			this.setDraggable(false);
+			this.off("dragend dragmove dblclick click");
+			this.startElement.setDraggable(true);
+		}
+		else if (this.type == Kinetic.WorkFlowType.nested)
+		{
+			if(this.mainElement == null)
+			{
+				this.config["type"] = "mainRect";
+				this.config["draggable"] = true;
+				this.mainElement = new Kinetic.WorkFlowComponent(this.config);
+				this.setAllAttrs({draggable:false});
+				this.setDraggable(true);
+				this.add(this.mainElement);
+				this.mainElement.moveToBottom();
+				this.on("dblclick",function()
+				{
+					//here we want to clear the screen and just render this workflow
+					this.config.layer.renderWorkFlow(this);
+				
+				});
+				this.on("dragmove", function(ev) 
+				{ 
+					this.updateAllVertices();
+				});
+				this.on("dragend", function(ev) { 
+		    		config.layer.checkOverBin(this,ev);
+		    	});
+			}
+		}
+		this.reDraw();
+	},
 	reDraw : function()
 	{
 		if(this.type == Kinetic.WorkFlowType.standAlone)
