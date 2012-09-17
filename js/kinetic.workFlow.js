@@ -2,59 +2,53 @@ var fontSize = 10;
 
 Kinetic.WorkFlow = function (config)
 {
-	//call the super, i.e group
-	this.title = config.text;
+	//call the super
 	Kinetic.WorkFlowElement.apply(this, [{draggable:config.draggable,brokerProperties:config.brokerProperties}]);
+	//variables
+	this.title = config.text;
 	this.classType = "WorkFlow";
 	this.components = [];
 	this.endElement = {};
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.type = config.type;
 	this.config = {};
+	this.brokerProperties["iterations"] = 1;
+	/*
+		Getter and Setter Methods
+	*/
+	this.getWorkFlows = function (noIOs)
+	{
+		var workflows = [];
+		_.each(this.children,function(child)
+		{
+			if(child instanceof Kinetic.WorkFlow)
+			{
+				if(noIOs)
+				{
+					if(_.isEmpty(child.getInputs()) || _.isEmpty(child.getOutputs()))
+					{
+						workflows.push(child);
+					}
+				}
+				else
+				{
+					workflows.push(child);
+				}
+			}
+			
+		});
+		if(_.isEmpty(this.getInputs()) || _.isEmpty(this.getOutputs()))
+		{
+			workflows.push(this);
+		}
+		
+		return workflows;
+	};
 	this.setType = function(val)
 	{
 		this.standAlone = val;	
 		this.type = val;
-		if(val == Kinetic.WorkFlowType.standAlone)
-		{
-			//set the elements up to be dragged etc
-			if(this.mainElement != undefined)
-			{
-				this.getLayer().remove(this.mainElement);
-				this.remove(this.mainElement);
-				this.mainElement = null;
-			}
-			this.setDraggable(false);
-			this.off("dragend dragmove dblclick");
-			this.startElement.setDraggable(true);
-		}
-		else if (val == Kinetic.WorkFlowType.nested)
-		{
-			if(this.mainElement == null)
-			{
-				this.config["type"] = "mainRect";
-				this.config["draggable"] = true;
-				this.mainElement = new Kinetic.WorkFlowComponent(this.config);
-				this.setAllAttrs({draggable:false});
-				this.setDraggable(true);
-				this.add(this.mainElement);
-				this.mainElement.moveToBottom();
-				this.on("dblclick",function()
-				{
-					//here we want to clear the screen and just render this workflow
-					this.config.layer.renderWorkFlow(this);
-				
-				});
-				this.on("dragmove", function(ev) 
-				{ 
-					this.updateAllVertices();
-				});
-				this.on("dragend", function(ev) { 
-		    		config.layer.checkOverBin(this,ev);
-		    	});
-					}
-				}
-		this.reDraw();
+		this.updateType();
 	};
 	this.setStroke = function (colour)
 	{
@@ -105,13 +99,13 @@ Kinetic.WorkFlow = function (config)
 		if(check == undefined)
 		{
 			this.brokerProperties.inputs.push(newI);
+			this.updateVerticesOrders();
 			return true;
 		}
 		else
 		{
 			return false;
 		}
-		
 	};
 	this.addOutput = function (newO)
 	{
@@ -119,6 +113,7 @@ Kinetic.WorkFlow = function (config)
 		if(check == undefined)
 		{
 			this.brokerProperties.outputs.push(newO);
+			this.updateVerticesOrders();
 			return true;
 		}
 		else
@@ -138,6 +133,7 @@ Kinetic.WorkFlow = function (config)
 			del.output.obj.disconnect(del);
 		});
 		this.brokerProperties.outputs.splice(this.getIndexOfObject(this.brokerProperties.outputs,io),1);
+		this.updateVerticesOrders();
 	};
 	this.deleteInput = function (io)
 	{
@@ -150,7 +146,35 @@ Kinetic.WorkFlow = function (config)
 			del.output.obj.disconnect(del);
 		});
 		this.brokerProperties.inputs.splice(this.getIndexOfObject(this.brokerProperties.inputs,io),1);
+		this.updateVerticesOrders();
 	};
+	//for removing IO if element that comes from is deleted
+	this.removeIO = function(el)
+	{
+		var ins = this.getInputs().slice();
+		var outs = this.getOutputs().slice();
+		var self = this;
+		//inputs first
+		_.each(ins, function(i)
+		{
+			if(_.isEqual(el,i.com))
+			{
+				self.deleteInput(i);
+			}
+		});
+		_.each(outs, function(out)
+		{
+			if(_.isEqual(el,out.com))
+			{
+				self.deleteOutput(out);
+			}
+		});
+
+	};
+	
+	/*
+		Workflow Init
+	*/
 	if(this.type == Kinetic.WorkFlowType.standAlone || this.type == Kinetic.WorkFlowType.main)
 	{
 		//create the start element for the workflow
@@ -184,6 +208,9 @@ Kinetic.WorkFlow = function (config)
 	this.config = config;
 	//update the size of the element, to ensure it covers all internal elements
 	this.updateSizeAndPosOfMainEl();
+	/* 
+		Set up events for workflow
+	*/
 	if(this.type == Kinetic.WorkFlowType.nested)
 	{
 		this.on("dragmove", function(ev) 
@@ -193,11 +220,56 @@ Kinetic.WorkFlow = function (config)
 		this.on("dragend", function(ev) { 
     		config.layer.checkOverBin(this,ev);
     	});
-
+    	this.on("click", function(ev) { 
+    		WorkFlow_UI.toolbox.displayObject(this);
+    	});
 	}
-
+	
 }
 Kinetic.WorkFlow.prototype = {
+	updateType : function()
+	{
+		if(this.type == Kinetic.WorkFlowType.standAlone)
+		{
+			//set the elements up to be dragged etc
+			if(this.mainElement != undefined)
+			{
+				this.getLayer().remove(this.mainElement);
+				this.remove(this.mainElement);
+				this.mainElement = null;
+			}
+			this.setDraggable(false);
+			this.off("dragend dragmove dblclick click");
+			this.startElement.setDraggable(true);
+		}
+		else if (this.type == Kinetic.WorkFlowType.nested)
+		{
+			if(this.mainElement == null)
+			{
+				this.config["type"] = "mainRect";
+				this.config["draggable"] = true;
+				this.mainElement = new Kinetic.WorkFlowComponent(this.config);
+				this.setAllAttrs({draggable:false});
+				this.setDraggable(true);
+				this.add(this.mainElement);
+				this.mainElement.moveToBottom();
+				this.on("dblclick",function()
+				{
+					//here we want to clear the screen and just render this workflow
+					this.config.layer.renderWorkFlow(this);
+				
+				});
+				this.on("dragmove", function(ev) 
+				{ 
+					this.updateAllVertices();
+				});
+				this.on("dragend", function(ev) { 
+		    		config.layer.checkOverBin(this,ev);
+		    	});
+			}
+		}
+		this.reDraw();
+	},
 	reDraw : function()
 	{
 		if(this.type == Kinetic.WorkFlowType.standAlone)
@@ -290,6 +362,9 @@ Kinetic.WorkFlow.prototype = {
 		this.updateVerticesOrders()
 
 	},
+	/*
+		Delete all IOs and call on all components to deletes there IOs
+	*/
 	deleteAllIOs : function ()
 	{
 		//loop through all the ioConnections
@@ -306,6 +381,9 @@ Kinetic.WorkFlow.prototype = {
 		this.disconnectAllVertices();
 
 	},
+	/*
+		Connects all IOs already set, if workflow is standalone then will not connect workflow IOs
+	*/
 	connectAllIOs : function()
 	{
 		if(this.type != Kinetic.WorkFlowType.standAlone)
@@ -315,11 +393,14 @@ Kinetic.WorkFlow.prototype = {
 				io.output.obj.connectTo(io);
 			});
 		}
-		_.each(this.components,function(com)
+		_.each(this.children,function(com)
 		{
 			com.connectAllIOs();
 		});	
 	},
+	/*
+		Determines whether to render a backwards or forwards row, based on noRows.
+	*/
 	renderRow : function(noRows,rowArray,lastYRow,rowWidth,maxWidth)
 	{
 		if (noRows%2 == 0)
@@ -331,6 +412,15 @@ Kinetic.WorkFlow.prototype = {
 			return this.setUpForwardsRow(rowArray,lastYRow,rowWidth,maxWidth);
 		}	
 	},
+	/*
+		Sets the x,y positions of the rowArray elements. Goes from left to right
+		
+		Arguments:
+			rowArray = array of workflow elements
+			lastYRow = Y position of last row
+			rowWidth = width of all components in rowArray
+			maxWidth = maximum width that canvas can take
+	*/
 	setUpForwardsRow : function(rowArray,lastYRow,rowWidth,maxWidth)
 	{
 		//the X value to write to next
@@ -356,6 +446,15 @@ Kinetic.WorkFlow.prototype = {
 		})
 		return nextRowY;
 	},
+	/*
+		Sets the x,y positions of the rowArray elements. Goes from right to left
+		
+		Arguments:
+			rowArray = array of workflow elements
+			lastYRow = Y position of last row
+			rowWidth = width of all components in rowArray
+			maxWidth = maximum width that canvas can take
+	*/
 	setUpBackwardsRow : function(rowArray,lastYRow,rowWidth,maxWidth)
 	{
 		//the X value to write to next
@@ -380,6 +479,11 @@ Kinetic.WorkFlow.prototype = {
 		});
 		return nextRowY;
 	},
+	/*
+		Finds the y position for the next row, based on the height of the components past to the function.
+		
+		Argument: rowArray = array of workflow elements
+	*/
 	findYPosForRow : function(rowArray)
 	{
 		var last = null;
@@ -398,19 +502,38 @@ Kinetic.WorkFlow.prototype = {
 		});
 		return ys;
 	},
-	createEndElement : function()
+	/*
+		Create end element, either create a new one or based on the argument passed
+		
+		Arguments: currentEl = end element
+	*/
+	createEndElement : function(currentEl)
 	{
-		//need to create the element after the last element
-		var position = this.findWhereToPutNewElement(15,this.components);
-		if(position.lastShape == undefined)
+		if(_.isEmpty(currentEl))
 		{
-			return new Kinetic.WorkFlowEnd({x:position.x+7.5, y:position.y,text:"End",draggable:true});
+			var position = this.findWhereToPutNewElement(15,this.components);
+			position.x = position.x + 7.5;
 		}
 		else
 		{
-			return new Kinetic.WorkFlowEnd({x:position.x+7.5, y:position.y + position.lastShape.getHeight()/2,text:"End",draggable:true});
+			var position = currentEl.circle.getPosition();
+		}
+		//need to create the element after the last element
+		
+		if(position.lastShape == undefined)
+		{
+			return new Kinetic.WorkFlowEnd({x:position.x, y:position.y,text:"End",draggable:true});
+		}
+		else
+		{
+			return new Kinetic.WorkFlowEnd({x:position.x, y:position.y + position.lastShape.getHeight()/2,text:"End",draggable:true});
 		}
 	},
+	/*
+		Add elements to the workflow.
+		
+		Argument: els is an array or new components
+	*/
 	addElements : function(els)
 	{
 		var draggable =  this.type == Kinetic.nested ? false : true;
@@ -424,17 +547,11 @@ Kinetic.WorkFlow.prototype = {
 			self.components.push(el);
 			el.setAttrs({draggable:draggable});
 		});
-		//renew the endElement
-		//if its already created, then do not remove it
-		if(this.endElement != null)
-		{
-			//this.getLayer().remove(this.endElement);
-			this.remove(this.endElement)
-			this.endElement = null;
-		}
- 		
-	    this.endElement = this.createEndElement()
-	    this.add(this.endElement);
+		//create end element if its not currently created
+		if(_.isEmpty(this.endElement)==false){this.remove(this.endElement);}
+		this.endElement = this.createEndElement(this.endElement)
+		this.add(this.endElement);
+		
 	    if(this.type == Kinetic.WorkFlowType.nested)
 	    {
 	    	this.reDraw();
@@ -443,8 +560,12 @@ Kinetic.WorkFlow.prototype = {
 		this.updateSizeAndPosOfMainEl();
 		return this.components.length -1;
 	},
+	/*
+		Update vertices when component is dragged, calls _dragUpdate on each vertice.
+	*/
 	updateAllVertices : function ()
 	{
+		//updates vertices when components are dragged
 		if(this.type == Kinetic.WorkFlowType.nested)
 		{
 			this.mainElement.updateAllVertices();
@@ -453,21 +574,35 @@ Kinetic.WorkFlow.prototype = {
 		for(Ci=0;Ci<this.components.length;Ci++) { this.components[Ci].updateAllVertices(); }
 		this.startElement.updateAllVertices();
 	},
+	/*
+		Updates vertice orders.
+		
+		Does this by doing them and reconnecting all the IOs
+	*/
 	updateVerticesOrders : function()
 	{
-		 this.disconnectAllVertices();
-	    this.setOrderedVertices();
+		this.disconnectAllVertices();
+	    //this.setOrderedVertices();
 	    this.connectAllIOs();
 	},
+	/*
+		Delete component within workflow
+		
+		Argument is either an index for teh components array or a component to delete.
+	*/
 	deleteElement : function(el)
 	{
 		//if the argument is a number then it is the index of a component which should be rendered
 		el = _.isNumber(el) ? this.components[el] : el;
 		el.deleteAllIOs();
+		this.removeIO(el);
 		//remove the element from the currentElements
 		this.components.splice(this.getIndexOfObject(this.components,el), 1);
 		this.remove(el);
 	},
+	/*
+		Remove all vertices for this workflow and internal components
+	*/
 	disconnectAllVertices : function ()
 	{
 		var deleteVerts = this.vertices.slice();
@@ -477,27 +612,14 @@ Kinetic.WorkFlow.prototype = {
 			vert.remove();
 		});
 		//disconnect the vertices of all components
-		_.each(this.components,function(el)
+		_.each(this.children,function(el)
 		{
 			el.disconnectAllVertices();
 		});
 	},
-	
-	setVertices : function (verticesArray,wFlow)
-	{
-		for(Vi=0;Vi<verticesArray.length;Vi++) 
-		{ 
-			if(_.isEqual(verticesArray[Vi].start,wFlow))
-			{
-				verticesArray[Vi].start = this;
-			}
-			if(_.isEqual(verticesArray[Vi].end,wFlow))
-			{
-				verticesArray[Vi].end = this;
-			} 
-		}
-		this.vertices = verticesArray;
-	},
+	/*
+		Connects all elements based the component order.
+	*/
 	setOrderedVertices : function ()
 	{
 		//loop all elements
@@ -519,8 +641,14 @@ Kinetic.WorkFlow.prototype = {
 			this.components[this.components.length - 1].connectToEl(this.endElement);
 		}
 	},
+	/*
+		Set up or remove click events for IO Mode, so a stroke can be set.
+		
+		Arguments: ioMode boolean. True for setting up, False for turning off
+	*/
 	setIOMode : function(ioMode)
 	{	
+		//set up click events for ioMode
 		if(ioMode)
 		{
 			for(iCEls=0;iCEls<this.children.length;iCEls++)
@@ -546,11 +674,18 @@ Kinetic.WorkFlow.prototype = {
 			for(iCEls=0;iCEls<this.children.length;iCEls++)
 			{
 				this.children[iCEls].off('click');
+				this.children[iCEls].on("click", function(ev) { 
+					WorkFlow_UI.toolbox.displayObject(this);
+				});
 				this.children[iCEls].setStroke('black');
 			}
 		}
 		
 	},
+	/*
+		Update size and position based on internal components.
+		Also ensures text for nested workflow is centered.
+	*/
 	updateSizeAndPosOfMainEl : function()
 	{
 		//if standalone, then do not need to update the size
@@ -563,6 +698,9 @@ Kinetic.WorkFlow.prototype = {
 	    //ensure the group as a whole is not overlapping, if it is then it needs to be moved
 	    
 	},
+	/*
+		Move internal components above nested workflow rectangle, so components can be seen.
+	*/
 	moveComponentsToTop : function()
 	{
 		for(i=0;i<this.components.length;i++) 
@@ -570,6 +708,9 @@ Kinetic.WorkFlow.prototype = {
 			this.components[i].moveToTop(); 
 		}
 	},
+	/*
+		Finds where the next element should go, used for autolayout and laying out components within a nested workflow.
+	*/
 	findWhereToPutNewElement : function(width,comArray)
 	{
 		//first we need to find the size of the new element
@@ -608,111 +749,54 @@ Kinetic.WorkFlow.prototype = {
 		}
 		return position;
 	},
+	/*
+		Workout the size of the outside rectangle based on the components.
+		Returns the width and height to change the rectangle too, and x and y coordinates
+	*/
 	updateSizeOfMainElement : function()
 	{
 		smallestX = -1;
 		biggestX = -1;
 		biggestY = -1;
-		smallestX = -1;
-		if(this.components.length == 0)
-		{
-			x = this.startElement.circle.getAbsolutePosition().x;
-			rad = this.startElement.circle.getAttrs().radius;
-			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x)
-			
-			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
+		smallestY = -1;
+			 
+		_.each(this.children, function(child){
 		
-			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
-		
-			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
+			var pos = child.getPositionOfElement();
+			if(pos.x < smallestX)
+			{
+				smallestX = pos.x;
+			}
+			if(pos.y < smallestY)
+			{
+				smallestY = pos.y;
+			}
+			if((pos.x + child.getWidth()) > biggestX)
+			{
+				biggestX = (pos.x + child.getWidth());
+			}
+			if((pos.y + child.getHeight()) > biggestY)
+			{
+				biggestY = (pos.y + child.getHeight());
+			}
 			
-			if((this.mainElement.textLength)+20>(biggestX-smallestX))
-			{
-				return {w:((this.mainElement.textLength)+20),h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
-			}
-			else
-			{
-				return {w:(biggestX-smallestX)+40,h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
-			}
-		}
-		else
-		{
-			for(i=0;i<this.components.length;i++) 
-			{ 
-				if(smallestX == -1)
-				{
-					smallestX = this.components[i].rect.getAbsolutePosition().x;
-					biggestX = this.components[i].rect.getAbsolutePosition().x + this.components[i].rect.getAttrs().width;
-					smallestY = this.components[i].rect.getAbsolutePosition().y
-					biggestY = this.components[i].rect.getAbsolutePosition().y + this.components[i].rect.getAttrs().height;
-				}
-				if(this.components[i].rect.getAbsolutePosition().x < smallestX)
-				{
-					smallestX = this.components[i].rect.getAbsolutePosition().y;
-				}
-				if(this.components[i].rect.getAbsolutePosition().y < smallestY)
-				{
-					smallestY = this.components[i].rect.getAbsolutePosition().y;
-				}
-				
-				if((this.components[i].rect.getAbsolutePosition().x + this.components[i].rect.getAttrs().width) > biggestX)
-				{
-					biggestX = (this.components[i].rect.getAbsolutePosition().x + this.components[i].rect.getAttrs().width);
-				}
-				if((this.components[i].rect.getAbsolutePosition().y + this.components[i].rect.getAttrs().height) > biggestY)
-				{
-					biggestY = (this.components[i].rect.getAbsolutePosition().y + this.components[i].rect.getAttrs().height);
-				}
-			}
-		}
-		//check the startElement to see if that contains the smallest or biggest of x and y
-		if(smallestX>(this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x))
-		{
-			smallestX = (this.startElement.circle.getAbsolutePosition().x-this.startElement.circle.getAttrs().radius.x)
-		}
-		if(smallestY>(this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x))
-		{
-			smallestY = (this.startElement.circle.getAbsolutePosition().y-this.startElement.circle.getAttrs().radius.x)
-		}
-		if(biggestX<(this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x))
-		{
-			biggestX = (this.startElement.circle.getAbsolutePosition().x+this.startElement.circle.getAttrs().radius.x)
-		}
-		if(biggestY<(this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x))
-		{
-			biggestY = (this.startElement.circle.getAbsolutePosition().y+this.startElement.circle.getAttrs().radius.x)
-		}
-		//check the endElement to see if that contains the smallest or biggest of x and y
-		if(!(_.isEmpty(this.endElement)))
-		{
-			if(smallestX>(this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x))
-			{
-				smallestX = (this.endElement.circle.getAbsolutePosition().x-this.endElement.circle.getAttrs().radius.x)
-			}
-			if(smallestY>(this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x))
-			{
-				smallestY = (this.endElement.circle.getAbsolutePosition().y-this.endElement.circle.getAttrs().radius.x)
-			}
-			if(biggestX<(this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x))
-			{
-				biggestX = (this.endElement.circle.getAbsolutePosition().x+this.endElement.circle.getAttrs().radius.x)
-			}
-			if(biggestY<(this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x))
-			{
-				biggestY = (this.endElement.circle.getAbsolutePosition().y+this.endElement.circle.getAttrs().radius.x)
-			}
-		}
+		});
+		
 		if((this.mainElement.textLength)+20>(biggestX-smallestX))
 		{
-			return {w:((this.mainElement.textLength)+40),h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
+			return {w:((this.mainElement.textLength)+10),h:(biggestY-smallestY)+15,x:smallestX,y:smallestY-5};
 		}
 		else
 		{
-			return {w:(biggestX-smallestX)+40,h:(biggestY-smallestY)+50,x:smallestX-15,y:smallestY-30};
+			return {w:(biggestX-smallestX)+10,h:(biggestY-smallestY)+15,x:smallestX,y:smallestY-5};
 		}
 
 		
 	},
+	/*
+		Set all positions within the nested workflow, relative to the top left of the 
+		workflow.
+	*/
 	setAllPositions : function (config)
 	{
 		this.setPosition({x:0,y:0});
@@ -757,15 +841,13 @@ Kinetic.WorkFlow.prototype = {
 	},
 	publish : function()
 	{
-		var workFlow = new UncertWeb.Workflow(this.brokerProperties);
+		//create workflow for this workflow
+		var currentWF = new UncertWeb.Workflow(this.brokerProperties)
 		_.each(this.components,function(com)
 		{
-			workFlow.append(com.publish().com);
+			currentWF.append(com.publish());
 		});
-		
-		return workFlow;
-		
-		
+		return currentWF;
 	}
 
 };

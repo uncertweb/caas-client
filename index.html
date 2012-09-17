@@ -3,6 +3,7 @@
   <head>
    <link href="css/bootstrap-responsive.css" rel="stylesheet">
     <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/override_stylesheet.css" rel="stylesheet">
     <link href="css/jquery-ui-1.8.21.custom.css" rel="stylesheet">
     <style>
 	    #sortable { list-style-type: none; margin: 0; padding: 0;; }
@@ -23,10 +24,7 @@
       }
       .alert {
 		  margin-bottom: 5px;
-		  }
-	  .navbar{
-		  margin-bottom: 5px;
-	  }
+		 }
 	  /*
 		Navbar forms
 		Adding a Drop Down Login Form to Bootstrap’s Navbar
@@ -53,111 +51,15 @@
 		    height: 32px;
 		    font-size: 13px;
 		}
-	​	
+		table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 95%; }
+		table.testgrid td, table.testgrid th { padding: 5px; border: 1px solid #E0E0E0; }
+		table.testgrid th { background: #E5E5E5; text-align: left; }
+		input.invalid { background: red; color: #FDFDFD; }
+		
     </style>
   
     
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
-    <script type="text/javascript" src="js/lib/kinetic-v3.10.2.js"></script>
-    <script src="js/lib/kinetic.line.js"></script>
-	<script src="js/lib/kinetic.bezier.js"></script>
-	<script type="text/javascript" src="js/kinetic.workflowLayer.js"></script>
-    <script type="text/javascript" src="js/kinetic.workFlowElement.js"></script>
-    <script type="text/javascript" src="js/kinetic.workFlowComponents.js"></script>
-    <script type="text/javascript" src="js/kinetic.workFlow.js"></script>
-    <script type="text/javascript" src="js/workflow.ui.js"></script>
-    <script type="text/javascript" src="js/workflow.js"></script>
-	
-	
-	<script src="js/lib/underscore.js"></script>
-	<script src="js/lib/bootstrap.js"></script>
-	<script src="js/lib/spin.min.js"></script>
-    
-    
-    <script type="text/javascript">
-
-    	var layer;
-    	window.onload = function() {
-    		$(function() {
-    			$('a[rel="popover"]').popover();
-			});
-			$(function() {
-    			$('a[rel="tooltip"]').tooltip();
-			});
-			// Adding a Drop Down Login Form to Bootstrap’s Navbar
-			// 
-			$(function() {
-			    // Setup drop down menu
-			    $('.dropdown-toggle').dropdown();
-			    
-			    // Fix input element click problem
-			    $('.dropdown input, .dropdown label').click(function(e) {
-			        e.stopPropagation();
-			    });
-			});
-			
-			
-	    	var stage = new Kinetic.Stage({
-	          container: "container",
-	          width: $(document).width()-10,
-	          height:$(document).height() - 60
-	        });
-	        
-	        
-	        
-	    	layer = new Kinetic.WorkFlowLayer();
-	        stage.add(layer);
-	        ctx = stage.children[0].getContext();
-	        ctx.font = fontSize + "Calibri";
-	       
-	        stage.draw();
-	        
-	        document.getElementById('moveup').addEventListener('click', function() {
-          		layer.moveUp();
-        	}, false);
-        	document.getElementById('addWF').addEventListener('click', function() {
-          		WorkFlow_UI.addWF.open();
-        	}, false);
-        	document.getElementById('io').addEventListener('click', function() {
-          		
-          		if(layer.toggleIOMode())
-          		{
-          			$("#io").html('Toggle Input/Output Mode - On');
-          		}
-          		else
-          		{
-          			$("#io").html('Toggle Input/Output Mode - Off');
-          		}
-          	}, false);
-          	document.getElementById('redraw').addEventListener('click', function() {
-          		layer.reDrawLayer();
-	        },false);
-	        document.getElementById('setOrder').addEventListener('click', function() {
-          		WorkFlow_UI.orderComponents.open();
-	        },false);
-	        
-	        
-
-          	var con = $('#container');
-          	con.droppable({
-		              drop: function(el,ui) {
-                        	WorkFlow_UI.search.doDrop(el,ui,layer)
-                    }
-		               				               		
-		    });
-		    $('#ioModal').on('hidden', function () {
-			    layer.clearIOMode();
-			})
-          	
-			$('#ioWorkFlowModal').on('hidden', function () {
-			    layer.clearIOMode();
-			})
-
-	
-        };
-    </script>
-   </head>
+      </head>
   <body>
   <div class="navbar">
     <div class="navbar-inner">
@@ -167,22 +69,6 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </a>
-        <ul class="nav">
-        <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    
-                    <b class="caret"></b>
-                </a>
-                <div class="dropdown-menu">
-                    
-                        <input class="text" type="text" id="search" name="search"
-                            size="50" onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords" />
-                    
-                    <div class="well" id="searchResults">
-                    </div>
-                </div>
-            </li>
-        </ul>
         <a class="brand" href="">Uncert Web</a>
         <div class="nav-collapse">
           <ul class="nav">
@@ -191,13 +77,77 @@
           	<li><a id="moveup">Move Up</a></li>
             <li><a id="io">Toggle Input/Output Mode - Off</a></li>
             <li><a id="redraw">Auto Layout</a></li>
-            <li><a id="setOrder">Set Ordeccr</a></li>
+            <li><a id="setOrder">Set Order</a></li>
           </ul>
         </div><!-- /.nav-collapse -->
       </div>
     </div><!-- /navbar-inner -->
   </div>
-    <div id="container" class="droppable"></div>
+  <div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span2" style="width: 20%;">
+       <div id="toolbox">
+            <div id="toolboxTitle" class="modal-header">
+            Toolbox - Main Workflow
+            </div>
+            <div id="toolboxBody" >
+		            <div id="searchBody" class="accordion">
+			              <div class="toolboxaccordion-heading">
+			              			                  <a class="accordion-toggle" data-toggle="collapse" data-parent="#searchBody" href="#collapseSearch">
+                  Search for Components
+                </a>
+
+			              </div>
+			              <div id="collapseSearch" class="accordion-body collapse in">
+			                <button type="button" style="float:right;line-height:23px" onclick="WorkFlow_UI.search.clear()">Clear</button>
+			                <input class="text span2" type="text" id="search" name="search"
+	                             onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords"></input>
+	                             
+	                             <ul class="well draggable unstyled" id="searchResults">
+	                             </ul>
+	                             
+			              </div>
+			       </div><!--accordion group-->
+			       <div id="whatNextAccordion" class="accordion">
+			              <div class="toolboxaccordion-heading">
+			                 
+			                 <a class="accordion-toggle" data-toggle="collapse" data-parent="#whatNextAccordion" href="#whatNext">
+                  Tips - What to do next?
+                </a>
+			              </div>
+			              <div id="whatNext" class="accordion-body collapse in">
+			              </div>
+			       </div><!--accordion group-->
+			        <div id="inspectorAccordion" class="accordion">
+			              <div class="toolboxaccordion-heading">
+			                  <a class="accordion-toggle" data-toggle="collapse" data-parent="#inspectorAccordion" href="#componentInspector">
+                  Component Inspector
+                </a>
+
+			              </div>
+			              <div class="accordion-body collapse in" id="componentInspector">
+				              <form class="form-horizontal">
+						        <fieldset>
+						          <div id="inspector">
+				                
+						          </div>
+						          <div class="form-actions"  id="inspectorActions" style="padding-left:100px;">
+						            
+						          </div>
+						        </fieldset>
+						      </form>
+					      </div>
+			       </div><!--accordion group-->
+			</div>
+		</div>
+	</div><!--span2 end -->
+    <div class="span10" id="forCanvas" style="width: 80%; margin-left: 0px">
+      <div id="container" class="droppable"></div>
+    </div><!--span10 end-->
+  </div><!--row-fluid end-->
+</div><!--container-fluid end-->
+ 
+      
         
     
     <div id="ioModal" class="modal hide fade" style="display: none; ">
@@ -279,16 +229,28 @@
 				        <input type="text" class="input-xlarge" id="titleWF" placeholder="Enter Title....">
 				        
 				      </div>
+				      <div id="titleErrors">
+				      </div>
 				    </div>
 				    <div class="control-group" id="abstractGroup">
 				      <label class="control-label" for="abstractWF">Abstract</label>
 				      <div class="controls">
 				        <textarea class="input-xlarge" id="abstractWF" rows="3" placeholder="Enter a description for your workflow...."></textarea>
 				      </div>
+				       <div id="abstractErrors">
+				      </div>
+				    </div>
+				    <div class="control-group" id="iterationGroup">
+				      <label class="control-label" for="iterationWF">No. of Iterations</label>
+				      <div class="controls">
+				        <input type="text" class="input-xlarge" id="iterationWF" placeholder="Enter number of iterations for your workflow....">
+				      </div>
+				       <div id="iterationErrors">
+				      </div>
 				    </div>
 				    <div class="form-actions">
 			            <button type="submit" class="btn btn-primary">Create Workflow</button>
-			            <button class="btn">Cancel</button>
+			            <button class="btn" data-dismiss="modal">Cancel</button>
 		            </div>
 				  </fieldset>
 				</form>
@@ -297,6 +259,10 @@
               <a class="btn" data-dismiss="modal">Done</a>
               <!--<button href="#" class="btn btn-primary" onclick="WorkFlow_UI.io.test()">Save changes</button>-->
             </div>
+     </div>
+
+     
+
      </div>
      <div id="orderComponents" class="modal hide" style="display: none; ">
             <div class="modal-header">
@@ -314,6 +280,110 @@
             </div>
      </div>
 
-     
+
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
+    <script type="text/javascript" src="js/lib/kinetic-v3.10.2.js"></script>
+    <script src="js/lib/kinetic.line.js"></script>
+	<script src="js/lib/kinetic.bezier.js"></script>
+	<script type="text/javascript" src="js/kinetic.workflowLayer.js"></script>
+    <script type="text/javascript" src="js/kinetic.workFlowElement.js"></script>
+    <script type="text/javascript" src="js/kinetic.workFlowComponents.js"></script>
+    <script type="text/javascript" src="js/kinetic.workFlow.js"></script>
+    <script type="text/javascript" src="js/workflow.ui.js"></script>
+    <script type="text/javascript" src="js/workflow.js"></script>
+	
+	
+	<script src="js/lib/underscore.js"></script>
+	<script src="js/lib/bootstrap.js"></script>
+	<script src="js/lib/spin.min.js"></script>
+   
+    <script type="text/javascript">
+
+    	var layer;
+    	window.onload = function() {
+    		$(function() {
+    			$('a[rel="popover"]').popover();
+			});
+			$(function() {
+    			$('a[rel="tooltip"]').tooltip();
+			});
+			// Adding a Drop Down Login Form to Bootstrap’s Navbar
+			// 
+			$(function() {
+			    // Setup drop down menu
+			    $('.dropdown-toggle').dropdown();
+			    
+			    // Fix input element click problem
+			    $('.dropdown input, .dropdown label').click(function(e) {
+			        e.stopPropagation();
+			    });
+			});
+			
+			document.getElementById('moveup').addEventListener('click', function() {
+          		layer.moveUp();
+        	}, false);
+        	document.getElementById('addWF').addEventListener('click', function() {
+          		WorkFlow_UI.addWF.open();
+        	}, false);
+        	document.getElementById('io').addEventListener('click', function() {
+          		
+          		if(layer.toggleIOMode())
+          		{
+          			$("#io").html('Toggle Input/Output Mode - On');
+          		}
+          		else
+          		{
+          			$("#io").html('Toggle Input/Output Mode - Off');
+          		}
+          	}, false);
+          	document.getElementById('redraw').addEventListener('click', function() {
+          		layer.reDrawLayer();
+	        },false);
+	        document.getElementById('setOrder').addEventListener('click', function() {
+          		WorkFlow_UI.orderComponents.open();
+	        },false);
+			
+			
+			
+			
+	    	var stage = new Kinetic.Stage({
+	          container: "container",
+	          width: $('#forCanvas').width(),
+	          height:$(document).height() -60
+	        });
+	        	        
+	        
+	    	layer = new Kinetic.WorkFlowLayer();
+	    	
+
+	        stage.add(layer);
+	        ctx = stage.children[0].getContext();
+	        ctx.font = fontSize + "Calibri";
+	       
+	        stage.draw();
+	       
+          	var con = $('#container');
+          	con.droppable({
+		              drop: function(el,ui) {
+                        	WorkFlow_UI.search.doDrop(el,ui,layer)
+                    }
+		               				               		
+		    });
+		    $('#ioModal').on('hidden', function () {
+			    layer.clearIOMode();
+			})
+
+          	WorkFlow_UI.toolbox.open();
+          	
+          	
+			$('#ioWorkFlowModal').on('hidden', function () {
+			    layer.clearIOMode();
+			})
+
+	
+        };
+    </script>
+
   </body>
 </html>

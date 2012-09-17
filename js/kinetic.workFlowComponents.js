@@ -102,6 +102,9 @@ Kinetic.WorkFlowComponent = function (config)
     this.on("dragend", function(ev) { 
     	config.layer.checkOverBin(this,ev);
     });
+    this.on("click", function(ev) { 
+		WorkFlow_UI.toolbox.displayObject(this);
+	});
 		    
 }
 
@@ -137,6 +140,12 @@ Kinetic.WorkFlowComponent.prototype = {
 	getWidth : function()
 	{
 		return this.rect.getWidth();
+	},
+	publish : function()
+	{
+		//create workflow for this workflow
+		var currentCom = new UncertWeb.Component(this.brokerProperties)
+		return currentCom;
 	}
 };
 
@@ -161,7 +170,7 @@ Kinetic.WorkFlowTerminalNodes = function (config)
     });
 	this.add(this.circle);
 	this.textElement = new Kinetic.Text({
-          x: config.x - (radius-2),
+          x: config.x - (radius-3),
           y: config.y+radius+10,
           text: config.type,
           fontSize: 10,
@@ -182,15 +191,22 @@ Kinetic.WorkFlowTerminalNodes = function (config)
 Kinetic.WorkFlowTerminalNodes.prototype = {
 	connectTo : function (el)
 	{
-		connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
+		//only want to add one connection between this and el
+		//this should always bee the output i.e. arrow point towards el
+		var that = this;
+		foundCon = _.find(this.vertices, function(vert)
+					{
+						return vert.start == that && vert.end == el;
+					});
+		if(foundCon == undefined)
+		{
+			//no connection, so create one
+			connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black", dashArray: [30,10]}); 
+			this.getLayer().add(connection);
+			
+			this.getLayer().draw();
+		}
 	
-	},
-	connectToEl : function(el)
-	{
-		//need to connect this to the main element as thats the outer layer
-		var connection = new Kinetic.Connection({start: this, end: el, lineWidth: 1, color: "black"}); 
-		this.getLayer().add(connection);
 	},
 	addConnectionsToLayer : function ()
 	{
@@ -209,7 +225,10 @@ Kinetic.WorkFlowTerminalNodes.prototype = {
 	},
 	disconnectAllVertices : function ()
 	{
-		_.each(this.vertices,function(vert)
+		//remove the vertices
+		var deleteVerts = this.vertices.slice();
+		//remove all the vertices for this workflow
+		_.each(deleteVerts,function(vert)
 		{
 			vert.remove();
 		});
@@ -220,7 +239,7 @@ Kinetic.WorkFlowTerminalNodes.prototype = {
 	},
 	getWidth : function()
 	{
-		return this.circle.getRadius().x *2;
+		return this.circle.getRadius().x;
 	},
 	setAllAttrs : function(attrs)
 	{
@@ -229,7 +248,12 @@ Kinetic.WorkFlowTerminalNodes.prototype = {
 		{
 			child.setAttrs(attrs);
 		})	
+	},
+	getPositionOfElement : function()
+	{
+		return this.circle.getPosition();
 	}
+	
 
 };
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowTerminalNodes, Kinetic.Group);
@@ -243,7 +267,19 @@ Kinetic.WorkFlowStart = function (config)
     	    
 }
 Kinetic.WorkFlowStart.prototype = {
-
+	connectAllIOs : function()
+	{
+		//get inputs for the workflow, this means a line has to be drawn from the component 
+		var ins = this.parent.getInputs();
+		var self = this;
+		if (_.isEmpty(ins) == false)
+		{
+			_.each(ins,function(i)
+			{
+				self.connectTo(i.com);
+			});
+		}
+	}
 };
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowStart, Kinetic.WorkFlowTerminalNodes);
 
@@ -255,7 +291,19 @@ Kinetic.WorkFlowEnd = function (config)
  	    
 }
 Kinetic.WorkFlowEnd.prototype = {
-
+	connectAllIOs : function()
+	{
+		//get inputs for the workflow, this means a line has to be drawn from the component 
+		var outs = this.parent.getOutputs();
+		var self = this;
+		if (_.isEmpty(outs) == false)
+		{
+			_.each(outs,function(out)
+			{
+				out.com.connectToEl(self);
+			});
+		}
+	},
 };
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowEnd, Kinetic.WorkFlowTerminalNodes);
 
@@ -305,6 +353,7 @@ Kinetic.Connection.prototype = {
 			var dy = r.getAbsolutePosition().y - (this.line.startPoint.y - r.getHeight());
 			this.line.transform({dx:dx,dy:dy});
 		}
+		this.getLayer().draw();
 	},
 	_getStartPt : function( el1, el2 ) {
 		if(el1 instanceof Kinetic.WorkFlow)

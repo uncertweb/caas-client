@@ -6,6 +6,10 @@ Kinetic.WorkFlowLayer = function (config)
 	this.standAloneWF = null;
 	this.ioMode = false;
 	this.ioObjects = {input:null,output:null};
+	
+	/*
+		Getters and Setters
+	*/
 	this.getComponents = function(includeStartEnd)
 	{
 		if(this.standAloneWF == null)
@@ -23,8 +27,14 @@ Kinetic.WorkFlowLayer = function (config)
 		{
 			return this.standAloneWF.components;
 		}
-		
-		
+	};
+	this.getWorkFlows = function (noIOs)
+	{
+		return this.mainWorkFlow.getWorkFlows(noIOs);
+	};
+	this.getMainWorkFlow = function ()
+	{
+		return 	this.mainWorkFlow;
 	};
 	this.toggleIOMode = function ()
 	{
@@ -47,7 +57,89 @@ Kinetic.WorkFlowLayer = function (config)
 		//setup the IO mode, based on the setting
 		this.setUpIOMode();
 	}
-	this.setIoObjects = function(el)
+	this.updateComponentOrder = function(order)
+	{
+		if(this.standAloneWF == null)
+		{
+			this.mainWorkFlow.updateComponentOrder(order);
+		}
+		else
+		{
+			this.standAloneWF.updateComponentOrder(order);
+		}
+		
+	};
+	this.on("click", function(ev) { 
+		/*if(this.standAloneWF == null)
+		{
+			WorkFlow_UI.toolbox.displayObject(this.mainWorkFlow);
+		}
+		else
+		{
+			WorkFlow_UI.toolbox.displayObject(this.standAloneWF);
+		}*/
+		
+	});
+
+	this.standAloneIndex = -1;
+	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{title:"",description:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
+	
+	this.add(this.mainWorkFlow);
+	this.renderRubbishBin();
+	
+		
+}
+Kinetic.WorkFlowLayer.prototype = {
+	/*
+		Render rubbish to allow users to delete components, by dragging them to onto this bin.
+	*/
+	renderRubbishBin : function()
+	{
+		//add the trash bin to the top right
+		var self = this;
+		var imageObj = new Image();
+		    imageObj.onload = function() {
+		      self.image = new Kinetic.Image({
+		        x: $('#forCanvas').width()-100,
+		        y: 0,
+		        image: imageObj,
+		        width: 100,
+		        height: 100
+		      });
+		      self.add(self.image);
+		      self.draw();
+		      self.afterDraw(WorkFlow_UI.toolbox.checkWhatNext());
+		   };
+		   
+		   imageObj.src = "img/trash.png";
+
+	},
+	/*
+		Method is called when a component is being dragged, it checks whether mouse is over the bin
+		
+		Arguments: el = element is element being dragged
+				   ev = event for element being dragged
+	*/
+	checkOverBin : function(el,ev)
+	{
+		imgAttrs = this.image.getAttrs();
+		if(ev.layerX > imgAttrs.x && ev.layerX < (imgAttrs.x + imgAttrs.width))
+		{
+			//within x boundaries
+			if(ev.layerY > imgAttrs.y && ev.layerY < (imgAttrs.y + imgAttrs.height))
+			{
+				//over bin so delete the element
+				this.deleteElement(el);
+			}
+		}
+	},
+	/*
+		Called when a component is clicked when IO Mode is turned on.
+		The first component click is always the output.
+		objects that are clicked are stored in the this.ioObjects variable
+		If a component is clicked twice it is deleted from the variable.
+	*/
+	setIoObjects : function(el)
 	{
 		//if user has clicked an item again then, this means they do not want to select it
 		if(_.isEqual(el,this.ioObjects.output))
@@ -76,7 +168,7 @@ Kinetic.WorkFlowLayer = function (config)
 				{
 					WorkFlow_UI.io.open(this.ioObjects);
 				}
-					
+				return false;
 					
 			}
 			return true;
@@ -97,7 +189,7 @@ Kinetic.WorkFlowLayer = function (config)
 			{
 				WorkFlow_UI.io.open(this.ioObjects);
 			}
-			return true;
+			return false;
 		}
 		else
 		{
@@ -107,59 +199,6 @@ Kinetic.WorkFlowLayer = function (config)
 		}
 		
 			
-	};
-	this.updateComponentOrder = function(order)
-	{
-		if(this.standAloneWF == null)
-		{
-			this.mainWorkFlow.updateComponentOrder(order);
-		}
-		else
-		{
-			this.standAloneWF.updateComponentOrder(order);
-		}
-		
-	};
-	this.standAloneIndex = -1;
-	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
-	this.add(this.mainWorkFlow);
-	this.renderRubbishBin();
-	
-		
-}
-Kinetic.WorkFlowLayer.prototype = {
-	renderRubbishBin : function()
-	{
-		//add the trash bin to the top right
-		var self = this;
-		var imageObj = new Image();
-		    imageObj.onload = function() {
-		      self.image = new Kinetic.Image({
-		        x: $(document).width()-100,
-		        y: 0,
-		        image: imageObj,
-		        width: 100,
-		        height: 100
-		      });
-		      self.add(self.image);
-		      self.draw();
-		   };
-		   
-		   imageObj.src = "img/trash.png";
-
-	},
-	checkOverBin : function(el,ev)
-	{
-		imgAttrs = this.image.getAttrs();
-		if(ev.layerX > imgAttrs.x && ev.layerX < (imgAttrs.x + imgAttrs.width))
-		{
-			//within x boundaries
-			if(ev.layerY > imgAttrs.y && ev.layerY < (imgAttrs.y + imgAttrs.height))
-			{
-				//over bin so delete the element
-				this.deleteElement(el);
-			}
-		}
 	},
 	updateConnectionOrders : function()
 	{
@@ -173,28 +212,41 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	/*
+		Deletes the current view and renders the workflow that is sent through the parameter
+		
+		Argument: workflow = instance of workflow
+	*/
 	renderWorkFlow : function(workFlow)
 	{
-		//if the argument is a number then it is the index of a component which should be rendered
-		workFlow = _.isNumber(workFlow) ? this.mainWorkFlow.components[workFlow] : workFlow;
-		//need to save the index of the render workflow, as thsi will need to overwritten
-		this.standAloneIndex = this.mainWorkFlow.getIndexOfObject(this.mainWorkFlow.components,workFlow);
-		//clear the stage so it is blank
-		this.clear();
-		this.removeChildren();
-		
-		this.standAloneWF = workFlow;
-		this.add(this.standAloneWF);
-		this.standAloneWF.setType(Kinetic.WorkFlowType.standAlone);
-		
-		this.setIOMode(false);
-		
-		//create bin for lower layer
-		this.renderRubbishBin();
-		
-		this.draw();
-		this.standAloneWF.updateAllVertices();
+		if(this.standAloneWF == null)
+		{
+			//if the argument is a number then it is the index of a component which should be rendered
+			workFlow = _.isNumber(workFlow) ? this.mainWorkFlow.components[workFlow] : workFlow;
+			//need to save the index of the render workflow, as thsi will need to overwritten
+			this.standAloneIndex = this.mainWorkFlow.getIndexOfObject(this.mainWorkFlow.components,workFlow);
+			//clear the stage so it is blank
+			this.clear();
+			this.removeChildren();
+			this.setIOMode(false);
+			this.standAloneWF = workFlow;
+			this.add(this.standAloneWF);
+			this.standAloneWF.setType(Kinetic.WorkFlowType.standAlone);
+			//create bin for lower layer
+			this.renderRubbishBin();
+			this.standAloneWF.updateAllVertices();
+			
+			this.draw();
+		}
+		else
+		{
+			this.moveUp();
+			this.renderWorkFlow(workflow);
+		}
 	},
+	/*
+		Adds an element to the current workflow, whether it is the main workflow or the current workflow that is rendered
+	*/
 	addElement : function (el)
 	{
 		//need to return the index, its used for adding a new workflow
@@ -216,11 +268,14 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.setIOMode(false);
 			this.setIOMode(true);
 		}
-		
+		WorkFlow_UI.toolbox.checkWhatNext();
 		//redraw the layer
 		this.draw();
 		return returnIndex;
 	},
+	/*
+		Deletes an element to the current workflow, whether it is the main workflow or the current workflow that is rendered
+	*/
 	deleteElement : function (el)
 	{
 		if(this.standAloneWF == null)
@@ -238,6 +293,10 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.updateConnectionOrders();
 		this.draw();
 	},
+	/*
+		Moves up from the current rendered workflow to the main workflow, 
+		if the current workflow is not the main workflow
+	*/
 	moveUp : function ()
 	{
 		if(this.standAloneWF != null)
@@ -260,9 +319,14 @@ Kinetic.WorkFlowLayer.prototype = {
 			
 			//render rubbish bin for the top layer
 			this.renderRubbishBin();
+
 			this.updateConnectionOrders();
+
 		}
 	},
+	/*
+		Calls the setIOMode on the current workflow
+	*/
 	setUpIOMode : function ()
 	{
 		this.ioObjects = this.ioMode == false ? {input:null,output:null} : this.ioObjects;
@@ -273,7 +337,6 @@ Kinetic.WorkFlowLayer.prototype = {
 		{
 			//all currentEls need to be clickable
 			this.mainWorkFlow.setIOMode(this.ioMode);
-			
 		}
 		else
 		{
@@ -281,6 +344,9 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	/*
+		Sets ioObjects variable to null and set stroke of previously clicked objects to the default (black)
+	*/
 	clearIOMode : function()
 	{
 		if (this.ioObjects.input != null)
@@ -294,12 +360,18 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.ioObjects = {input:null,output:null};
 		this.draw();
 	},
+	/*
+		Clears layer of all components and renders rubbish bin
+	*/
 	clearLayer : function ()
 	{
 		this.clear();
 		this.removeChildren();
 		this.renderRubbishBin();
 	},
+	/*
+		Redraws the current workflow
+	*/
 	reDrawLayer : function ()
 	{
 		if(this.standAloneWF == null)
@@ -312,9 +384,44 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	/*
+		Creates a workflow using workflow.js
+		
+		Returns that workflow.js workflow
+	*/
+	createWorkFlow : function()
+	{
+		/*var mainWorkFlow = new UncertWeb.Workflow();
+		for(iCEls=0;iCEls<this.currentElements.length;iCEls++)
+		{
+			if(this.currentElements[iCEls] instanceof Kinetic.WorkFlow)
+			{
+				//create new workflow
+				var workflow = new UncertWeb.Workflow();
+				for(iWFEls=0;iWFEls<this.currentElements[iCEls].components.length;iWFEls++)
+				{
+					//add the components to that workflow
+					workflow.append(new UncertWeb.Component(this.currentElements[iCEls].components[iWFEls].brokerProperties));
+				}
+				mainWorkFlow.append(workflow);
+			}
+			else if (this.currentElements[iCEls] instanceof Kinetic.WorkFlowComponent)
+			{
+				mainWorkFlow.append(new UncertWeb.Component(this.currentElements[iCEls].brokerProperties))
+			}
+		}*/
+		
+		return this.mainWorkFlow.publish();
+		
+		
+	},
+	/*
+		Publishes to the CaaS after a workflow has been created calling createWorkFlow
+	*/
 	publishWorkFlow : function()
 	{
-		
+		 console.debug(UncertWeb.Encode.asBPMN(this.createWorkFlow()));
+		 UncertWeb.CaaS.publish(this.createWorkFlow(),this.mainWorkFlow.brokerProperties)
 	}
 	
 	

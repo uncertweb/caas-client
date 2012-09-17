@@ -1,5 +1,206 @@
 var WorkFlow_UI = {};
 var idCount = 100;
+
+WorkFlow_UI.toolbox =
+{
+	objInspecting : {},
+	//for referencing against links to be able to render workflows
+	linkWorkFlows : [],
+	activeButtons : [],
+	allButtons:  new Array({id:"moveUp", text:"View main Workflow",class:"btn  btn-primary",'data-toggle':"", onclick:"layer.moveUp();"},
+					  {id:"io",text:"Toggle IO Mode", class:"btn btn-primary",'data-toggle':"button", onclick:"WorkFlow_UI.addWF.click();"},
+					  {id:"reDraw", text:"Auto Layout", class:"btn btn-primary",'data-toggle':"", onclick:"layer.reDrawLayer();"},
+					  {id:"addWF",text:"Add Workflow",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.addWF.open();"},
+					  {id:"setOrder",text:"Set Order",class:"btn btn-primary",'data-toggle':"", onclick:"WorkFlow_UI.orderComponents.open();"}
+					 ),
+	open: function ()
+	{	
+		this.setActiveControl(["io","reDraw","addWF","setOrder"]);
+		
+		
+		
+		//set the tool box so it is draggable
+				
+		//$('#toolbox').modal('show');
+		this.displayActiveControls('activeControls');
+	},
+	changeToolBoxTitle :function (title)
+	{
+		$('#toolboxTitle').html(title);
+		
+	},
+	setActiveControl:function(controls)
+	{
+		var activeButtons = [];
+		var self = this;
+		_.each(controls,function(control)
+		{
+			activeButtons.push(_.find(self.allButtons,function(button){return button.id == control;}));
+		});
+		this.activeButtons = activeButtons;
+	},
+	displayActiveControls :function(divId)
+	{
+		$('#' + divId).empty();
+		_.each(this.activeButtons,function(ac){
+			html = '<div class="span"><button ';
+			_.each(ac,function(v,k){ html += ' ' + k + '="' + v + '"'});
+			html += '>' + ac.text + '</button></div>';
+			$('#' + divId).append(html);
+		})
+		
+	},
+	checkWhatNext : function()
+	{
+		$('#whatNext').html('');
+		var whatNext = $('<div class="well" style="padding: 10px;"></div>');
+		//check for main Workflow title
+		if(layer.getMainWorkFlow().brokerProperties.title == "")
+		{
+			whatNext.append(this.renderWorkFlowForm(layer.getMainWorkFlow()));
+			
+		}
+		workFlows = layer.getWorkFlows(true);
+		//check all workflow have IO, loop layers children
+		if(workFlows.length != 0)
+		{
+			whatNext.append('Some Workflows need IO defined:');
+			whatNext.append(this.renderWorkFlowLinks(workFlows));
+			
+		}
+		//check components in current workflow have connections
+		$('#whatNext').append(whatNext);
+			
+	},
+	renderWorkFlowForm : function()
+	{
+		var group = $('<div class="control-group form-horizontal" id="saveWFName" style="margin-bottom: 7px"></div>');
+			
+		group.append('<label class="togvis control-label" style="width: 0; text-transform:capitalize" for="mainWFName">MainWFName:</label>');
+		var control = $('<div class="controls" style="margin-left: 90px"></div>');
+		control.append('<input type="text" style="width:93%" id="mainWFName">');
+		control.append('<div style="text-align: right; margin-top: 10px"><button type="submit" onclick="WorkFlow_UI.toolbox.saveMainWorkFlowTitle();return false" class="btn btn-primary">Save</button></div>');
+		group.append(control);
+		
+		return group;
+
+	},
+	renderWorkFlowLinks : function(workflows)
+	{
+		var workFlowLinks = $('<ul id="workflowLinks"></ul>');
+		
+		linkWorkFlows = workflows;
+		//loop through workflows
+		for(var i = 0; i < linkWorkFlows.length; i++)
+		{
+		
+			workFlowLinks.append(this.renderWorkFlowLink(linkWorkFlows[i],linkWorkFlows[i].type,i));
+		};	
+		return workFlowLinks;
+	},
+	renderWorkFlowLink : function(workFlow,type,index)
+	{
+		if(type == Kinetic.WorkFlowType.standAlone)
+		{
+			//no link as currently rendered on the canvas
+			return "Current Workflow"
+		}
+		else if(type == Kinetic.WorkFlowType.main)
+		{
+			//need to call move up
+			return '<li><a onclick="layer.moveUp()">Main WorkFlow</a></li>';
+		}
+		else
+		{	
+			//call render
+			return '<li><a onclick="WorkFlow_UI.toolbox.renderWF(' + index + ')">' + workFlow.brokerProperties.title + '</a></li>';
+		}
+	},
+	renderWF : function(index)
+	{
+		layer.renderWorkFlow(linkWorkFlows[index]);	
+	},
+	displayObject :function(obj)
+	{
+		$('#inspector').html('')
+		$('#inspectorActions').html('');
+		objInspecting = obj;
+		var toDisplay = obj.brokerProperties;
+		
+		_.each(toDisplay, function(val, key)
+		{ 
+			
+			var group = $('<div class="control-group" style="margin-bottom: 7px"></div>');
+			if(key == "inputs" || key ==  "outputs")
+			{
+				group.append('<i class="icon-chevron-right" id="io_icon" style="margin-top:5px; margin-left:-15px;"></i>');
+				group.append('<label class="togvis control-label" style="width: 0; margin-left:15px; text-transform:capitalize" for="' + key + '">' + key + '</label>');
+				var control = $('<div class="controls" style="display:none; margin-left: 80px; margin-top: -20px"></div>');
+			}
+			else
+			{
+				group.append('<label class="control-label" style="width: 0; text-transform:capitalize" for="' + key + '">' + key + '</label>');
+				var control = $('<div class="controls" style="margin-left: 80px;"></div>');
+
+			}
+			
+			if(key == "description")
+			{
+			    control.append('<textarea type="text" rows="3" style="width:93%" id="' + key  + '">' + val + '</textarea>');
+			}
+			else
+			{   
+				if(key == "inputs" || key ==  "outputs")
+				{
+					_.each(val, function(val1,key1)
+					{
+						control.append('<input type="text" style="width:93%; margin-top:5px" disabled="disabled" value="' + val1.name + '" >');
+					});
+				}
+				else
+				{
+					control.append('<input type="text" style="width:93%" id="' + key + '" value="' + val + '" >');
+				}
+			    
+			}
+			
+			group.append(control);
+			$('#inspector').append(group);
+			
+		});
+		$('#inspectorActions').append('<button type="submit" id="inspectorSave" onclick="WorkFlow_UI.toolbox.saveObject();return false" class="btn btn-primary">Save changes</button>');
+		$('label.togvis').click(function() {
+			    var controls = $(this).closest('div').find('.controls');
+			    var icon = $(this).closest('i');
+			    icon.attr('class',"icon-chevron-down");
+			    controls.toggle();
+			    return false;
+		});
+	},
+	saveMainWorkFlowTitle : function()
+	{
+		//get it from form and save
+		layer.getMainWorkFlow().brokerProperties.title = $('#mainWFName').val();
+		layer.getMainWorkFlow().brokerProperties.description = "Test Description";
+		layer.getMainWorkFlow().brokerProperties["organisation"]="Aston";
+		//remove form
+		$('#saveWFName').remove();
+		
+	},
+	saveObject : function()
+	{
+		_.each(objInspecting.brokerProperties, function(val, key)
+		{ 
+			if($('#' + key) != undefined)
+			{
+				var newValue = $('#' + key).val();
+				objInspecting.brokerProperties[key] = newValue;
+			}
+			
+		});
+		
+	}
+},
 WorkFlow_UI.orderComponents =
 {
 		currentOrder : [],
@@ -25,13 +226,6 @@ WorkFlow_UI.orderComponents =
 			                    }
 						});
 					},
-					drag : function()
-					{
-						$('#toolbox').css(
-						{
-							opacity:0.6
-						});
-					},
 					stop: function()
 					{
 						var con = $('#container');
@@ -47,7 +241,7 @@ WorkFlow_UI.orderComponents =
 				});
 				$( "#sortable" ).disableSelection();
 			});
-			
+			var o = $('#orderComponents');
 			$('#orderComponents').modal
 			({
 	    		backdrop: true,
@@ -75,10 +269,15 @@ WorkFlow_UI.orderComponents =
 			var currentPos = $("#sortable").sortable("toArray");
 			layer.updateComponentOrder(currentPos);
 		}
+
 };
 WorkFlow_UI.search =
 {
 		brokerInfo: new Array(),
+		clear: function()
+		{
+			$("#searchResults").empty();
+		},
         doSearch : function()
         {
         	$("#searchResults").empty();
@@ -116,7 +315,25 @@ WorkFlow_UI.search =
 		        	_.each(brokerInfo.results,function(res)
 		        	{
 			        	
-			        	$("#searchResults").append('<li class="draggable" rel="popover" data-content="' + res.description + '" data-original-title="' + res.name + '"id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');    	
+			        	$("#searchResults").append('<li class="draggable" rel="popover" data-content="' + res.description + '" data-original-title="' + res.name + '"id=' + _.indexOf(brokerInfo.results, res) + '>' + res.name + '</li>');   
+			        	
+			        $('#' + _.indexOf(brokerInfo.results, res)).draggable({
+				        	revert: true,
+				        	appendTo: "body",
+				        	helper: "clone",
+							start: function() {
+								//on drag start, we want to remove the popover
+								//this gets in the way when dragging
+								$("li[rel=popover]").popover('hide');
+								$("li[rel=popover]").popover('disable');
+							},
+							stop: function(){
+								$("li[rel=popover]").popover('enable');
+							}
+						}).css
+						({
+							zIndex:5000
+						});	
 		        	});
 		        	
 		        	//enable the popovers that give the info for the component
@@ -125,19 +342,7 @@ WorkFlow_UI.search =
 	    			});
 		        	
 		        	//set the options for the draggable component
-		        	$('.draggable').draggable({
-			        	revert: true,
-			        	 
-						start: function() {
-							//on drag start, we want to remove the popover
-							//this gets in the way when dragging
-							$("li[rel=popover]").popover('hide');
-							$("li[rel=popover]").popover('disable');
-						},
-						stop: function(){
-							$("li[rel=popover]").popover('enable');
-						}
-					});
+		        	
 					//if there are no results, tell the user
 		        	if(brokerInfo.results.length == 0)
 				        {
@@ -168,8 +373,8 @@ WorkFlow_UI.search =
                 //get search meta data using this id
                 var s = layer.getStage();
              var mousePos = s.getMousePosition();
-                var mouseX = (ev.clientX + offset.left + window.pageXOffset);
-                var mouseY = (ev.clientY + offset.top + window.pageYOffset);
+                var mouseX = (ev.clientX - offset.left + window.pageXOffset);
+                var mouseY = (ev.clientY - offset.top + window.pageYOffset);
                 var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:mouseX,y:mouseY,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
                 layer.addElement(wFlowEle);
                 
@@ -178,9 +383,20 @@ WorkFlow_UI.search =
 };
 WorkFlow_UI.addWF =
 {
+	click: function()
+	{
+		if(layer.toggleIOMode())
+  		{
+  			$("#io").html('Toggle Input/Output Mode - On');
+  		}
+  		else
+  		{
+  			$("#io").html('Toggle Input/Output Mode - Off');
+  		}
+	},
 	open : function()
 	{
-		
+		this.removeAllHelp();
 		$('#newWFModal').modal
 		({
     		backdrop: true,
@@ -195,28 +411,53 @@ WorkFlow_UI.addWF =
    		 	}
 		});
 		$('#newWFModal').modal('show');
-		$('#titleWF').empty();
-		$('#abstractWF').empty();	
+		$('#titleWF').val('');
+		$('#abstractWF').val('');
+		$('#iterationWF').val('');
+	},
+	removeAllHelp :function()
+	{
+		$('#titleErrors').html('');
+		$('#abstractErrors').html('');
+		$('#iterationErrors').html('');
+		$('#titleGroup').attr("class","control-group");
+		$('#abstractGroup').attr("class","control-group");
+		$('#iterationGroup').attr("class","control-group");
 	},
 	add : function()
 	{
+		this.removeAllHelp();
 		//check that the required fields have been entered
 		if($('#titleWF').val() == '')
 		{
-			$('#titleGroup').append('<p class="help-block">Enter title of Workflow</p>');
+			$('#titleErrors').append('<p class="help-block">Enter title of Workflow</p>');
 			$('#titleGroup').attr("class","control-group error");
 			return false;
 		}
 		if($('#abstractWF').val() == '')
 		{
-			$('#abstractGroup').append('<p class="help-block">Enter abstract for Workflow</p>');
+			$('#abstractErrors').append('<p class="help-block">Enter abstract for Workflow</p>');
 			$('#abstractGroup').attr("class","control-group error");
 			return false;
 		}
+		if($('#iterationWF').val() == '')
+		{
+			$('#iterationErrors').append('<p class="help-block">Enter iteration for Workflow</p>');
+			$('#iterationGroup').attr("class","control-group error");
+			return false;
+		}
+		if(isNaN($('#iterationWF').val()) != false)
+		{
+			$('#iterationErrors').append('<p class="help-block">Iteration has to be number</p>');
+			$('#iterationGroup').attr("class","control-group error");
+			return false;
+
+		}
 		config = {
-			name:$('#titleWF').val(),
-			description:$('#abstractGroup').val(),
-			annotation:''
+			title:$('#titleWF').val(),
+			description:$('#abstractWF').val(),
+			annotation:'',
+			iterations:$('#iterationWF').val()
 		}
 		//create workflow from
 		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});
@@ -232,6 +473,7 @@ WorkFlow_UI.addWF =
 		//remove the errors from the form
 		$('#titleGroup').attr("class","control-group");
 		$('#abstractGroup').attr("class","control-group");
+		$('#iterationGroup').attr("class","control-group");
 	}
 };
 WorkFlow_UI.io =
@@ -240,6 +482,7 @@ WorkFlow_UI.io =
 		noRows: 1,
 		components : {},
 		currentIOs : {},
+		
 		open : function(IO)
 		{
 			IOs = {inputs:IO.input.getInputs(),outputs:IO.output.getOutputs()};
@@ -279,7 +522,7 @@ WorkFlow_UI.io =
 	   			 $('#inputDesc').html('<h4>Title:</h4> ' + IO.input.title);
 	   			 $('#inputDesc').append('<h4>Type:</h4> Nested Workflow');
 	   			 $('#inputDesc').append('<h4>Description</h4>');
-	   			 $('#inputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
+	   			 $('#inputDesc').append('<p>' + IO.input.brokerProperties.description +'</p>');
    			 }
    			 else if (IO.input instanceof Kinetic.WorkFlowComponent)
    			 {
@@ -299,7 +542,7 @@ WorkFlow_UI.io =
 	   			 $('#outputDesc').append('<h4>Title:</h4> ' + IO.output.title);
 	   			 $('#outputDesc').append('<h4>Type:</h4> Nested Workflow');
 	   			 $('#outputDesc').append('<h4>Description</h4>');
-	   			 $('#outputDesc').append('<p>This is the Description, it will be added by the user when they choose to create a workflow</p>');
+	   			 $('#outputDesc').append('<p>' + IO.output.brokerProperties.description +'</p>');
 	   			 
    			 }
    			 else if (IO.output instanceof Kinetic.WorkFlowComponent)
@@ -329,12 +572,16 @@ WorkFlow_UI.io =
 			if(IOs.outputs.length == 0)
 			{
 				alert('ERROR! - You need to set Outputs for this WorkFlow.\n Double Click to Edit');
+				layer.setIOMode(false);
+				layer.setIOMode(true);
 				$('#ioModal').modal('hide');
 				return false;
 			}
 			else if(IOs.inputs.length == 0)
 			{
 				alert('ERROR! - You need to set Inputs for this WorkFlow.\n Double Click to Edit');
+				layer.setIOMode(false);
+				layer.setIOMode(true);
 				$('#ioModal').modal('hide');
 				return false;
 			}
@@ -553,7 +800,7 @@ WorkFlow_UI.ioWorkFlow =
 			components = IO;
 			
 			this.workFlow = this.getStartEndComponent().obj.parent;
-			var WFName = this.workFlow.brokerProperties.name;
+			var WFName = this.workFlow.brokerProperties.title;
 			if(this.getStartEndComponent().type == "start")
 			{
 				$('#ioWorkFlowHeader').html('Set inputs for Workflow - ' + WFName);
@@ -595,6 +842,8 @@ WorkFlow_UI.ioWorkFlow =
 			if(IOs.length == 0)
 			{
 				alert('ERROR! - You need to set Outputs for this WorkFlow.\nDouble Click to Edit');
+				layer.setIOMode(false);
+				layer.setIOMode(true);
 				$('#ioModal').modal('hide');
 				return false;
 			}
@@ -762,7 +1011,7 @@ WorkFlow_UI.ioWorkFlow =
 			
 			//update the currentIOs
 			//remove the row, do we need to change all the IDS?
-			$('#row_' + row).alert('close')
+			$('#rowio_' + row).alert('close')
 			//$('#row_' + row).remove();
 		}
 

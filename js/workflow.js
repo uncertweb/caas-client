@@ -110,8 +110,8 @@
 
     return [{
       id: UncertWeb.uid(),
-      name: "Input Name",
-      description: "Input description"
+      name: "IO 1",
+      description: "IO number 1"
     }, {
       id: UncertWeb.uid(),
       name: "IO 2",
