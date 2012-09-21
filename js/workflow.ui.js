@@ -133,20 +133,20 @@ WorkFlow_UI.toolbox =
 			var group = $('<div class="control-group" style="margin-bottom: 7px"></div>');
 			if(key == "inputs" || key ==  "outputs")
 			{
-				group.append('<i class="icon-chevron-right" id="io_icon" style="margin-top:5px; margin-left:-15px;"></i>');
+				group.append('<i class="icon-chevron-right" id="io_icon" style="margin-top:5px;"></i>');
 				group.append('<label class="togvis control-label" style="width: 0; margin-left:15px; text-transform:capitalize" for="' + key + '">' + key + '</label>');
-				var control = $('<div class="controls" style="display:none; margin-left: 80px; margin-top: -20px"></div>');
+				var control = $('<div class="controls" style="display:none; margin: 5px;"></div>');
 			}
 			else
 			{
 				group.append('<label class="control-label" style="width: 0; text-transform:capitalize" for="' + key + '">' + key + '</label>');
-				var control = $('<div class="controls" style="margin-left: 80px;"></div>');
+				var control = $('<div class="controls" style="margin: 5px;"></div>');
 
 			}
 			
 			if(key == "description")
 			{
-			    control.append('<textarea type="text" rows="3" style="width:93%" id="' + key  + '">' + val + '</textarea>');
+			    control.append('<textarea type="text" rows="3" id="' + key  + '">' + val + '</textarea>');
 			}
 			else
 			{   
@@ -154,12 +154,12 @@ WorkFlow_UI.toolbox =
 				{
 					_.each(val, function(val1,key1)
 					{
-						control.append('<input type="text" style="width:93%; margin-top:5px" disabled="disabled" value="' + val1.name + '" >');
+						control.append('<input type="text" style="margin-top:5px" disabled="disabled" value="' + val1.name + '" >');
 					});
 				}
 				else
 				{
-					control.append('<input type="text" style="width:93%" id="' + key + '" value="' + val + '" >');
+					control.append('<input type="text"  id="' + key + '" value="' + val + '" >');
 				}
 			    
 			}

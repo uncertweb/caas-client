@@ -384,6 +384,11 @@ Kinetic.WorkFlowLayer.prototype = {
 		}
 		this.draw();
 	},
+	lineIntersections : function (lineXY)
+	{
+		
+		this.getStage().getIntersection()
+	},
 	/*
 		Creates a workflow using workflow.js
 		
