@@ -13,6 +13,17 @@ Kinetic.WorkFlow = function (config)
 	this.type = config.type;
 	this.config = {};
 	this.brokerProperties["iterations"] = 1;
+	this.getTitle = function()
+	{
+		if(this.brokerProperties.title == "")
+		{
+			return "Main Workflow";	
+		}
+		else
+		{
+			return this.brokerProperties.title;	
+		}
+	};
 	/*
 		Getter and Setter Methods
 	*/

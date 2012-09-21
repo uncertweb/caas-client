@@ -235,7 +235,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			//create bin for lower layer
 			this.renderRubbishBin();
 			this.standAloneWF.updateAllVertices();
-			
+			WorkFlow_UI.toolbox.changeToolBoxTitle('<a onclick="layer.moveUp()">' + this.mainWorkFlow.getTitle() + '</a> >> ' + this.standAloneWF.getTitle());
 			this.draw();
 		}
 		else
@@ -321,6 +321,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.renderRubbishBin();
 
 			this.updateConnectionOrders();
+			WorkFlow_UI.toolbox.changeToolBoxTitle('<a onclick="layer.moveUp()">' + this.mainWorkFlow.getTitle() + '</a>');
 
 		}
 	},
