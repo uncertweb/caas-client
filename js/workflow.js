@@ -58,6 +58,7 @@
 
   // UncertWeb options
   UncertWeb.options = {
+    iso_broker_url: 'lib/iso_broker.php',
     broker_url: 'lib/broker.php',
     caas_url:   'lib/caas.php',
     caas_delete_url: 'lib/caas_delete.php',
@@ -177,7 +178,7 @@
           //- **serviceType**: Type of component (data access, model etc).
           //- **annotation**: CaaS annotation of this component.
           return {
-            id: UncertWeb.uid() || $this.find('id').text(),
+            id: $this.find('id').text(),
             name: $this.find('title').text(),
             endpoint: $this.find('endpoint').text(),
             keywords: $.map($this.find('[term="keywords"]'), function (elem) {
@@ -187,9 +188,7 @@
             description: $this.find('summary').text(),
             serviceType: $this.find('category[term="serviceType"]').attr('label'),
             annotation: $this.find('category[scheme="urn:X-GI-caas:component:taxonomy"]').attr('label'),
-            parentID: $this.find('parentID').text(),
-            inputs: parseIO($this.find('inputs')),
-            outputs: parseIO($this.find('outputs'))
+            parentID: $this.find('parentID').text()
           };
         });
         // Create a wrapper object for the query results and including:
@@ -227,6 +226,79 @@
     // Alias function for `UncertWeb.broker.search('')` that returns all components in the broker.
     all: function (success, failure) {
       return this.search('', success, failure);
+    },
+
+    // ISO broker module
+    // -----------------
+
+    // Get the full details of the component from the ISO broker
+    getDetails: function(id) {
+      var dfd = $.Deferred();
+
+      $.ajax({
+        url: UncertWeb.options.iso_broker_url,
+        data: {
+          id: id
+        }
+      }).done(function (xml) {
+        if(xml === null) {
+          dfd.reject({
+            message: "No component exists with the ID: " + id
+          });
+          return;
+        }
+
+        var $xml = $(xml.firstChild),
+            component = {};
+
+
+        component['id'] = $xml.find('fileIdentifier').children().text();
+
+        var $idInfo = $xml.find('identificationInfo');
+
+        component['name'] = $idInfo.find('citation').children().children().children().text();
+
+        var $abstract = $($idInfo.find('abstract'));
+        component['description'] = $abstract.find('CharacterString').text();
+
+        var $keywords = $($idInfo.find('keyword'));
+        component['keywords'] = $.map($keywords, function (elem) {
+          return $(elem).find('CharacterString').text();
+        });
+
+        component['version'] = $($idInfo.find('serviceTypeVersion')).find('CharacterString').text();
+
+        component['endpoint'] = $($xml.find('linkage')).find('URL').text();
+
+        // IO
+        var $parameters = $($idInfo.find('SV_Parameter'));
+        component['inputs'] = [];
+        component['outputs'] = [];
+
+        $.each($parameters, function (elem) {
+          var ioObject = {};
+          var $param = $(this);
+          var $nameDetails = $($param.find('name'));
+
+          ioObject['name'] = $($nameDetails.find('aName')).find('CharacterString').text();
+          ioObject['id'] = ioObject['name'];
+          ioObject['dataType'] = $($nameDetails.find('TypeName')).find('CharacterString').text();
+          ioObject['required'] = $($param.find('optionality')).find('CharacterString').text() == "Mandatory";
+          ioObject['multiple'] = $($param.find('repeatability')).find('Boolean').text() == "true";
+
+
+          var direction = $($param.find('direction')).find('SV_ParameterDirection').text();
+          if(direction == "in") {
+            component['inputs'].push(ioObject);
+          } else {
+            component['outputs'].push(ioObject);
+          }
+        });
+
+        dfd.resolve(component);
+      });
+
+      return dfd;
     }
   };
 
@@ -664,7 +736,7 @@
           isForCompensation: false,
           name: "[" + component.annotation + "] " + component.name,
           startQuantity: 1,
-          id: component.id
+          id: UncertWeb.uid()
         }
     );
   }

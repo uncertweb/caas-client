@@ -1,6 +1,7 @@
 (function () {
 
   UncertWeb.options.broker_url = "../lib/broker.php";
+  UncertWeb.options.iso_broker_url = "../lib/iso_broker.php";
   UncertWeb.options.caas_url = "../lib/caas.php";
   UncertWeb.options.caas_delete_url = "../lib/caas_delete.php";
 
@@ -707,6 +708,34 @@
       UncertWeb.broker.search('habitat').done(assert);
     }
 
+  });
+
+  test("ISO Broker getDetails", function () {
+    stop();
+    var dfd = UncertWeb.broker.all(),
+        assert = function (component) {
+          ok(component, "A component should exist");
+          ok(component.id, "and it should have an id");
+          ok(component.name, "and a name");
+          ok(component.description, "and a description");
+          ok(component.inputs.length > 0, "and some inputs");
+          console.log(component.inputs);
+          ok(component.outputs.length > 0, "and some outputs");
+          start();
+        },
+        report = function (message) {
+          console.error(message.message);
+          start();
+        };
+
+    dfd.done(function (result) {
+      var components = result.results;
+      stop(components.length - 1);
+      expect(components.length * 6);
+      for (var i = 0; i < components.length; i++) {
+        UncertWeb.broker.getDetails(components[i].id).done(assert).fail(report);
+      }
+    });
   });
 
   module("Encode", {
