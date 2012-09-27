@@ -177,7 +177,7 @@
           //- **serviceType**: Type of component (data access, model etc).
           //- **annotation**: CaaS annotation of this component.
           return {
-            id: $this.find('id').text(),
+            id: UncertWeb.uid() || $this.find('id').text(),
             name: $this.find('title').text(),
             endpoint: $this.find('endpoint').text(),
             keywords: $.map($this.find('[term="keywords"]'), function (elem) {
@@ -270,6 +270,7 @@
 
   // Create the `UncertWeb.Component` module.
   UncertWeb.Component = function (opts) {
+    opts = opts || {};
     // Setup public properties
     this.id = opts.id || UncertWeb.uid();
     this.name = opts.name || "";
@@ -318,7 +319,7 @@
         }
         return _res;
       }
-
+      console.log(this._inputs);
       return this._inputs;
     };
 
@@ -661,7 +662,7 @@
         {
           completionQuantity: 1,
           isForCompensation: false,
-          name: component.annotation,
+          name: "[" + component.annotation + "] " + component.name,
           startQuantity: 1,
           id: component.id
         }
@@ -676,7 +677,7 @@
       completionQuantity: 1,
       id: id,
       isForCompensation: false,
-      name: '[' + iterations + '] Multiple Instances (one for each environmental dataset)',
+      name: '[' + iterations + '] Multiple instances (one for each environmental dataset)',
       startQuantity: 1,
       triggeredByEvent: false
     }, XML('multiInstanceLoopCharacteristics', {
@@ -960,6 +961,44 @@
     return refID;
   }
 
+  // Function to tidy up the XML to ensure it is all in the correct order
+  function tidy (doc) {
+    var $doc = $(doc),
+        $process = $doc.children('process');
+
+    var $tasks = $process.children('scripttask');
+    var $subProcesses = $process.children('subprocess');
+    var $endEvents = $process.children('endevent');
+
+    $tasks.each(function () {
+      var $task = $(this);
+      $task.children('iospecification').prependTo($task);
+      $task.children('outgoing').prependTo($task);
+      $task.children('incoming').prependTo($task);
+    });
+
+    $subProcesses.each(function () {
+      var $sub = $(this);
+      $sub.children('endevent').prependTo($sub);
+      $sub.children('sequenceflow').prependTo($sub);
+      $sub.children('scripttask').prependTo($sub);
+      $sub.children('startevent').prependTo($sub);
+      $sub.children('multiInstanceLoopCharacteristics').prependTo($sub);
+      $sub.children('outgoing').prependTo($sub);
+      $sub.children('incoming').prependTo($sub);
+    });
+
+    $endEvents.each(function () {
+      var $end = $(this);
+      $end.children('outgoing').prependTo($end);
+      $end.children('incoming').prependTo($end);
+    });
+
+
+
+    return doc;
+  }
+
   // Create the Uncertweb.Encode module
   UncertWeb.Encode = {
     asBPMN: function (workflow) {
@@ -1004,7 +1043,7 @@
         bpmn.appendChild(process);
       }
 
-      return bpmn;
+      return tidy(bpmn);
     }
   };
 
