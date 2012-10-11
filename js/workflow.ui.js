@@ -134,7 +134,7 @@ WorkFlow_UI.toolbox =
 			if(key == "inputs" || key ==  "outputs")
 			{
 				group.append('<i class="icon-chevron-right" id="io_icon" style="margin-top:5px;"></i>');
-				group.append('<label class="togvis control-label" style="width: 0; margin-left:15px; text-transform:capitalize" for="' + key + '">' + key + '</label>');
+				group.append('<label class="togvis control-label" style="width: 0; margin-left:15px; margin-top:-15px; text-transform:capitalize" for="' + key + '">' + key + '</label>');
 				var control = $('<div class="controls" style="display:none; margin: 5px;"></div>');
 			}
 			else
