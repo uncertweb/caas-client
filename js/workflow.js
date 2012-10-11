@@ -262,8 +262,15 @@
         component['description'] = $abstract.find('CharacterString').text();
 
         var $keywords = $($idInfo.find('keyword'));
-        component['keywords'] = $.map($keywords, function (elem) {
-          return $(elem).find('CharacterString').text();
+        component['keywords'] = [];
+
+        $.each($keywords, function (elem) {
+          var keyword = $(this).find('CharacterString').text();
+          // If the keyword contains a colon use it as the CaaS annotation
+          if(keyword.match(/:/)) {
+            component['annotation'] = keyword;
+          }
+          component['keywords'].push();
         });
 
         component['version'] = $($idInfo.find('serviceTypeVersion')).find('CharacterString').text();
@@ -281,7 +288,7 @@
           var $nameDetails = $($param.find('name'));
 
           ioObject['name'] = $($nameDetails.find('aName')).find('CharacterString').text();
-          ioObject['id'] = ioObject['name'];
+          ioObject['id'] = UncertWeb.uid();
           ioObject['dataType'] = $($nameDetails.find('TypeName')).find('CharacterString').text();
           ioObject['required'] = $($param.find('optionality')).find('CharacterString').text() == "Mandatory";
           ioObject['multiple'] = $($param.find('repeatability')).find('Boolean').text() == "true";
@@ -344,7 +351,8 @@
   UncertWeb.Component = function (opts) {
     opts = opts || {};
     // Setup public properties
-    this.id = opts.id || UncertWeb.uid();
+    this.id = UncertWeb.uid();
+    this.broker_id = opts.id;
     this.name = opts.name || "";
     this.description = opts.description || "";
     this.annotation = opts.annotation || "";
@@ -391,7 +399,6 @@
         }
         return _res;
       }
-      console.log(this._inputs);
       return this._inputs;
     };
 
@@ -736,7 +743,7 @@
           isForCompensation: false,
           name: "[" + component.annotation + "] " + component.name,
           startQuantity: 1,
-          id: UncertWeb.uid()
+          id: component.id
         }
     );
   }
@@ -835,7 +842,6 @@
     // Add the end event
     var endID = workflow.id + "_end";
     appendTo.appendChild(endEvent(endID, !isNestedWorkflow));
-
     // Add the sequence flow
     createLink(appendTo, startID, workflow[0]);
 
@@ -857,6 +863,7 @@
 
     // Append the sequenceFlow attribute
     doc.appendChild(sequenceFlow(fromID, toID));
+
     // update the script tasks
     var $doc = $(doc),
         start = $doc.find('[id="' + fromID + '"]').get(0),
@@ -867,7 +874,7 @@
 
     if(from.connections && from.connections.length > 0) {
       start.appendChild(ioSpecification(from));
-      appendDataOutputAssociations(doc, start, end, from);
+      appendDataOutputAssociations(doc, from);
     }
   }
 
@@ -963,12 +970,19 @@
     );
   }
 
-  function appendDataOutputAssociations (doc, scriptTaskFrom, scriptTaskTo, component) {
-    for (var i = 0; i < component.outputs(true).length; i++) {
-      var id = appendDataObject(doc),
-          connection = component;
-      scriptTaskFrom.appendChild(dataOutputAssociation(component.outputs(true)[i].id, id));
-      scriptTaskTo.appendChild(dataInputAssociation(component.findConnection(component.outputs(true)[i]).input.id, id));
+  function appendDataOutputAssociations (doc, component) {
+    var connections = component.connections;
+    console.log(connections);
+    if(connections === undefined) return;
+
+    for (var i = 0; i < connections.length; i++) {
+      // var id = appendDataObject(doc),
+      //     connection = component,
+      //     scriptTaskTo = $(doc).find('[id="' + outputs[i].component.id + '"]').get(0);
+      // console.log(scriptTaskTo);
+
+      // scriptTaskFrom.appendChild(dataOutputAssociation(component.outputs(true)[i].id, id));
+      // scriptTaskTo.appendChild(dataInputAssociation(component.findConnection(component.outputs(true)[i]).input.id, id));
     }
   }
 
@@ -1114,7 +1128,6 @@
         // attach the process to the bpmn document
         bpmn.appendChild(process);
       }
-
       return tidy(bpmn);
     }
   };

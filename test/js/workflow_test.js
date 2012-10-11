@@ -104,56 +104,46 @@
     return workflow;
   };
 
-  var generateFERA = function (withIO) {
-    var workflow = new UncertWeb.Workflow();
+  var generateFERA = function (context) {
+    var callbacks = [],
+        components = {},
+        workflow,
+        dfd = new $.Deferred();
 
-    var LCCS = new UncertWeb.Component({
-      name: 'Land Capability Classification',
-      description: 'TEST',
-      annotation: 'processing:geoprocessing:thematic:gpc:landcapabilityclassification',
-      outputs: [
-        {
-          id: UncertWeb.uid(),
-          name: "Land Cap Class",
-          description: "TEST"
-        }
-      ]
+    $.each([
+      {name: 'lccs', id: 'urn:X-GI-caas:id:Land Capability Classification' },
+      {name: 'utms', id: 'urn:X-GI-caas:id:Uncertain Transition Matrix Sampler' },
+      {name: 'fact', id: 'urn:X-GI-caas:id:Landsfacts' },
+      {name: 'vis', id: 'urn:X-GI-caas:id:Visualizer' }
+    ], function (index, value) {
+      callbacks.push(UncertWeb.broker.getDetails(value.id).done(function (data) {
+        components[value.name] = new UncertWeb.Component(data);
+      }));
     });
 
-    var UTMS = new UncertWeb.Component({
-      name: 'Uncertain Transition Matrix Sampler',
-      description: 'TEST',
-      annotation: 'processing:datamanipulation:matrixsampler',
-      inputs: [
-        {
-          id: UncertWeb.uid(),
-          name: "TransitionMatrix-Input-ID",
-          description: "TEST"
-        }
-      ]
+    $.when.apply($, callbacks).then(function () {
+      workflow = new UncertWeb.Workflow();
+      var nestedWorkflow = new UncertWeb.Workflow();
+      var lccs = components['lccs'];
+      var utms = components['utms'];
+      var fact = components['fact'];
+      var vis = components['vis'];
+
+      workflow.append(lccs);
+      workflow.append(utms);
+
+      nestedWorkflow.append(fact);
+      nestedWorkflow.append(vis);
+      workflow.append(nestedWorkflow);
+
+      // IO linking
+      lccs.connect(lccs.outputs()[0], utms.inputs()[0]);
+      utms.connect(utms.outputs()[0], fact.inputs()[2]);
+
+      dfd.resolve(workflow);
     });
 
-    var nestedWorkflow = new UncertWeb.Workflow();
-
-    var landsfacts = new UncertWeb.Component({
-      name: 'Landsfacts',
-      description: "TEST",
-      annotation: 'processing:geoprocessing:thematic:gpc:landsfacts'
-    });
-
-    var visualizer = new UncertWeb.Component({
-      name: 'Visualizer',
-      description: "TEST",
-      annotation: 'utils:viewer'
-    });
-
-    nestedWorkflow.append([landsfacts, visualizer]);
-
-    if(withIO) {
-      LCCS.connect(LCCS.outputs()[0], UTMS.inputs()[0]);
-    }
-
-    return workflow.append([LCCS, UTMS, nestedWorkflow]);
+    return dfd;
   };
 
   module('UncertWeb', {
@@ -755,10 +745,45 @@
         c = new UncertWeb.Component(results.results[0]);
         c2 = new UncertWeb.Component(results.results[1]);
         c3 = new UncertWeb.Component(results.results[2]);
+
+        // stub IO
+        c._inputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST input",
+          component: c
+        }];
+
+        c2._inputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST input",
+          component: c2
+        }];
+
+        c3._inputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST input",
+          component: c3
+        }];
+
+        c._outputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST output",
+          component: c
+        }];
+        c2._outputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST output",
+          component: c2
+        }];
+        c3._outputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST output",
+          component: c3
+        }];
+
+
         w2.append(c3);
         c.connect(c._outputs[0], c2._inputs[0]);
-        c.connect(c._outputs[1], c2._inputs[1]);
-        // c.connect(c._outputs[0], c2._inputs[1]);
         w.append([c, c2, w2]);
         self.bpmn = UncertWeb.Encode.asBPMN(w);
         self.$bpmn = $(self.bpmn);
@@ -948,7 +973,7 @@
         $outIO = this.$bpmn.find('scriptTask[id="' + this.component1.id + '"]').find('ioSpecification'),
         $inIO = this.$bpmn.find('scriptTask[id="' + this.component2.id + '"]').find('ioSpecification'),
         $noIO = this.$bpmn.find('scriptTask[id="' + this.component3.id + '"]').find('ioSpecification');
-
+    console.log($outIO);
     equal($outIO.length, 1, "a scriptTask with specified IO linking should have an ioSpecification element");
     equal($inIO.length, 1, "a scriptTask with specified IO linking should have an ioSpecification element");
     equal($noIO.length, 0, "but a scriptTask with no specified IO shouldnt have an ioSpecification element");
@@ -960,11 +985,11 @@
     });
 
     var $dataOut = $outIO.find('dataOutput');
-    equal($dataOut.length, 2, "an ioSpecification should have 1 dataOutput element for every connected output");
+    equal($dataOut.length, 1, "an ioSpecification should have 1 dataOutput element for every connected output");
     equal($outIO.find('dataInput').length, 0, "an ioSpecification should not have a dataInput element if it has no connected inputs");
 
     var $dataIn = $inIO.find('dataInput');
-    equal($dataIn.length, 2, "an ioSpecification should have 1 dataInput element for every connected input");
+    equal($dataIn.length, 1, "an ioSpecification should have 1 dataInput element for every connected input");
     equal($inIO.find('dataOutput').length, 0, "an ioSpecification should not have a dataOutput if it has no connected outputs");
   });
 
@@ -1014,7 +1039,7 @@
         $outIO = this.$bpmn.find('scriptTask[id="' + this.component1.id + '"]').find('ioSpecification'),
         $set = $outIO.find('outputSet');
 
-    equal($set.find('dataOutputRefs').length, 2, 'an outputSet should have the same number of dataOutputRefs as connected outputs');
+    equal($set.find('dataOutputRefs').length, 1, 'an outputSet should have the same number of dataOutputRefs as connected outputs');
     equal($outIO.find('inputSet').children().length, 0, 'an inputSet should be empty if there are no connected inputs');
     $set.find('dataOutputRefs').each(function (index) {
       var $ref = $(this);
@@ -1029,7 +1054,7 @@
         $inIO = this.$bpmn.find('scriptTask[id="' + this.component2.id + '"]').find('ioSpecification'),
         $set = $inIO.find('inputSet');
 
-    equal($set.find('dataInputRefs').length, 2, 'an inputSet should have the same number of dataInputRefs as connected inputs');
+    equal($set.find('dataInputRefs').length, 1, 'an inputSet should have the same number of dataInputRefs as connected inputs');
     equal($inIO.find('outputSet').children().length, 0, 'an outputSet should be empty if there are no connected inputs');
     $set.find('dataInputRefs').each(function (index) {
       var $ref = $(this);
@@ -1041,7 +1066,7 @@
     var self = this,
         $dos = this.$bpmn.find('dataObject');
     console.log(this.$bpmn);
-    equal($dos.length, 2, "there should be a dataObject element for each connection");
+    equal($dos.length, 1, "there should be a dataObject element for each connection");
 
     $dos.each(function (index) {
       var $do = $(this);
@@ -1063,7 +1088,7 @@
     var self = this,
         $dors = this.$bpmn.find('dataObjectReference');
     console.log(this.$bpmn);
-    equal($dors.length, 2, "there should be a dataObjectReference element for each connection");
+    equal($dors.length, 1, "there should be a dataObjectReference element for each connection");
 
     $dors.each(function (index) {
       var $dor = $(this);
@@ -1082,7 +1107,7 @@
         $outIO = this.$bpmn.find('scriptTask[id="' + this.component1.id + '"]'),
         $doas = $outIO.find('dataOutputAssociation');
 
-    equal($doas.length, 2, 'a scriptTask should have a dataOutputAssociation for every connected output');
+    equal($doas.length, 1, 'a scriptTask should have a dataOutputAssociation for every connected output');
 
     $doas.each(function (index) {
       var $doa = $(this);
@@ -1105,7 +1130,7 @@
         $inIO = this.$bpmn.find('scriptTask[id="' + this.component2.id + '"]'),
         $dias = $inIO.find('dataInputAssociation');
 
-    equal($dias.length, 2, 'a scriptTask should have a dataInputAssociation for every connected input');
+    equal($dias.length, 1, 'a scriptTask should have a dataInputAssociation for every connected input');
 
     $dias.each(function (index) {
       var $dia = $(this);
@@ -1247,35 +1272,35 @@
   });
 
   test('FERA BPMN example', function () {
+    stop();
+    generateFERA().done(function (workflow) {
+      var bpmn = UncertWeb.Encode.asBPMN(workflow),
+          $bpmn = $(bpmn);
+      start();
+      ok(bpmn, "It should at least do something!");
+      equal($bpmn.find('process').length, 1, "There should be 1 process element");
+      equal($bpmn.find('scriptTask').length, 4, "There should be 4 scriptTask elements");
+      equal($bpmn.find('subProcess').length, 1, "There should be 1 subProcess element");
+      equal($bpmn.find('sequenceFlow').length, 7, "There should be 7 sequenceFlow elements");
+      equal($bpmn.find('startEvent').length, 2, "There should be 2 startEvent elements");
+      equal($bpmn.find('endEvent').length, 2, "There should be 2 endEvent elements");
+      equal($bpmn.find('itemDefinition').length, 1, "There should be 2 itemDefinition elements");
+    });
 
-    var workflow = generateFERA();
 
-    var bpmn = UncertWeb.Encode.asBPMN(workflow),
-        $bpmn = $(bpmn);
-
-    console.log(bpmn);
-
-    ok(bpmn, "It should at least do something!");
-    equal($bpmn.find('process').length, 1, "There should be 1 process element");
-    equal($bpmn.find('scriptTask').length, 4, "There should be 4 scriptTask elements");
-    equal($bpmn.find('subProcess').length, 1, "There should be 1 subProcess element");
-    equal($bpmn.find('sequenceFlow').length, 7, "There should be 7 sequenceFlow elements");
-    equal($bpmn.find('startEvent').length, 2, "There should be 2 startEvent elements");
-    equal($bpmn.find('endEvent').length, 2, "There should be 2 endEvent elements");
-    equal($bpmn.find('itemDefinition').length, 2, "There should be 2 itemDefinition elements");
 
   });
 
   test("FERA IO BPMN example", function () {
-    var workflow = generateFERA(true);
+    stop();
+    generateFERA().done(function (workflow) {
+      var bpmn = UncertWeb.Encode.asBPMN(workflow),
+          $bpmn = $(bpmn);
+      start();
+      ok(bpmn, "It should at least do something!");
+      equal($bpmn.find('dataInput').length, 8, "There should be 8 dataInput elements");
+    });
 
-    var bpmn = UncertWeb.Encode.asBPMN(workflow),
-        $bpmn = $(bpmn);
-
-    console.log(bpmn);
-
-    ok(bpmn, "It should at least do something!");
-    equal($bpmn.find('dataInput').length, 8, "There should be 8 dataInput elements");
   });
 
 
@@ -1294,6 +1319,50 @@
         c2 = new UncertWeb.Component(results.results[1]);
         c3 = new UncertWeb.Component(results.results[2]);
         w2.append(c3);
+
+        c._inputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST input",
+          component: c
+        }];
+
+        c2._inputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST input",
+          component: c2
+        }, {
+          id: UncertWeb.uid(),
+          name: "TEST input 2",
+          component: c2
+        }];
+
+        c3._inputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST input",
+          component: c3
+        }];
+
+        c._outputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST output",
+          component: c
+        }, {
+          id: UncertWeb.uid(),
+          name: "TEST output 2",
+          component: c
+        }];
+
+        c2._outputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST output",
+          component: c2
+        }];
+        c3._outputs = [{
+          id: UncertWeb.uid(),
+          name: "TEST output",
+          component: c3
+        }];
+
         c.connect(c._outputs[0], c2._inputs[0]);
         c.connect(c._outputs[1], c2._inputs[1]);
         // c.connect(c._outputs[0], c2._inputs[1]);
@@ -1337,8 +1406,8 @@
     expect(2);
 
     var eHabitat = generateEHabitat(),
-        fera = generateFERA(),
         promise;
+
 
     UncertWeb.CaaS.publish(eHabitat, {
       title: "My new workflow",
@@ -1350,16 +1419,18 @@
       start();
     });
 
-    UncertWeb.CaaS.publish(fera, {
-      title: "FERA",
-      description: "Auto-generated FERA workflow for testing",
-      organisation: "Aston University"
-    }).done(function (result) {
-      ok(true, "Publishing a valid BPMN FERA example should work");
-    }).always(function () {
-      start();
+    generateFERA().done(function (fera) {
+      console.log(fera);
+      UncertWeb.CaaS.publish(fera, {
+        title: "FERA",
+        description: "Auto-generated FERA workflow for testing",
+        organisation: "Aston University"
+      }).done(function (result) {
+        ok(true, "Publishing a valid BPMN FERA example should work");
+      }).always(function () {
+        start();
+      });
     });
-
 
 
   });
