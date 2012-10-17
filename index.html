@@ -78,6 +78,7 @@
             <li><a id="io">Toggle Input/Output Mode - Off</a></li>
             <li><a id="redraw">Auto Layout</a></li>
             <li><a id="setOrder">Set Order</a></li>
+            <li><a id="publish">Publish</a></li>
           </ul>
         </div><!-- /.nav-collapse -->
       </div>
@@ -322,6 +323,9 @@
 			
 			document.getElementById('moveup').addEventListener('click', function() {
           		layer.moveUp();
+        	}, false);
+        	document.getElementById('publish').addEventListener('click', function() {
+          		layer.publishWorkFlow();
         	}, false);
         	document.getElementById('addWF').addEventListener('click', function() {
           		WorkFlow_UI.addWF.open();
