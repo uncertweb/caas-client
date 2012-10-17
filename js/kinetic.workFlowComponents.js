@@ -1,5 +1,6 @@
 Kinetic.WorkFlowComponent = function (config)
 {
+	
 	this.classType = "WorkFlowComponent";
 	this.text = config.text;
 	//we need to put a line break if too long, currently crude needs to be update
@@ -104,6 +105,11 @@ Kinetic.WorkFlowComponent = function (config)
     });
     this.on("click", function(ev) { 
 		WorkFlow_UI.toolbox.displayObject(this);
+	});
+	var lookup = UncertWeb.broker.getDetails(this.brokerProperties.id);
+	lookup.done(function(details) {
+		self.brokerProperties = details;	
+		self.config.brokerProperties = details;	 	
 	});
 		    
 }
