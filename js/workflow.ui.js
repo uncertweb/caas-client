@@ -368,16 +368,20 @@ WorkFlow_UI.search =
 	    	 opts = arguments;
              var draggedID = ui.draggable.attr("id");
              var resultOb = brokerInfo.results[draggedID];
-             
-             offset = layer.getStage()._getContentPosition();
+             var my_component;
+             var lookup = UncertWeb.broker.getDetails(resultOb.id);
+             lookup.done(function(details) {
+			 	 offset = layer.getStage()._getContentPosition();
                 //get search meta data using this id
                 var s = layer.getStage();
-             var mousePos = s.getMousePosition();
+                var mousePos = s.getMousePosition();
                 var mouseX = (ev.clientX - offset.left + window.pageXOffset);
                 var mouseY = (ev.clientY - offset.top + window.pageYOffset);
-                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:mouseX,y:mouseY,draggable:true,layer:layer,type:"component",brokerProperties:resultOb});
+                var wFlowEle = new Kinetic.WorkFlowComponent({text:'',x:mouseX,y:mouseY,draggable:true,layer:layer,type:"component",brokerProperties:details});
                 layer.addElement(wFlowEle);
-                
+
+			 });
+                            
 		    
 	    }
 };
