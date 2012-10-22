@@ -12,7 +12,7 @@ Kinetic.WorkFlow = function (config)
 	//mainElement is the box around the entire workflow. All other elements sit inside this
 	this.type = config.type;
 	this.config = {};
-	this.brokerProperties["iterations"] = 1;
+	
 	this.getTitle = function()
 	{
 		if(this.brokerProperties.title == "")
@@ -21,7 +21,7 @@ Kinetic.WorkFlow = function (config)
 		}
 		else
 		{
-			return this.brokerProperties.title;	
+			return '[' + this.brokerProperties.iterations + '] ' + this.brokerProperties.title;	
 		}
 	};
 	/*
@@ -192,6 +192,7 @@ Kinetic.WorkFlow = function (config)
 		//put it in the centre of the stage
 		this.startElement = new Kinetic.WorkFlowStart({x:30, y:30,text:"Start",draggable:true});
 		this.add(this.startElement);
+		this.brokerProperties["iterations"] = 1;
 	}
 	else
 	{	config["type"] = "mainRect";

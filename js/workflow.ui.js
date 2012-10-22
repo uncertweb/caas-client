@@ -433,19 +433,11 @@ WorkFlow_UI.addWF =
 			$('#titleGroup').attr("class","control-group error");
 			return false;
 		}
-		if($('#abstractWF').val() == '')
-		{
-			$('#abstractErrors').append('<p class="help-block">Enter abstract for Workflow</p>');
-			$('#abstractGroup').attr("class","control-group error");
-			return false;
-		}
 		if($('#iterationWF').val() == '')
 		{
-			$('#iterationErrors').append('<p class="help-block">Enter iteration for Workflow</p>');
-			$('#iterationGroup').attr("class","control-group error");
-			return false;
+			$('#iterationWF').val('?');
 		}
-		if(isNaN($('#iterationWF').val()) != false)
+		if(isNaN($('#iterationWF').val()) != false && $('#iterationWF').val() != '?')
 		{
 			$('#iterationErrors').append('<p class="help-block">Iteration has to be number</p>');
 			$('#iterationGroup').attr("class","control-group error");
@@ -458,8 +450,9 @@ WorkFlow_UI.addWF =
 			annotation:'',
 			iterations:$('#iterationWF').val()
 		}
+		var text = '[' + $('#iterationWF').val() + '] ' + $('#titleWF').val();
 		//create workflow from
-		newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});
+		newWFlow = new Kinetic.WorkFlow({text:text,brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});
 		var index = layer.addElement(newWFlow);
 		//move down a layer to start editing this workflow
 		layer.renderWorkFlow(index);
