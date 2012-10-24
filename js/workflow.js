@@ -177,6 +177,8 @@
           //- **summary**: Human readable description of the component.
           //- **serviceType**: Type of component (data access, model etc).
           //- **annotation**: CaaS annotation of this component.
+          //
+          console.log($this);
           return {
             id: $this.find('id').text(),
             name: $this.find('title').text(),

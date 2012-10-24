@@ -30,21 +30,21 @@
 		Adding a Drop Down Login Form to Bootstrap’s Navbar
 		http://mifsud.me/adding-dropdown-login-form-bootstraps-navbar/
 		*/
-		
+
 		div.dropdown-menu {
 		    padding: 15px;
 		    padding-bottom: 0px;
 		}
-		
+
 		div.dropdown-menu input.text {
 		    margin-bottom: 15px;
 		}
-		
+
 		div.dropdown-menu input.remember {
 		    float: left;
 		    margin-right: 10px;
 		}
-		
+
 		div.dropdown-menu input.btn {
 		    clear: left;
 		    width: 100%;
@@ -55,10 +55,10 @@
 		table.testgrid td, table.testgrid th { padding: 5px; border: 1px solid #E0E0E0; }
 		table.testgrid th { background: #E5E5E5; text-align: left; }
 		input.invalid { background: red; color: #FDFDFD; }
-		
+
     </style>
-  
-    
+
+      <title>UncertWeb design client</title>
       </head>
   <body>
   <div class="navbar">
@@ -72,7 +72,7 @@
         <a class="brand" href="">Uncert Web</a>
         <div class="nav-collapse">
           <ul class="nav">
-           
+
            <li><a id="addWF">Add WorkFlow</a></li>
           	<li><a id="moveup">Move Up</a></li>
             <li><a id="io">Toggle Input/Output Mode - Off</a></li>
@@ -103,15 +103,15 @@
 			                <button type="button" style="float:right;line-height:23px" onclick="WorkFlow_UI.search.clear()">Clear</button>
 			                <input class="text span2" type="text" id="search" name="search"
 	                             onchange="WorkFlow_UI.search.doSearch()" placeholder="Type Keywords"></input>
-	                             
+
 	                             <ul class="well draggable unstyled" id="searchResults">
 	                             </ul>
-	                             
+
 			              </div>
 			       </div><!--accordion group-->
 			       <div id="whatNextAccordion" class="accordion">
 			              <div class="toolboxaccordion-heading">
-			                 
+
 			                 <a class="accordion-toggle" data-toggle="collapse" data-parent="#whatNextAccordion" href="#whatNext">
                   Tips - What to do next?
                 </a>
@@ -130,10 +130,10 @@
 				              <form class="form-vertical">
 						        <fieldset>
 						          <div id="inspector">
-				                
+
 						          </div>
 						          <div class="form-actions"  id="inspectorActions" style="padding-left:100px;">
-						            
+
 						          </div>
 						        </fieldset>
 						      </form>
@@ -147,18 +147,18 @@
     </div><!--span10 end-->
   </div><!--row-fluid end-->
 </div><!--container-fluid end-->
- 
-      
-        
-    
+
+
+
+
     <div id="ioModal" class="modal hide fade" style="display: none; ">
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal">×</button>
               <h3>Input/Output</h3>
             </div>
             <div class="modal-body">
-	            
-	       
+
+
 	         <div class="accordion" id="ioAccordion">
                        <div class="accordion-group">
               <div class="accordion-heading">
@@ -186,7 +186,7 @@
             </div>
 
           </div>
-				
+
 				<div class="span10" id="dropdowns">
 					<div class="row">
 						<div class="span4"><h3>Inputs</h3></div>
@@ -207,7 +207,7 @@
             </div>
             <div class="modal-body">
 				<div class="span6" id="ioDropdownWF">
-					
+
 				</div>
             </div>
             <div class="modal-footer">
@@ -228,7 +228,7 @@
 				      <label class="control-label" for="titleWF">Title</label>
 				      <div class="controls">
 				        <input type="text" class="input-xlarge" id="titleWF" placeholder="Enter Title....">
-				        
+
 				      </div>
 				      <div id="titleErrors">
 				      </div>
@@ -262,7 +262,7 @@
             </div>
      </div>
 
-     
+
 
      </div>
      <div id="orderComponents" class="modal hide" style="display: none; ">
@@ -272,7 +272,7 @@
             </div>
             <div class="modal-body" id="orderComponents">
 	            <ul id="sortable">
-					
+
 				</ul>
             </div>
             <div class="modal-footer">
@@ -293,12 +293,12 @@
     <script type="text/javascript" src="js/kinetic.workFlow.js"></script>
     <script type="text/javascript" src="js/workflow.ui.js"></script>
     <script type="text/javascript" src="js/workflow.js"></script>
-	
-	
+
+
 	<script src="js/lib/underscore.js"></script>
 	<script src="js/lib/bootstrap.js"></script>
 	<script src="js/lib/spin.min.js"></script>
-   
+
     <script type="text/javascript">
 
     	var layer;
@@ -310,17 +310,17 @@
     			$('a[rel="tooltip"]').tooltip();
 			});
 			// Adding a Drop Down Login Form to Bootstrap’s Navbar
-			// 
+			//
 			$(function() {
 			    // Setup drop down menu
 			    $('.dropdown-toggle').dropdown();
-			    
+
 			    // Fix input element click problem
 			    $('.dropdown input, .dropdown label').click(function(e) {
 			        e.stopPropagation();
 			    });
 			});
-			
+
 			document.getElementById('moveup').addEventListener('click', function() {
           		layer.moveUp();
         	}, false);
@@ -331,7 +331,7 @@
           		WorkFlow_UI.addWF.open();
         	}, false);
         	document.getElementById('io').addEventListener('click', function() {
-          		
+
           		if(layer.toggleIOMode())
           		{
           			$("#io").html('Toggle Input/Output Mode - On');
@@ -347,45 +347,45 @@
 	        document.getElementById('setOrder').addEventListener('click', function() {
           		WorkFlow_UI.orderComponents.open();
 	        },false);
-			
-			
-			
-			
+
+
+
+
 	    	var stage = new Kinetic.Stage({
 	          container: "container",
 	          width: $('#forCanvas').width(),
 	          height:$(document).height() -60
 	        });
-	        	        
-	        
+
+
 	    	layer = new Kinetic.WorkFlowLayer();
-	    	
+
 
 	        stage.add(layer);
 	        ctx = stage.children[0].getContext();
 	        ctx.font = fontSize + "Calibri";
-	       
+
 	        stage.draw();
-	       
+
           	var con = $('#container');
           	con.droppable({
 		              drop: function(el,ui) {
                         	WorkFlow_UI.search.doDrop(el,ui,layer)
                     }
-		               				               		
+
 		    });
 		    $('#ioModal').on('hidden', function () {
 			    layer.clearIOMode();
 			})
 
           	WorkFlow_UI.toolbox.open();
-          	
-          	
+
+
 			$('#ioWorkFlowModal').on('hidden', function () {
 			    layer.clearIOMode();
 			})
 
-	
+
         };
     </script>
 

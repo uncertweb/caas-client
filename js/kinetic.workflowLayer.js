@@ -6,7 +6,7 @@ Kinetic.WorkFlowLayer = function (config)
 	this.standAloneWF = null;
 	this.ioMode = false;
 	this.ioObjects = {input:null,output:null};
-	
+
 	/*
 		Getters and Setters
 	*/
@@ -67,9 +67,9 @@ Kinetic.WorkFlowLayer = function (config)
 		{
 			this.standAloneWF.updateComponentOrder(order);
 		}
-		
+
 	};
-	this.on("click", function(ev) { 
+	this.on("click", function(ev) {
 		/*if(this.standAloneWF == null)
 		{
 			WorkFlow_UI.toolbox.displayObject(this.mainWorkFlow);
@@ -78,16 +78,16 @@ Kinetic.WorkFlowLayer = function (config)
 		{
 			WorkFlow_UI.toolbox.displayObject(this.standAloneWF);
 		}*/
-		
+
 	});
 
 	this.standAloneIndex = -1;
 	this.mainWorkFlow = new Kinetic.WorkFlow({text:"Main WorkFlow",brokerProperties:{title:"",description:""},x:0,y:0,draggable:false,layer:this,type:Kinetic.WorkFlowType.main});
-	
+
 	this.add(this.mainWorkFlow);
 	this.renderRubbishBin();
-	
-		
+
+
 }
 Kinetic.WorkFlowLayer.prototype = {
 	/*
@@ -110,13 +110,13 @@ Kinetic.WorkFlowLayer.prototype = {
 		      self.draw();
 		      self.afterDraw(WorkFlow_UI.toolbox.checkWhatNext());
 		   };
-		   
+
 		   imageObj.src = "img/trash.png";
 
 	},
 	/*
 		Method is called when a component is being dragged, it checks whether mouse is over the bin
-		
+
 		Arguments: el = element is element being dragged
 				   ev = event for element being dragged
 	*/
@@ -152,7 +152,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.ioObjects.input = null;
 			return false;
 		}
-		
+
 		if(this.ioObjects.output == null)
 		{
 			//first click should be the outputs
@@ -162,24 +162,24 @@ Kinetic.WorkFlowLayer.prototype = {
 			{
 				if(this.ioObjects.input instanceof Kinetic.WorkFlowTerminalNodes || this.ioObjects.output instanceof Kinetic.WorkFlowTerminalNodes)
 				{
-					WorkFlow_UI.ioWorkFlow.open(this.ioObjects);	
+					WorkFlow_UI.ioWorkFlow.open(this.ioObjects);
 				}
 				else
 				{
 					WorkFlow_UI.io.open(this.ioObjects);
 				}
 				return false;
-					
+
 			}
 			return true;
-		}	
+		}
 		else if (this.ioObjects.input == null)
 		{
 			this.ioObjects.input = el;
 			//if both objects now set, then open up the modal
 			if(this.ioObjects.input instanceof Kinetic.WorkFlowStart || this.ioObjects.output instanceof Kinetic.WorkFlowStart)
 			{
-				WorkFlow_UI.ioWorkFlow.open(this.ioObjects);	
+				WorkFlow_UI.ioWorkFlow.open(this.ioObjects);
 			}
 			else if(this.ioObjects.input instanceof Kinetic.WorkFlowEnd || this.ioObjects.output instanceof Kinetic.WorkFlowEnd)
 			{
@@ -197,8 +197,8 @@ Kinetic.WorkFlowLayer.prototype = {
 			//popup should appear, and after ioObjects should be cleared
 			console.error('Both ioObjects set, they have not been cleared correctly');
 		}
-		
-			
+
+
 	},
 	updateConnectionOrders : function()
 	{
@@ -214,7 +214,7 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	/*
 		Deletes the current view and renders the workflow that is sent through the parameter
-		
+
 		Argument: workflow = instance of workflow
 	*/
 	renderWorkFlow : function(workFlow)
@@ -260,7 +260,7 @@ Kinetic.WorkFlowLayer.prototype = {
 			//add the element to the standalone workflow, send it as an array
 			this.standAloneWF.addElements([el]);
 			returnIndex = this.standAloneWF.getLastComponentIndex();
-			
+
 		}
 		//setup IO Mode so this new element will be clickable
 		if(this.ioMode == true)
@@ -287,14 +287,14 @@ Kinetic.WorkFlowLayer.prototype = {
 		{
 			//delete the component from the standAlone workflow
 			this.standAloneWF.deleteElement(el);
-			
+
 		}
 		//update the ordering connections
 		this.updateConnectionOrders();
 		this.draw();
 	},
 	/*
-		Moves up from the current rendered workflow to the main workflow, 
+		Moves up from the current rendered workflow to the main workflow,
 		if the current workflow is not the main workflow
 	*/
 	moveUp : function ()
@@ -314,9 +314,9 @@ Kinetic.WorkFlowLayer.prototype = {
 			this.standAloneIndex = -1;
 			this.add(this.mainWorkFlow);
 			this.setIOMode(false);
-			
+
 			this.reDrawLayer();
-			
+
 			//render rubbish bin for the top layer
 			this.renderRubbishBin();
 
@@ -333,7 +333,7 @@ Kinetic.WorkFlowLayer.prototype = {
 		this.ioObjects = this.ioMode == false ? {input:null,output:null} : this.ioObjects;
 		var html = this.ioMode == false ? 'Toggle Input/Output Mode - Off' : 'Toggle Input/Output Mode - On';
 		$("#io").html(html);
-			
+
 		if(this.standAloneWF == null)
 		{
 			//all currentEls need to be clickable
@@ -353,11 +353,11 @@ Kinetic.WorkFlowLayer.prototype = {
 		if (this.ioObjects.input != null)
 		{
 			this.ioObjects.input.setStroke('black');
-		} 
+		}
 		if (this.ioObjects.output != null)
 		{
 			this.ioObjects.output.setStroke('black');
-		} 
+		}
 		this.ioObjects = {input:null,output:null};
 		this.draw();
 	},
@@ -387,12 +387,12 @@ Kinetic.WorkFlowLayer.prototype = {
 	},
 	lineIntersections : function (lineXY)
 	{
-		
+
 		this.getStage().getIntersection()
 	},
 	/*
 		Creates a workflow using workflow.js
-		
+
 		Returns that workflow.js workflow
 	*/
 	createWorkFlow : function()
@@ -416,21 +416,22 @@ Kinetic.WorkFlowLayer.prototype = {
 				mainWorkFlow.append(new UncertWeb.Component(this.currentElements[iCEls].brokerProperties))
 			}
 		}*/
-		
+
 		return this.mainWorkFlow.publish();
-		
-		
+
+
 	},
 	/*
 		Publishes to the CaaS after a workflow has been created calling createWorkFlow
 	*/
 	publishWorkFlow : function()
 	{
-		 console.debug(UncertWeb.Encode.asBPMN(this.createWorkFlow()));
-		 UncertWeb.CaaS.publish(this.createWorkFlow(),this.mainWorkFlow.brokerProperties)
+		 UncertWeb.CaaS.publish(this.createWorkFlow(),this.mainWorkFlow.brokerProperties).done(function () {
+		 	alert('Workflow successfully published!');
+		 });
 	}
-	
-	
+
+
 };
-	
+
 Kinetic.GlobalObject.extend(Kinetic.WorkFlowLayer, Kinetic.Layer);
