@@ -192,6 +192,7 @@ Kinetic.WorkFlow = function (config)
 		//put it in the centre of the stage
 		this.startElement = new Kinetic.WorkFlowStart({x:30, y:30,text:"Start",draggable:true});
 		this.add(this.startElement);
+		this.brokerProperties["iterations"] = 1;
 	}
 	else
 	{	config["type"] = "mainRect";

@@ -382,98 +382,91 @@ WorkFlow_UI.search =
 };
 WorkFlow_UI.addWF =
 {
-  click: function()
-  {
-    if(layer.toggleIOMode())
-      {
-        $("#io").html('Toggle Input/Output Mode - On');
-      }
-      else
-      {
-        $("#io").html('Toggle Input/Output Mode - Off');
-      }
-  },
-  open : function()
-  {
-    this.removeAllHelp();
-    $('#newWFModal').modal
-    ({
-        backdrop: true,
-        keyboard: true
-    }).css
-    ({
-      'overflow-y':'auto',
-      'max-height':'90%',
-        width: 'auto',
-        'margin-left': function () {
-            return -($(this).width() / 2);
-        }
-    });
-    $('#newWFModal').modal('show');
-    $('#titleWF').val('');
-    $('#abstractWF').val('');
-    $('#iterationWF').val('');
-  },
-  removeAllHelp :function()
-  {
-    $('#titleErrors').html('');
-    $('#abstractErrors').html('');
-    $('#iterationErrors').html('');
-    $('#titleGroup').attr("class","control-group");
-    $('#abstractGroup').attr("class","control-group");
-    $('#iterationGroup').attr("class","control-group");
-  },
-  add : function()
-  {
-    this.removeAllHelp();
-    //check that the required fields have been entered
-    if($('#titleWF').val() === '')
-    {
-      $('#titleErrors').append('<p class="help-block">Enter title of Workflow</p>');
-      $('#titleGroup').attr("class","control-group error");
-      return false;
-    }
-    // if($('#abstractWF').val() == '')
-    // {
-    //  $('#abstractErrors').append('<p class="help-block">Enter abstract for Workflow</p>');
-    //  $('#abstractGroup').attr("class","control-group error");
-    //  return false;
-    // }
-    // if($('#iterationWF').val() == '')
-    // {
-    //  $('#iterationErrors').append('<p class="help-block">Enter iteration for Workflow</p>');
-    //  $('#iterationGroup').attr("class","control-group error");
-    //  return false;
-    // }
-    if(isNaN($('#iterationWF').val()) !== false)
-    {
-      $('#iterationErrors').append('<p class="help-block">Iteration has to be number</p>');
-      $('#iterationGroup').attr("class","control-group error");
-      return false;
+	click: function()
+	{
+		if(layer.toggleIOMode())
+  		{
+  			$("#io").html('Toggle Input/Output Mode - On');
+  		}
+  		else
+  		{
+  			$("#io").html('Toggle Input/Output Mode - Off');
+  		}
+	},
+	open : function()
+	{
+		this.removeAllHelp();
+		$('#newWFModal').modal
+		({
+    		backdrop: true,
+   			keyboard: true
+		}).css
+		({
+			'overflow-y':'auto',
+			'max-height':'90%',
+    		width: 'auto',
+    		'margin-left': function () {
+        		return -($(this).width() / 2);
+   		 	}
+		});
+		$('#newWFModal').modal('show');
+		$('#titleWF').val('');
+		$('#abstractWF').val('');
+		$('#iterationWF').val('');
+	},
+	removeAllHelp :function()
+	{
+		$('#titleErrors').html('');
+		$('#abstractErrors').html('');
+		$('#iterationErrors').html('');
+		$('#titleGroup').attr("class","control-group");
+		$('#abstractGroup').attr("class","control-group");
+		$('#iterationGroup').attr("class","control-group");
+	},
+	add : function()
+	{
+		this.removeAllHelp();
+		//check that the required fields have been entered
+		if($('#titleWF').val() == '')
+		{
+			$('#titleErrors').append('<p class="help-block">Enter title of Workflow</p>');
+			$('#titleGroup').attr("class","control-group error");
+			return false;
+		}
+		if($('#iterationWF').val() == '')
+		{
+			$('#iterationWF').val('?');
+		}
+		if(isNaN($('#iterationWF').val()) != false && $('#iterationWF').val() != '?')
+		{
+			$('#iterationErrors').append('<p class="help-block">Iteration has to be number</p>');
+			$('#iterationGroup').attr("class","control-group error");
+			return false;
 
-    }
-    config = {
-      title:$('#titleWF').val(),
-      description:$('#abstractWF').val(),
-      annotation:'',
-      iterations: $('#iterationWF').val()
-    };
-    //create workflow from
-    newWFlow = new Kinetic.WorkFlow({text:$('#titleWF').val(),brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});
-    var index = layer.addElement(newWFlow);
-    //move down a layer to start editing this workflow
-    layer.renderWorkFlow(index);
+		}
+		config = {
+			title:$('#titleWF').val(),
+			description:$('#abstractWF').val(),
+			annotation:'',
+			iterations:$('#iterationWF').val()
+		}
+		var text = '[' + $('#iterationWF').val() + '] ' + $('#titleWF').val();
+		//create workflow from
+		newWFlow = new Kinetic.WorkFlow({text:text,brokerProperties:config,x:100,y:10,draggable:true,layer:layer,type:Kinetic.WorkFlowType.nested});
+		var index = layer.addElement(newWFlow);
+		//move down a layer to start editing this workflow
+		layer.renderWorkFlow(index);
 
 
-    //close the modal
-    $('#newWFModal').modal('hide');
+		//close the modal
+		$('#newWFModal').modal('hide');
 
 
-    //remove the errors from the form
-    $('#titleGroup').attr("class","control-group");
-    $('#abstractGroup').attr("class","control-group");
-    $('#iterationGroup').attr("class","control-group");
-  }
+		//remove the errors from the form
+		$('#titleGroup').attr("class","control-group");
+		$('#abstractGroup').attr("class","control-group");
+		$('#iterationGroup').attr("class","control-group");
+	}
 };
 WorkFlow_UI.io =
 {

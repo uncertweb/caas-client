@@ -76,6 +76,11 @@ Kinetic.WorkFlowComponent = function (config)
         config.fontSize = fontSize;
         this.rect = new Kinetic.Text(config);
         this.add(this.rect);
+        var lookup = UncertWeb.broker.getDetails(this.brokerProperties.id);
+		lookup.done(function(details) {
+			self.brokerProperties = details;
+			self.config.brokerProperties = details;
+		});
 
   }
   else
@@ -116,7 +121,7 @@ Kinetic.WorkFlowComponent = function (config)
     self.config.brokerProperties = details;
   });
 
-}
+};
 
 Kinetic.WorkFlowComponent.prototype = {
 
